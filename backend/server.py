@@ -18,6 +18,9 @@ from concurrent.futures import ThreadPoolExecutor
 import requests
 from bs4 import BeautifulSoup
 import json
+import requests_cache
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 
 ROOT_DIR = Path(__file__).parent
