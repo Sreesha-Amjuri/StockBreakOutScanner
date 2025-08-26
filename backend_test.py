@@ -120,8 +120,9 @@ class StockBreakoutAPITester:
         return success1 and success2
 
     def test_individual_stock_data(self):
-        """Test individual stock data endpoints"""
-        test_symbols = ['RELIANCE', 'TCS', 'HDFCBANK']
+        """Test individual stock data endpoints with trading recommendations"""
+        # Test specific stocks mentioned in the review request
+        test_symbols = ['MPHASIS', 'HDFCLIFE', 'HINDUNILVR', 'RELIANCE', 'TCS']
         successful_tests = 0
         
         for symbol in test_symbols:
@@ -138,8 +139,54 @@ class StockBreakoutAPITester:
                 else:
                     self.log_test(f"{symbol} Data Structure", True, 
                                 f"Price: ₹{data['current_price']:.2f}, Sector: {data.get('sector', 'N/A')}")
+                    
+                    # Test trading recommendation if present
+                    trading_rec = data.get('trading_recommendation')
+                    if trading_rec:
+                        self.test_individual_trading_recommendation(symbol, trading_rec)
         
         return successful_tests > 0
+
+    def test_individual_trading_recommendation(self, symbol, trading_rec):
+        """Test individual stock trading recommendation"""
+        required_fields = ['entry_price', 'stop_loss', 'target_price', 'risk_reward_ratio', 
+                         'position_size_percent', 'action', 'entry_rationale', 'stop_loss_rationale']
+        
+        missing_fields = [field for field in required_fields if field not in trading_rec]
+        
+        if missing_fields:
+            self.log_test(f"Trading Recommendation - {symbol}", False, f"Missing fields: {missing_fields}")
+        else:
+            entry_price = trading_rec['entry_price']
+            stop_loss = trading_rec['stop_loss']
+            target_price = trading_rec['target_price']
+            action = trading_rec['action']
+            
+            # Check if this matches expected values from review request
+            expected_values = {
+                'MPHASIS': {'entry': 2873.20, 'stop': 2730.71, 'target': 3300.66, 'action': 'BUY'},
+                'HDFCLIFE': {'entry': 776.60, 'stop': 747.99, 'target': 862.42, 'action': 'BUY'},
+                'HINDUNILVR': {'entry': 2692.60, 'stop': 2585.47, 'target': 3013.99, 'action': 'BUY'}
+            }
+            
+            if symbol in expected_values:
+                expected = expected_values[symbol]
+                tolerance = 0.05  # 5% tolerance for price variations
+                
+                entry_match = abs(entry_price - expected['entry']) / expected['entry'] <= tolerance
+                stop_match = abs(stop_loss - expected['stop']) / expected['stop'] <= tolerance
+                target_match = abs(target_price - expected['target']) / expected['target'] <= tolerance
+                action_match = action == expected['action']
+                
+                if entry_match and stop_match and target_match and action_match:
+                    self.log_test(f"Expected Trading Values - {symbol}", True, 
+                                f"Values match expected: Entry ₹{entry_price}, Stop ₹{stop_loss}, Target ₹{target_price}, Action {action}")
+                else:
+                    self.log_test(f"Expected Trading Values - {symbol}", False, 
+                                f"Values differ from expected. Got: Entry ₹{entry_price}, Stop ₹{stop_loss}, Target ₹{target_price}, Action {action}")
+            else:
+                self.log_test(f"Trading Recommendation - {symbol}", True, 
+                            f"Entry ₹{entry_price}, Stop ₹{stop_loss}, Target ₹{target_price}, Action {action}")
 
     def test_stock_chart_data(self):
         """Test stock chart data endpoints"""
