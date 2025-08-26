@@ -771,75 +771,6 @@ async def search_stocks(q: str):
     ]
     return {"results": matching_symbols[:10], "query": q}
 
-@api_router.get("/stocks/{symbol}")
-async def get_stock_data(symbol: str):
-    """Get detailed data for a specific stock"""
-    symbol = symbol.upper()
-    stock_data = await fetch_comprehensive_stock_data(symbol)
-    
-    if not stock_data:
-        raise HTTPException(status_code=404, detail=f"Stock data not found for {symbol}")
-    
-    return stock_data
-
-@api_router.get("/stocks/{symbol}/chart")
-async def get_stock_chart(symbol: str, timeframe: str = "1mo"):
-    """Get chart data for a specific stock and timeframe"""
-    symbol = symbol.upper()
-    
-    try:
-        ticker_symbol = f"{symbol}.NS"
-        
-        period_map = {
-            "1d": "1d",
-            "5d": "5d", 
-            "1mo": "1mo",
-            "3mo": "3mo",
-            "6mo": "6mo",
-            "1y": "1y",
-            "2y": "2y"
-        }
-        
-        period = period_map.get(timeframe, "1mo")
-        
-        loop = asyncio.get_event_loop()
-        
-        def get_chart_data():
-            ticker = yf.Ticker(ticker_symbol)
-            hist = ticker.history(period=period, interval="1d")
-            return hist
-        
-        hist = await loop.run_in_executor(executor, get_chart_data)
-        
-        if hist.empty:
-            raise HTTPException(status_code=404, detail=f"Chart data not found for {symbol}")
-        
-        # Calculate indicators for chart
-        technical_indicators = calculate_advanced_technical_indicators(hist)
-        
-        # Prepare chart data
-        chart_data = []
-        for index, row in hist.iterrows():
-            chart_data.append({
-                "date": index.strftime("%Y-%m-%d"),
-                "open": float(row['Open']),
-                "high": float(row['High']),
-                "low": float(row['Low']),
-                "close": float(row['Close']),
-                "volume": int(row['Volume'])
-            })
-        
-        return {
-            "symbol": symbol,
-            "timeframe": timeframe,
-            "data": chart_data,
-            "indicators": technical_indicators
-        }
-        
-    except Exception as e:
-        logger.error(f"Error fetching chart data for {symbol}: {str(e)}")
-        raise HTTPException(status_code=500, detail="Error fetching chart data")
-
 @api_router.get("/stocks/breakouts/scan")
 async def scan_breakout_stocks(
     sector: Optional[str] = None,
@@ -997,6 +928,75 @@ async def get_market_overview():
             "sector_performance": {},
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
+
+@api_router.get("/stocks/{symbol}")
+async def get_stock_data(symbol: str):
+    """Get detailed data for a specific stock"""
+    symbol = symbol.upper()
+    stock_data = await fetch_comprehensive_stock_data(symbol)
+    
+    if not stock_data:
+        raise HTTPException(status_code=404, detail=f"Stock data not found for {symbol}")
+    
+    return stock_data
+
+@api_router.get("/stocks/{symbol}/chart")
+async def get_stock_chart(symbol: str, timeframe: str = "1mo"):
+    """Get chart data for a specific stock and timeframe"""
+    symbol = symbol.upper()
+    
+    try:
+        ticker_symbol = f"{symbol}.NS"
+        
+        period_map = {
+            "1d": "1d",
+            "5d": "5d", 
+            "1mo": "1mo",
+            "3mo": "3mo",
+            "6mo": "6mo",
+            "1y": "1y",
+            "2y": "2y"
+        }
+        
+        period = period_map.get(timeframe, "1mo")
+        
+        loop = asyncio.get_event_loop()
+        
+        def get_chart_data():
+            ticker = yf.Ticker(ticker_symbol)
+            hist = ticker.history(period=period, interval="1d")
+            return hist
+        
+        hist = await loop.run_in_executor(executor, get_chart_data)
+        
+        if hist.empty:
+            raise HTTPException(status_code=404, detail=f"Chart data not found for {symbol}")
+        
+        # Calculate indicators for chart
+        technical_indicators = calculate_advanced_technical_indicators(hist)
+        
+        # Prepare chart data
+        chart_data = []
+        for index, row in hist.iterrows():
+            chart_data.append({
+                "date": index.strftime("%Y-%m-%d"),
+                "open": float(row['Open']),
+                "high": float(row['High']),
+                "low": float(row['Low']),
+                "close": float(row['Close']),
+                "volume": int(row['Volume'])
+            })
+        
+        return {
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "data": chart_data,
+            "indicators": technical_indicators
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching chart data for {symbol}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching chart data")
 
 @api_router.get("/watchlist")
 async def get_watchlist():
