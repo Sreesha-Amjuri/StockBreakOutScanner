@@ -104,6 +104,16 @@ class RiskAssessment(BaseModel):
     risk_factors: List[str] = []
     risk_level: str  # Low, Medium, High
 
+class TradingRecommendation(BaseModel):
+    entry_price: float
+    stop_loss: float
+    target_price: float
+    risk_reward_ratio: float
+    position_size_percent: float  # Suggested position size as % of portfolio
+    action: str  # "BUY", "WAIT", "AVOID"
+    entry_rationale: str
+    stop_loss_rationale: str
+
 class BreakoutStock(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     symbol: str
@@ -115,6 +125,7 @@ class BreakoutStock(BaseModel):
     technical_data: TechnicalIndicators
     fundamental_data: Optional[FundamentalData] = None
     risk_assessment: Optional[RiskAssessment] = None
+    trading_recommendation: Optional[TradingRecommendation] = None
     reason: str
     sector: Optional[str] = None
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
