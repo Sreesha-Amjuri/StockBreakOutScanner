@@ -1142,9 +1142,16 @@ async def get_market_overview():
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
+@api_router.get("/stocks/{symbol}/validate")
+async def validate_stock_data(symbol: str):
+    """Validate stock data against multiple sources for accuracy"""
+    symbol = symbol.upper()
+    validation_result = await validate_stock_data_multiple_sources(symbol)
+    return validation_result
+
 @api_router.get("/stocks/{symbol}")
 async def get_stock_data(symbol: str):
-    """Get detailed data for a specific stock"""
+    """Get detailed data for a specific stock with validation"""
     symbol = symbol.upper()
     stock_data = await fetch_comprehensive_stock_data(symbol)
     
