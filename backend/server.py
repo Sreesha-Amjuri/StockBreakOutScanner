@@ -724,6 +724,7 @@ async def fetch_comprehensive_stock_data(symbol: str) -> Optional[Dict]:
             "fundamental_data": fundamental_data,
             "risk_assessment": risk_assessment,
             "breakout_data": breakout_data,
+            "trading_recommendation": trading_recommendation,
             "chart_data": chart_data,
             "info": info
         }
