@@ -277,6 +277,221 @@ def calculate_advanced_technical_indicators(df: pd.DataFrame) -> Dict[str, Any]:
         logger.error(f"Error calculating technical indicators: {str(e)}")
         return {}
 
+def calculate_trading_recommendation(symbol: str, current_price: float, breakout_data: Dict, 
+                                   technical_data: Dict, risk_assessment: Dict) -> Dict:
+    """Calculate optimal entry points, stop loss, and target prices for trading"""
+    try:
+        breakout_price = breakout_data['breakout_price']
+        breakout_type = breakout_data['type']
+        confidence = breakout_data['confidence']
+        
+        # Calculate Entry Price
+        if breakout_type == '200_dma':
+            # Enter slightly above 200 DMA breakout
+            entry_price = max(current_price, breakout_price * 1.005)  # 0.5% above breakout
+            entry_rationale = f"Enter above 200 DMA breakout level of ₹{breakout_price:.2f}"
+        elif breakout_type == 'resistance':
+            # Enter above resistance with confirmation
+            entry_price = max(current_price, breakout_price * 1.01)  # 1% above resistance
+            entry_rationale = f"Enter above resistance breakout at ₹{breakout_price:.2f}"
+        elif breakout_type == 'momentum':
+            # Enter at current price for momentum plays
+            entry_price = current_price * 1.002  # Slight buffer for market orders
+            entry_rationale = f"Enter on momentum breakout near current price"
+        else:
+            # Default entry strategy
+            entry_price = max(current_price, breakout_price * 1.005)
+            entry_rationale = f"Enter above breakout level with confirmation"
+        
+        # Calculate Stop Loss using multiple methods
+        support_level = technical_data.get('support_level')
+        sma_20 = technical_data.get('sma_20')
+        atr = technical_data.get('atr')
+        
+        # Method 1: Support-based stop loss
+        support_stop = support_level * 0.98 if support_level else None
+        
+        # Method 2: ATR-based stop loss (2x ATR below entry)
+        atr_stop = entry_price - (2 * atr) if atr else None
+        
+        # Method 3: Percentage-based stop loss (5-8% based on volatility)
+        volatility = risk_assessment.get('volatility', 0.25)
+        pct_stop_distance = min(max(volatility * 0.3, 0.05), 0.08)  # 5-8% range
+        pct_stop = entry_price * (1 - pct_stop_distance)
+        
+        # Choose the most conservative (highest) stop loss
+        stop_options = [s for s in [support_stop, atr_stop, pct_stop] if s is not None]
+        stop_loss = max(stop_options) if stop_options else entry_price * 0.95
+        
+        # Stop loss rationale
+        if support_stop and stop_loss == support_stop:
+            stop_rationale = f"Support-based stop at ₹{stop_loss:.2f} (2% below support)"
+        elif atr_stop and stop_loss == atr_stop:
+            stop_rationale = f"ATR-based stop at ₹{stop_loss:.2f} (2x ATR)"
+        else:
+            stop_rationale = f"Volatility-based stop at ₹{stop_loss:.2f} ({pct_stop_distance*100:.1f}% risk)"
+        
+        # Calculate Target Price (Risk-Reward ratio approach)
+        risk_amount = entry_price - stop_loss
+        
+        # Adjust target based on breakout strength and confidence
+        if confidence >= 0.8:
+            reward_ratio = 3.0  # 1:3 risk reward for high confidence
+        elif confidence >= 0.7:
+            reward_ratio = 2.5  # 1:2.5 risk reward
+        else:
+            reward_ratio = 2.0  # 1:2 risk reward
+        
+        target_price = entry_price + (risk_amount * reward_ratio)
+        
+        # Calculate position sizing (% of portfolio)
+        risk_score = risk_assessment.get('risk_score', 5.0)
+        base_position = 0.1  # Base 10% position
+        
+        # Adjust based on confidence and risk
+        confidence_multiplier = confidence  # 0.5 to 1.0
+        risk_multiplier = max(0.3, 1.0 - (risk_score - 1) * 0.1)  # Lower for higher risk
+        
+        position_size_percent = min(base_position * confidence_multiplier * risk_multiplier, 0.15) * 100
+        
+        # Trading Action Recommendation
+        if confidence >= 0.75 and risk_score <= 6:
+            action = "BUY"
+        elif confidence >= 0.6 and risk_score <= 7:
+            action = "WAIT"  # Wait for better entry or more confirmation
+        else:
+            action = "AVOID"  # Too risky or low confidence
+        
+        risk_reward_ratio = (target_price - entry_price) / (entry_price - stop_loss)
+        
+        return {
+            "entry_price": round(entry_price, 2),
+            "stop_loss": round(stop_loss, 2),
+            "target_price": round(target_price, 2),
+            "risk_reward_ratio": round(risk_reward_ratio, 1),
+            "position_size_percent": round(position_size_percent, 1),
+            "action": action,
+            "entry_rationale": entry_rationale,
+            "stop_loss_rationale": stop_rationale
+        }
+        
+    except Exception as e:
+        logger.error(f"Error calculating trading recommendation for {symbol}: {str(e)}")
+        # Return safe defaults
+        return {
+            "entry_price": round(current_price * 1.01, 2),
+            "stop_loss": round(current_price * 0.95, 2),
+            "target_price": round(current_price * 1.1, 2),
+            "risk_reward_ratio": 2.0,
+            "position_size_percent": 5.0,
+            "action": "WAIT",
+            "entry_rationale": "Enter with caution",
+            "stop_loss_rationale": "5% stop loss"
+        }
+
+def get_market_status() -> Dict[str, Any]:
+    """Get detailed NSE market status with timings"""
+    try:
+        # Indian timezone
+        ist = pytz.timezone('Asia/Kolkata')
+        now_ist = datetime.now(ist)
+        
+        # NSE market hours: 9:15 AM to 3:30 PM IST (Monday to Friday)
+        market_open_time = now_ist.replace(hour=9, minute=15, second=0, microsecond=0)
+        market_close_time = now_ist.replace(hour=15, minute=30, second=0, microsecond=0)
+        pre_open_start = now_ist.replace(hour=9, minute=0, second=0, microsecond=0)
+        
+        # Check if it's a weekday
+        is_weekday = now_ist.weekday() < 5  # Monday = 0, Friday = 4
+        
+        current_time_str = now_ist.strftime("%I:%M %p IST")
+        
+        if not is_weekday:
+            return {
+                "status": "CLOSED",
+                "message": "Market Closed - Weekend",
+                "current_time": current_time_str,
+                "next_open": "Monday 9:15 AM IST",
+                "is_trading_hours": False,
+                "time_to_open": None,
+                "time_to_close": None
+            }
+        
+        if now_ist < pre_open_start:
+            # Before pre-open
+            time_to_open = (pre_open_start - now_ist).total_seconds()
+            hours, remainder = divmod(time_to_open, 3600)
+            minutes, _ = divmod(remainder, 60)
+            return {
+                "status": "CLOSED",
+                "message": f"Pre-Market opens in {int(hours)}h {int(minutes)}m",
+                "current_time": current_time_str,
+                "next_open": "9:00 AM IST (Pre-Market)",
+                "is_trading_hours": False,
+                "time_to_open": int(time_to_open),
+                "time_to_close": None
+            }
+        
+        elif pre_open_start <= now_ist < market_open_time:
+            # Pre-open session
+            time_to_open = (market_open_time - now_ist).total_seconds()
+            minutes, _ = divmod(time_to_open, 60)
+            return {
+                "status": "PRE_OPEN",
+                "message": f"Pre-Market Session (Trading starts in {int(minutes)}m)",
+                "current_time": current_time_str,
+                "next_open": "9:15 AM IST",
+                "is_trading_hours": False,
+                "time_to_open": int(time_to_open),
+                "time_to_close": None
+            }
+        
+        elif market_open_time <= now_ist <= market_close_time:
+            # Market is open
+            time_to_close = (market_close_time - now_ist).total_seconds()
+            hours, remainder = divmod(time_to_close, 3600)
+            minutes, _ = divmod(remainder, 60)
+            return {
+                "status": "OPEN",
+                "message": f"Market Open (Closes in {int(hours)}h {int(minutes)}m)",
+                "current_time": current_time_str,
+                "next_close": "3:30 PM IST",
+                "is_trading_hours": True,
+                "time_to_open": None,
+                "time_to_close": int(time_to_close)
+            }
+        
+        else:
+            # After market close
+            next_day = now_ist + timedelta(days=1)
+            next_open = next_day.replace(hour=9, minute=0, second=0, microsecond=0)
+            
+            # Skip weekend
+            while next_open.weekday() >= 5:
+                next_open += timedelta(days=1)
+            
+            return {
+                "status": "CLOSED",
+                "message": "Market Closed for the day",
+                "current_time": current_time_str,
+                "next_open": next_open.strftime("%A 9:00 AM IST"),
+                "is_trading_hours": False,
+                "time_to_open": None,
+                "time_to_close": None
+            }
+            
+    except Exception as e:
+        logger.error(f"Error getting market status: {str(e)}")
+        return {
+            "status": "UNKNOWN",
+            "message": "Unable to determine market status",
+            "current_time": "N/A",
+            "next_open": "N/A",
+            "is_trading_hours": False,
+            "time_to_open": None,
+            "time_to_close": None
+        }
+
 def calculate_risk_assessment(symbol: str, df: pd.DataFrame, technical_data: Dict, info: Dict) -> Dict:
     """Calculate risk assessment for a stock"""
     try:
