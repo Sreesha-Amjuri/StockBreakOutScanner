@@ -857,15 +857,22 @@ async def get_real_time_nse_price(symbol: str) -> Optional[Dict]:
         return None
 
 async def fetch_comprehensive_stock_data(symbol: str) -> Optional[Dict]:
-    """Fetch comprehensive stock data with all indicators"""
+    """Fetch comprehensive stock data with validation and accuracy checks"""
     try:
+        # Get real-time price data with validation
+        real_time_data = await get_real_time_nse_price(symbol)
+        
+        if not real_time_data:
+            logger.warning(f"No real-time data available for {symbol}")
+            return None
+        
         ticker_symbol = f"{symbol}.NS"
         
         loop = asyncio.get_event_loop()
         
         def get_stock_info():
             ticker = yf.Ticker(ticker_symbol)
-            hist = ticker.history(period="1y")
+            hist = ticker.history(period="1y")  # Get 1 year of data
             info = ticker.info
             return hist, info
         
@@ -873,10 +880,11 @@ async def fetch_comprehensive_stock_data(symbol: str) -> Optional[Dict]:
         
         if hist.empty:
             return None
-            
-        current_price = hist['Close'].iloc[-1]
-        prev_close = hist['Close'].iloc[-2] if len(hist) > 1 else current_price
-        change_percent = ((current_price - prev_close) / prev_close) * 100
+        
+        # Use validated real-time price data
+        current_price = real_time_data['current_price']
+        change_percent = real_time_data['change_percent']
+        volume = real_time_data.get('volume', int(hist['Volume'].iloc[-1]) if not hist.empty else 0)
         
         # Calculate all technical indicators
         technical_indicators = calculate_advanced_technical_indicators(hist)
@@ -908,13 +916,21 @@ async def fetch_comprehensive_stock_data(symbol: str) -> Optional[Dict]:
             "1y": hist.reset_index().to_dict('records')
         }
         
+        # Add data validation info
+        data_validation = {
+            "source": real_time_data.get('source', 'Yahoo Finance'),
+            "timestamp": real_time_data.get('timestamp', datetime.now(timezone.utc).isoformat()),
+            "data_age_warning": real_time_data.get('data_age_warning'),
+            "last_market_close": hist.index[-1].strftime("%Y-%m-%d") if not hist.empty else None
+        }
+        
         return {
             "symbol": symbol,
             "name": info.get('longName', symbol),
-            "current_price": float(current_price),
-            "change_percent": float(change_percent),
-            "volume": int(hist['Volume'].iloc[-1]),
-            "market_cap": info.get('marketCap'),
+            "current_price": current_price,
+            "change_percent": change_percent,
+            "volume": volume,
+            "market_cap": real_time_data.get('market_cap') or info.get('marketCap'),
             "sector": sector,
             "technical_indicators": technical_indicators,
             "fundamental_data": fundamental_data,
@@ -922,6 +938,7 @@ async def fetch_comprehensive_stock_data(symbol: str) -> Optional[Dict]:
             "breakout_data": breakout_data,
             "trading_recommendation": trading_recommendation,
             "chart_data": chart_data,
+            "data_validation": data_validation,
             "info": info
         }
     except Exception as e:
