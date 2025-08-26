@@ -163,7 +163,7 @@ class StockBreakoutAPITester:
         return successful_tests > len(timeframes) // 2
 
     def test_breakout_scanning(self):
-        """Test breakout scanning with various filters"""
+        """Test breakout scanning with enhanced trading features"""
         # Test basic breakout scan
         success1, data1 = self.test_api_endpoint("Breakout Scan - Basic", "GET", "stocks/breakouts/scan", 
                                                 timeout=60)  # Longer timeout for scanning
@@ -173,6 +173,11 @@ class StockBreakoutAPITester:
             total_scanned = data1.get('total_scanned', 0)
             self.log_test("Breakout Scan Results", True, 
                         f"Found {breakouts_found} breakouts from {total_scanned} stocks scanned")
+            
+            # Test trading recommendations in breakout results
+            breakout_stocks = data1.get('breakout_stocks', [])
+            if breakout_stocks:
+                self.test_trading_recommendations_in_breakouts(breakout_stocks)
         
         # Test with sector filter
         success2, data2 = self.test_api_endpoint("Breakout Scan - IT Sector", "GET", "stocks/breakouts/scan", 
@@ -183,6 +188,73 @@ class StockBreakoutAPITester:
                                                 params={"risk_level": "Low", "min_confidence": "0.7"}, timeout=60)
         
         return success1 and success2 and success3
+
+    def test_trading_recommendations_in_breakouts(self, breakout_stocks):
+        """Test trading recommendations structure in breakout results"""
+        stocks_with_recommendations = 0
+        valid_recommendations = 0
+        
+        for stock in breakout_stocks:
+            trading_rec = stock.get('trading_recommendation')
+            if trading_rec:
+                stocks_with_recommendations += 1
+                
+                # Validate trading recommendation structure
+                required_fields = ['entry_price', 'stop_loss', 'target_price', 'risk_reward_ratio', 
+                                 'position_size_percent', 'action', 'entry_rationale', 'stop_loss_rationale']
+                
+                missing_fields = [field for field in required_fields if field not in trading_rec]
+                
+                if not missing_fields:
+                    valid_recommendations += 1
+                    
+                    # Validate trading logic
+                    entry_price = trading_rec['entry_price']
+                    stop_loss = trading_rec['stop_loss']
+                    target_price = trading_rec['target_price']
+                    action = trading_rec['action']
+                    risk_reward = trading_rec['risk_reward_ratio']
+                    position_size = trading_rec['position_size_percent']
+                    
+                    # Test logical constraints
+                    logic_valid = True
+                    logic_issues = []
+                    
+                    if stop_loss >= entry_price:
+                        logic_valid = False
+                        logic_issues.append("Stop loss should be below entry price")
+                    
+                    if target_price <= entry_price:
+                        logic_valid = False
+                        logic_issues.append("Target price should be above entry price")
+                    
+                    if action not in ['BUY', 'WAIT', 'AVOID']:
+                        logic_valid = False
+                        logic_issues.append(f"Invalid action: {action}")
+                    
+                    if not (1.5 <= risk_reward <= 4.0):
+                        logic_valid = False
+                        logic_issues.append(f"Risk:reward ratio {risk_reward} outside expected range (1.5-4.0)")
+                    
+                    if not (1.0 <= position_size <= 20.0):
+                        logic_valid = False
+                        logic_issues.append(f"Position size {position_size}% outside expected range (1-20%)")
+                    
+                    if logic_valid:
+                        self.log_test(f"Trading Logic - {stock['symbol']}", True, 
+                                    f"Entry: ₹{entry_price}, Stop: ₹{stop_loss}, Target: ₹{target_price}, Action: {action}")
+                    else:
+                        self.log_test(f"Trading Logic - {stock['symbol']}", False, 
+                                    f"Logic issues: {', '.join(logic_issues)}")
+                else:
+                    self.log_test(f"Trading Recommendation Structure - {stock['symbol']}", False, 
+                                f"Missing fields: {missing_fields}")
+        
+        self.log_test("Trading Recommendations Coverage", stocks_with_recommendations > 0, 
+                    f"{stocks_with_recommendations}/{len(breakout_stocks)} stocks have trading recommendations")
+        
+        self.log_test("Trading Recommendations Validity", valid_recommendations > 0, 
+                    f"{valid_recommendations}/{stocks_with_recommendations} recommendations are structurally valid")
 
     def test_market_overview(self):
         """Test market overview endpoint"""
