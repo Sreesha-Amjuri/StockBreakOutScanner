@@ -285,6 +285,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
             <CardContent className="p-6">
