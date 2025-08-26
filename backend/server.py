@@ -919,8 +919,11 @@ async def scan_breakout_stocks(
 
 @api_router.get("/stocks/market-overview")
 async def get_market_overview():
-    """Enhanced market overview with sector performance"""
+    """Enhanced market overview with detailed market status"""
     try:
+        # Get detailed market status
+        market_status = get_market_status()
+        
         # Try to fetch NIFTY 50 data - use a fallback approach
         nifty_data = None
         try:
@@ -969,16 +972,27 @@ async def get_market_overview():
                 "current": nifty_current,
                 "change_percent": nifty_change
             },
-            "market_status": "Open" if 9 <= datetime.now().hour < 16 else "Closed",
+            "market_status": market_status,
             "market_sentiment": market_sentiment,
             "sector_performance": sector_performance,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
         logger.error(f"Error fetching market overview: {str(e)}")
+        # Return fallback data with current market status
+        try:
+            market_status = get_market_status()
+        except:
+            market_status = {
+                "status": "UNKNOWN",
+                "message": "Unable to determine market status",
+                "current_time": "N/A",
+                "is_trading_hours": False
+            }
+        
         return {
             "nifty_50": {"current": 24000, "change_percent": 0.5},
-            "market_status": "Unknown",
+            "market_status": market_status,
             "market_sentiment": "Neutral",
             "sector_performance": {},
             "timestamp": datetime.now(timezone.utc).isoformat()
