@@ -70,7 +70,7 @@ const Dashboard = () => {
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
-        limit: '30'
+        limit: '50'  // Increased limit to get more results
       });
       
       if (selectedSector !== 'All') {
@@ -81,13 +81,28 @@ const Dashboard = () => {
         params.append('risk_level', riskFilter);
       }
       
+      console.log('Requesting breakout scan with params:', params.toString());
+      
       const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`);
-      setBreakoutStocks(response.data.breakout_stocks);
-      setLastUpdated(new Date().toLocaleTimeString());
-      toast.success(`Found ${response.data.breakouts_found} breakout opportunities!`);
+      
+      console.log('Breakout scan response:', response.data);
+      console.log('Number of breakouts found:', response.data.breakouts_found);
+      console.log('Breakout stocks array length:', response.data.breakout_stocks?.length);
+      
+      if (response.data && response.data.breakout_stocks) {
+        setBreakoutStocks(response.data.breakout_stocks);
+        setLastUpdated(new Date().toLocaleTimeString());
+        toast.success(`Found ${response.data.breakouts_found} breakout opportunities!`);
+      } else {
+        console.error('Invalid response structure:', response.data);
+        toast.error("Invalid response from server");
+        setBreakoutStocks([]);
+      }
     } catch (error) {
       console.error('Error scanning breakouts:', error);
-      toast.error("Failed to scan for breakouts");
+      console.error('Error response:', error.response?.data);
+      toast.error(`Failed to scan for breakouts: ${error.message}`);
+      setBreakoutStocks([]);
     } finally {
       setLoading(false);
     }
