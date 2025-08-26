@@ -492,21 +492,18 @@ const Dashboard = () => {
                             <div>
                               <span className="font-semibold text-slate-900">{stock.symbol}</span>
                               <p className="text-sm text-slate-600 truncate max-w-32">{stock.name}</p>
-                              <Badge variant="outline" className="text-xs mt-1">
-                                {stock.sector}
-                              </Badge>
                             </div>
                           </TableCell>
                           <TableCell className="font-semibold">
-                            <div>
-                              {formatPrice(stock.current_price)}
-                              <div className={`text-sm font-medium ${
-                                stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-600'
-                              }`}>
-                                {stock.change_percent >= 0 ? '+' : ''}
-                                {stock.change_percent.toFixed(2)}%
-                              </div>
-                            </div>
+                            {formatPrice(stock.current_price)}
+                          </TableCell>
+                          <TableCell>
+                            <span className={`font-medium ${
+                              stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-600'
+                            }`}>
+                              {stock.change_percent >= 0 ? '+' : ''}
+                              {stock.change_percent.toFixed(2)}%
+                            </span>
                           </TableCell>
                           <TableCell className="font-semibold text-blue-600">
                             {trading ? formatPrice(trading.entry_price) : '-'}
@@ -547,6 +544,25 @@ const Dashboard = () => {
                                 {(stock.confidence_score * 100).toFixed(0)}%
                               </span>
                             </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getRiskColor(stock.risk_assessment?.risk_level)}>
+                              <Shield className="w-3 h-3 mr-1" />
+                              {stock.risk_assessment?.risk_level || 'Medium'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <span className={`font-medium ${
+                              stock.technical_data.rsi > 70 ? 'text-red-600' : 
+                              stock.technical_data.rsi > 50 ? 'text-emerald-600' : 'text-slate-600'
+                            }`}>
+                              {stock.technical_data.rsi ? stock.technical_data.rsi.toFixed(1) : '-'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {stock.sector}
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center space-x-2">
