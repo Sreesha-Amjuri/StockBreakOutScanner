@@ -121,24 +121,55 @@ class StockBreakoutAPITester:
 
     def test_individual_stock_data(self):
         """Test individual stock data endpoints with trading recommendations"""
-        # Test specific stocks mentioned in the review request
-        test_symbols = ['MPHASIS', 'HDFCLIFE', 'HINDUNILVR', 'RELIANCE', 'TCS']
+        # Test specific stocks mentioned in the review request with expected values
+        test_symbols_with_expected = {
+            'RELIANCE': {'expected_price': 1384.90, 'expected_change': -1.96},
+            'TCS': {'expected_price': 3157.20, 'expected_change': 0.53},
+            'MPHASIS': {'expected_price': 2873.20, 'expected_change': -1.53},
+            'HDFCLIFE': {'expected_price': 776.60, 'expected_change': -1.32},
+            'HINDUNILVR': {'expected_price': 2692.60, 'expected_change': 2.32}
+        }
+        
         successful_tests = 0
         
-        for symbol in test_symbols:
+        for symbol, expected in test_symbols_with_expected.items():
             success, data = self.test_api_endpoint(f"Stock Data - {symbol}", "GET", f"stocks/{symbol}")
             
             if success:
                 successful_tests += 1
                 # Validate response structure
-                required_keys = ['symbol', 'name', 'current_price', 'technical_indicators', 'fundamental_data', 'risk_assessment']
+                required_keys = ['symbol', 'name', 'current_price', 'change_percent', 'technical_indicators', 'fundamental_data', 'risk_assessment']
                 missing_keys = [key for key in required_keys if key not in data]
                 
                 if missing_keys:
                     self.log_test(f"{symbol} Data Structure", False, f"Missing keys: {missing_keys}")
                 else:
+                    current_price = data['current_price']
+                    change_percent = data['change_percent']
+                    
+                    # Test price accuracy against expected values (allow 5% variance for market movements)
+                    price_tolerance = 0.05  # 5% tolerance
+                    change_tolerance = 2.0   # 2% absolute tolerance for change
+                    
+                    price_diff = abs(current_price - expected['expected_price']) / expected['expected_price']
+                    change_diff = abs(change_percent - expected['expected_change'])
+                    
+                    price_accurate = price_diff <= price_tolerance
+                    change_reasonable = change_diff <= change_tolerance
+                    
+                    self.log_test(f"{symbol} Price Accuracy", price_accurate, 
+                                f"Current: ₹{current_price:.2f}, Expected: ₹{expected['expected_price']:.2f}, Diff: {price_diff*100:.2f}%")
+                    
+                    self.log_test(f"{symbol} Change Accuracy", change_reasonable, 
+                                f"Current: {change_percent:.2f}%, Expected: {expected['expected_change']:.2f}%, Diff: {change_diff:.2f}%")
+                    
                     self.log_test(f"{symbol} Data Structure", True, 
-                                f"Price: ₹{data['current_price']:.2f}, Sector: {data.get('sector', 'N/A')}")
+                                f"Price: ₹{current_price:.2f} ({change_percent:+.2f}%), Sector: {data.get('sector', 'N/A')}")
+                    
+                    # Test data validation info
+                    data_validation = data.get('data_validation', {})
+                    if data_validation:
+                        self.test_data_validation_info(symbol, data_validation)
                     
                     # Test trading recommendation if present
                     trading_rec = data.get('trading_recommendation')
