@@ -251,7 +251,40 @@ const Dashboard = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Stats Cards */}
+        {/* Market Status - Enhanced Display */}
+        {marketOverview?.market_status && (
+          <Card className="mb-8 bg-white/60 backdrop-blur-sm border-slate-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className={`w-4 h-4 rounded-full ${
+                    marketOverview.market_status.status === 'OPEN' ? 'bg-emerald-500 animate-pulse' :
+                    marketOverview.market_status.status === 'PRE_OPEN' ? 'bg-amber-500 animate-pulse' :
+                    'bg-red-500'
+                  }`}></div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      NSE Market Status: {marketOverview.market_status.status}
+                    </h3>
+                    <p className="text-sm text-slate-600">{marketOverview.market_status.message}</p>
+                  </div>
+                </div>
+                
+                <div className="text-right">
+                  <p className="text-sm text-slate-600">Current Time (IST)</p>
+                  <p className="text-lg font-semibold text-slate-900">
+                    {marketOverview.market_status.current_time}
+                  </p>
+                  {marketOverview.market_status.next_open && (
+                    <p className="text-xs text-slate-500">
+                      Next: {marketOverview.market_status.next_open}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
             <CardContent className="p-6">
