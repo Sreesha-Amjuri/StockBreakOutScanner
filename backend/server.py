@@ -776,7 +776,7 @@ async def add_to_watchlist(symbol: str, target_price: Optional[float] = None, st
             "target_price": target_price,
             "stop_loss": stop_loss,
             "notes": notes,
-            "added_date": datetime.now(timezone.utc)
+            "added_date": datetime.now(timezone.utc).isoformat()  # Store as ISO string
         }
         
         await db.watchlist.insert_one(watchlist_item)
