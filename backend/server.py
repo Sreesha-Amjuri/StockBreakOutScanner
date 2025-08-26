@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks
+from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Depends
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -8,7 +8,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import yfinance as yf
 import pandas as pd
 import numpy as np
@@ -16,6 +16,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor
 import requests
 from bs4 import BeautifulSoup
+import json
 
 
 ROOT_DIR = Path(__file__).parent
@@ -33,7 +34,7 @@ app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
 # Thread pool for blocking operations
-executor = ThreadPoolExecutor(max_workers=10)
+executor = ThreadPoolExecutor(max_workers=15)
 
 # Define Models
 class StatusCheck(BaseModel):
@@ -59,9 +60,19 @@ class TechnicalIndicators(BaseModel):
     sma_20: Optional[float] = None
     sma_50: Optional[float] = None
     sma_200: Optional[float] = None
+    ema_12: Optional[float] = None
+    ema_26: Optional[float] = None
     rsi: Optional[float] = None
     macd: Optional[float] = None
     macd_signal: Optional[float] = None
+    macd_histogram: Optional[float] = None
+    bollinger_upper: Optional[float] = None
+    bollinger_lower: Optional[float] = None
+    bollinger_middle: Optional[float] = None
+    stochastic_k: Optional[float] = None
+    stochastic_d: Optional[float] = None
+    vwap: Optional[float] = None
+    atr: Optional[float] = None
     volume_ratio: Optional[float] = None
     breakout_level: Optional[float] = None
     support_level: Optional[float] = None
@@ -79,6 +90,19 @@ class FundamentalData(BaseModel):
     earnings_growth: Optional[float] = None
     revenue_growth: Optional[float] = None
     dividend_yield: Optional[float] = None
+    market_cap: Optional[float] = None
+    book_value: Optional[float] = None
+    eps: Optional[float] = None
+    sector: Optional[str] = None
+    industry: Optional[str] = None
+
+class RiskAssessment(BaseModel):
+    symbol: str
+    risk_score: float  # 1-10 scale
+    volatility: Optional[float] = None
+    beta: Optional[float] = None
+    risk_factors: List[str] = []
+    risk_level: str  # Low, Medium, High
 
 class BreakoutStock(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
@@ -86,126 +110,339 @@ class BreakoutStock(BaseModel):
     name: str
     current_price: float
     breakout_price: float
-    breakout_type: str  # "200_dma", "resistance", "pattern"
+    breakout_type: str  # "200_dma", "resistance", "pattern", "momentum"
     confidence_score: float
     technical_data: TechnicalIndicators
     fundamental_data: Optional[FundamentalData] = None
+    risk_assessment: Optional[RiskAssessment] = None
     reason: str
+    sector: Optional[str] = None
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-# NSE stock symbols (top 100 liquid stocks)
-NSE_SYMBOLS = [
-    "RELIANCE", "TCS", "HDFCBANK", "BHARTIARTL", "ICICIBANK", "INFOSYS", 
-    "SBIN", "LICI", "HINDUNILVR", "ITC", "LT", "AXISBANK", "KOTAKBANK",
-    "BAJFINANCE", "ASIANPAINT", "NESTLEIND", "MARUTI", "HCLTECH", "SUNPHARMA",
-    "TITAN", "WIPRO", "ULTRACEMCO", "ONGC", "NTPC", "POWERGRID", "M&M",
-    "TECHM", "TATAMOTORS", "COALINDIA", "BAJAJFINSV", "ADANIENTS", "HDFCLIFE",
-    "SBILIFE", "JSWSTEEL", "TATACONSUM", "IOC", "BAJAJ-AUTO", "GRASIM",
-    "HINDALCO", "BRITANNIA", "APOLLOHOSP", "CIPLA", "DIVISLAB", "DRREDDY",
-    "EICHERMOT", "HEROMOTOCO", "INDUSINDBK", "SHREECEM", "TATASTEEL",
-    "GODREJCP", "VEDL", "BPCL", "ADANIPORTS", "PIDILITIND", "PAGEIND"
-]
+class WatchlistItem(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    symbol: str
+    name: str
+    added_price: float
+    target_price: Optional[float] = None
+    stop_loss: Optional[float] = None
+    notes: Optional[str] = None
+    added_date: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-def calculate_technical_indicators(df: pd.DataFrame) -> Dict[str, Any]:
-    """Calculate technical indicators for a stock"""
+class ChartData(BaseModel):
+    symbol: str
+    timeframe: str  # 1d, 5d, 1mo, 3mo, 6mo, 1y, 2y
+    data: List[Dict[str, Any]]
+    indicators: Dict[str, List[float]]
+
+class AlertRequest(BaseModel):
+    symbol: str
+    price: float
+    condition: str  # "above", "below"
+    email: Optional[str] = None
+
+# NSE stock symbols with sectors
+NSE_SYMBOLS = {
+    # IT Sector
+    "TCS": "IT", "INFOSYS": "IT", "HCLTECH": "IT", "WIPRO": "IT", "TECHM": "IT",
+    "LTIM": "IT", "PERSISTENT": "IT", "MPHASIS": "IT", "LTTS": "IT",
+    
+    # Banking & Financial
+    "HDFCBANK": "Banking", "ICICIBANK": "Banking", "SBIN": "Banking", "AXISBANK": "Banking",
+    "KOTAKBANK": "Banking", "INDUSINDBK": "Banking", "BAJFINANCE": "Finance",
+    "BAJAJFINSV": "Finance", "HDFCLIFE": "Insurance", "SBILIFE": "Insurance", "LICI": "Insurance",
+    
+    # FMCG
+    "HINDUNILVR": "FMCG", "ITC": "FMCG", "NESTLEIND": "FMCG", "BRITANNIA": "FMCG",
+    "TATACONSUM": "FMCG", "GODREJCP": "FMCG", "MARICO": "FMCG", "DABUR": "FMCG",
+    
+    # Auto
+    "MARUTI": "Auto", "TATAMOTORS": "Auto", "M&M": "Auto", "BAJAJ-AUTO": "Auto",
+    "EICHERMOT": "Auto", "HEROMOTOCO": "Auto", "TVSMOTORS": "Auto",
+    
+    # Pharma
+    "SUNPHARMA": "Pharma", "DRREDDY": "Pharma", "CIPLA": "Pharma", "DIVISLAB": "Pharma",
+    "APOLLOHOSP": "Healthcare", "FORTIS": "Healthcare",
+    
+    # Energy & Power
+    "RELIANCE": "Energy", "ONGC": "Energy", "IOC": "Energy", "BPCL": "Energy",
+    "NTPC": "Power", "POWERGRID": "Power", "COALINDIA": "Mining",
+    
+    # Metals & Mining
+    "TATASTEEL": "Metals", "JSWSTEEL": "Metals", "HINDALCO": "Metals", "VEDL": "Metals",
+    "SAIL": "Metals", "NMDC": "Mining",
+    
+    # Cement
+    "ULTRACEMCO": "Cement", "SHREECEM": "Cement", "GRASIM": "Cement", "RAMCOCEM": "Cement",
+    
+    # Telecom
+    "BHARTIARTL": "Telecom", "IDEA": "Telecom",
+    
+    # Others
+    "LT": "Infrastructure", "ASIANPAINT": "Paints", "TITAN": "Jewelry",
+    "PIDILITIND": "Chemicals", "PAGEIND": "FMCG", "ADANIPORTS": "Infrastructure",
+    "ADANIENTS": "Diversified"
+}
+
+def calculate_advanced_technical_indicators(df: pd.DataFrame) -> Dict[str, Any]:
+    """Calculate comprehensive technical indicators"""
     try:
-        # Simple Moving Averages
-        sma_20 = df['Close'].rolling(window=20).mean().iloc[-1] if len(df) >= 20 else None
-        sma_50 = df['Close'].rolling(window=50).mean().iloc[-1] if len(df) >= 50 else None
-        sma_200 = df['Close'].rolling(window=200).mean().iloc[-1] if len(df) >= 200 else None
+        indicators = {}
+        
+        # Basic Moving Averages
+        indicators['sma_20'] = df['Close'].rolling(window=20).mean().iloc[-1] if len(df) >= 20 else None
+        indicators['sma_50'] = df['Close'].rolling(window=50).mean().iloc[-1] if len(df) >= 50 else None
+        indicators['sma_200'] = df['Close'].rolling(window=200).mean().iloc[-1] if len(df) >= 200 else None
+        
+        # Exponential Moving Averages
+        indicators['ema_12'] = df['Close'].ewm(span=12).mean().iloc[-1] if len(df) >= 12 else None
+        indicators['ema_26'] = df['Close'].ewm(span=26).mean().iloc[-1] if len(df) >= 26 else None
         
         # RSI
         delta = df['Close'].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
         rs = gain / loss
-        rsi = 100 - (100 / (1 + rs)).iloc[-1] if len(df) >= 14 else None
+        indicators['rsi'] = 100 - (100 / (1 + rs)).iloc[-1] if len(df) >= 14 else None
         
         # MACD
-        exp1 = df['Close'].ewm(span=12).mean()
-        exp2 = df['Close'].ewm(span=26).mean()
-        macd = (exp1 - exp2).iloc[-1] if len(df) >= 26 else None
-        signal = (exp1 - exp2).ewm(span=9).mean().iloc[-1] if len(df) >= 35 else None
+        if indicators['ema_12'] and indicators['ema_26']:
+            exp1 = df['Close'].ewm(span=12).mean()
+            exp2 = df['Close'].ewm(span=26).mean()
+            macd_line = exp1 - exp2
+            indicators['macd'] = macd_line.iloc[-1]
+            signal_line = macd_line.ewm(span=9).mean()
+            indicators['macd_signal'] = signal_line.iloc[-1] if len(df) >= 35 else None
+            indicators['macd_histogram'] = (macd_line - signal_line).iloc[-1] if len(df) >= 35 else None
+        
+        # Bollinger Bands
+        if indicators['sma_20']:
+            std_20 = df['Close'].rolling(window=20).std().iloc[-1]
+            indicators['bollinger_middle'] = indicators['sma_20']
+            indicators['bollinger_upper'] = indicators['sma_20'] + (2 * std_20)
+            indicators['bollinger_lower'] = indicators['sma_20'] - (2 * std_20)
+        
+        # Stochastic Oscillator
+        if len(df) >= 14:
+            low_14 = df['Low'].rolling(window=14).min()
+            high_14 = df['High'].rolling(window=14).max()
+            k_percent = 100 * ((df['Close'] - low_14) / (high_14 - low_14))
+            indicators['stochastic_k'] = k_percent.iloc[-1]
+            indicators['stochastic_d'] = k_percent.rolling(window=3).mean().iloc[-1]
+        
+        # VWAP (Volume Weighted Average Price)
+        if len(df) >= 20:
+            typical_price = (df['High'] + df['Low'] + df['Close']) / 3
+            vwap = (typical_price * df['Volume']).rolling(window=20).sum() / df['Volume'].rolling(window=20).sum()
+            indicators['vwap'] = vwap.iloc[-1]
+        
+        # ATR (Average True Range)
+        if len(df) >= 14:
+            high_low = df['High'] - df['Low']
+            high_close = np.abs(df['High'] - df['Close'].shift())
+            low_close = np.abs(df['Low'] - df['Close'].shift())
+            true_range = pd.concat([high_low, high_close, low_close], axis=1).max(axis=1)
+            indicators['atr'] = true_range.rolling(window=14).mean().iloc[-1]
         
         # Volume analysis
         avg_volume = df['Volume'].rolling(window=20).mean().iloc[-1] if len(df) >= 20 else None
         current_volume = df['Volume'].iloc[-1]
-        volume_ratio = current_volume / avg_volume if avg_volume and avg_volume > 0 else None
+        indicators['volume_ratio'] = current_volume / avg_volume if avg_volume and avg_volume > 0 else None
         
         # Support and Resistance
-        high_20 = df['High'].rolling(window=20).max().iloc[-1] if len(df) >= 20 else None
-        low_20 = df['Low'].rolling(window=20).min().iloc[-1] if len(df) >= 20 else None
+        indicators['resistance_level'] = df['High'].rolling(window=20).max().iloc[-1] if len(df) >= 20 else None
+        indicators['support_level'] = df['Low'].rolling(window=20).min().iloc[-1] if len(df) >= 20 else None
         
-        return {
-            "sma_20": float(sma_20) if sma_20 and not pd.isna(sma_20) else None,
-            "sma_50": float(sma_50) if sma_50 and not pd.isna(sma_50) else None,
-            "sma_200": float(sma_200) if sma_200 and not pd.isna(sma_200) else None,
-            "rsi": float(rsi) if rsi and not pd.isna(rsi) else None,
-            "macd": float(macd) if macd and not pd.isna(macd) else None,
-            "macd_signal": float(signal) if signal and not pd.isna(signal) else None,
-            "volume_ratio": float(volume_ratio) if volume_ratio and not pd.isna(volume_ratio) else None,
-            "resistance_level": float(high_20) if high_20 and not pd.isna(high_20) else None,
-            "support_level": float(low_20) if low_20 and not pd.isna(low_20) else None,
-        }
+        # Convert numpy values to Python native types and handle NaN
+        for key, value in indicators.items():
+            if value is not None and not pd.isna(value):
+                indicators[key] = float(value)
+            else:
+                indicators[key] = None
+                
+        return indicators
     except Exception as e:
         logger.error(f"Error calculating technical indicators: {str(e)}")
         return {}
 
-def detect_breakout(symbol: str, df: pd.DataFrame, technical_data: Dict) -> Optional[Dict]:
-    """Detect if a stock is showing breakout signals"""
+def calculate_risk_assessment(symbol: str, df: pd.DataFrame, technical_data: Dict, info: Dict) -> Dict:
+    """Calculate risk assessment for a stock"""
+    try:
+        risk_factors = []
+        risk_score = 5.0  # Start with neutral risk
+        
+        # Volatility check
+        returns = df['Close'].pct_change().dropna()
+        volatility = returns.std() * np.sqrt(252)  # Annualized volatility
+        
+        if volatility > 0.4:
+            risk_factors.append("High volatility (>40%)")
+            risk_score += 1.5
+        elif volatility > 0.25:
+            risk_factors.append("Moderate volatility (25-40%)")
+            risk_score += 0.5
+        
+        # RSI overbought/oversold
+        rsi = technical_data.get('rsi')
+        if rsi:
+            if rsi > 80:
+                risk_factors.append("Overbought (RSI > 80)")
+                risk_score += 1.0
+            elif rsi < 20:
+                risk_factors.append("Oversold (RSI < 20)")
+                risk_score += 0.5
+        
+        # Price vs Moving Averages
+        current_price = df['Close'].iloc[-1]
+        sma_200 = technical_data.get('sma_200')
+        if sma_200 and current_price < sma_200:
+            risk_factors.append("Below 200-day SMA")
+            risk_score += 0.5
+        
+        # Volume analysis
+        volume_ratio = technical_data.get('volume_ratio', 1)
+        if volume_ratio < 0.5:
+            risk_factors.append("Low volume activity")
+            risk_score += 0.5
+        
+        # Market cap consideration
+        market_cap = info.get('marketCap', 0)
+        if market_cap and market_cap < 1e9:  # Less than 1 billion
+            risk_factors.append("Small cap stock")
+            risk_score += 1.0
+        
+        # Beta consideration
+        beta = info.get('beta')
+        if beta and beta > 1.5:
+            risk_factors.append(f"High beta ({beta:.2f})")
+            risk_score += 0.5
+        
+        # Determine risk level
+        if risk_score <= 3:
+            risk_level = "Low"
+        elif risk_score <= 6:
+            risk_level = "Medium"
+        else:
+            risk_level = "High"
+        
+        return {
+            "risk_score": min(10.0, max(1.0, risk_score)),
+            "volatility": float(volatility) if not pd.isna(volatility) else None,
+            "beta": float(beta) if beta and not pd.isna(beta) else None,
+            "risk_factors": risk_factors,
+            "risk_level": risk_level
+        }
+    except Exception as e:
+        logger.error(f"Error calculating risk assessment for {symbol}: {str(e)}")
+        return {
+            "risk_score": 5.0,
+            "volatility": None,
+            "beta": None,
+            "risk_factors": ["Unable to assess risk"],
+            "risk_level": "Medium"
+        }
+
+def extract_fundamental_data(info: Dict) -> Dict:
+    """Extract fundamental data from yfinance info"""
+    try:
+        return {
+            "pe_ratio": info.get('trailingPE'),
+            "pb_ratio": info.get('priceToBook'),
+            "roe": info.get('returnOnEquity'),
+            "debt_to_equity": info.get('debtToEquity'),
+            "dividend_yield": info.get('dividendYield'),
+            "market_cap": info.get('marketCap'),
+            "book_value": info.get('bookValue'),
+            "eps": info.get('trailingEps'),
+            "sector": info.get('sector'),
+            "industry": info.get('industry'),
+            "earnings_growth": info.get('earningsGrowth'),
+            "revenue_growth": info.get('revenueGrowth')
+        }
+    except Exception as e:
+        logger.error(f"Error extracting fundamental data: {str(e)}")
+        return {}
+
+def detect_advanced_breakout(symbol: str, df: pd.DataFrame, technical_data: Dict) -> Optional[Dict]:
+    """Enhanced breakout detection with multiple patterns"""
     try:
         current_price = df['Close'].iloc[-1]
+        breakouts = []
         
-        # Check for 200 DMA breakout
-        if technical_data.get('sma_200'):
-            if current_price > technical_data['sma_200'] * 1.02:  # 2% above 200 DMA
-                if technical_data.get('volume_ratio', 0) > 1.5:  # High volume
-                    return {
-                        "type": "200_dma",
-                        "breakout_price": technical_data['sma_200'],
-                        "confidence": 0.8
-                    }
+        # 200 DMA breakout
+        sma_200 = technical_data.get('sma_200')
+        if sma_200 and current_price > sma_200 * 1.02:
+            if technical_data.get('volume_ratio', 0) > 1.5:
+                breakouts.append({
+                    "type": "200_dma",
+                    "breakout_price": sma_200,
+                    "confidence": 0.85
+                })
         
-        # Check for resistance breakout
-        if technical_data.get('resistance_level'):
-            if current_price > technical_data['resistance_level'] * 1.01:
-                if technical_data.get('volume_ratio', 0) > 1.3:
-                    return {
-                        "type": "resistance",
-                        "breakout_price": technical_data['resistance_level'],
-                        "confidence": 0.7
-                    }
+        # Resistance breakout
+        resistance = technical_data.get('resistance_level')
+        if resistance and current_price > resistance * 1.01:
+            if technical_data.get('volume_ratio', 0) > 1.3:
+                breakouts.append({
+                    "type": "resistance",
+                    "breakout_price": resistance,
+                    "confidence": 0.75
+                })
         
-        # Check for RSI and MACD confirmation
-        rsi = technical_data.get('rsi', 0)
+        # Bollinger Band breakout
+        bb_upper = technical_data.get('bollinger_upper')
+        if bb_upper and current_price > bb_upper:
+            if technical_data.get('volume_ratio', 0) > 1.2:
+                breakouts.append({
+                    "type": "bollinger_upper",
+                    "breakout_price": bb_upper,
+                    "confidence": 0.65
+                })
+        
+        # MACD bullish crossover
         macd = technical_data.get('macd', 0)
         macd_signal = technical_data.get('macd_signal', 0)
+        rsi = technical_data.get('rsi', 0)
         
-        if 50 < rsi < 80 and macd > macd_signal:
-            if current_price > technical_data.get('sma_50', 0):
-                return {
+        if macd > macd_signal and 50 < rsi < 80:
+            sma_50 = technical_data.get('sma_50', current_price)
+            if current_price > sma_50:
+                breakouts.append({
                     "type": "momentum",
-                    "breakout_price": technical_data.get('sma_50', current_price),
-                    "confidence": 0.6
-                }
+                    "breakout_price": sma_50,
+                    "confidence": 0.70
+                })
+        
+        # Stochastic breakout
+        stoch_k = technical_data.get('stochastic_k', 0)
+        stoch_d = technical_data.get('stochastic_d', 0)
+        if stoch_k > stoch_d and stoch_k > 20 and stoch_k < 80:
+            breakouts.append({
+                "type": "stochastic",
+                "breakout_price": current_price * 0.98,
+                "confidence": 0.60
+            })
+        
+        # Return the highest confidence breakout
+        if breakouts:
+            best_breakout = max(breakouts, key=lambda x: x['confidence'])
+            return best_breakout
         
         return None
     except Exception as e:
         logger.error(f"Error detecting breakout for {symbol}: {str(e)}")
         return None
 
-async def fetch_stock_data(symbol: str) -> Optional[Dict]:
-    """Fetch stock data using yfinance"""
+async def fetch_comprehensive_stock_data(symbol: str) -> Optional[Dict]:
+    """Fetch comprehensive stock data with all indicators"""
     try:
-        # Add .NS suffix for NSE stocks
         ticker_symbol = f"{symbol}.NS"
         
-        # Run in thread pool to avoid blocking
         loop = asyncio.get_event_loop()
         
         def get_stock_info():
             ticker = yf.Ticker(ticker_symbol)
-            hist = ticker.history(period="1y")  # Get 1 year of data
+            hist = ticker.history(period="1y")
             info = ticker.info
             return hist, info
         
@@ -218,8 +455,28 @@ async def fetch_stock_data(symbol: str) -> Optional[Dict]:
         prev_close = hist['Close'].iloc[-2] if len(hist) > 1 else current_price
         change_percent = ((current_price - prev_close) / prev_close) * 100
         
-        technical_indicators = calculate_technical_indicators(hist)
-        breakout_data = detect_breakout(symbol, hist, technical_indicators)
+        # Calculate all technical indicators
+        technical_indicators = calculate_advanced_technical_indicators(hist)
+        
+        # Extract fundamental data
+        fundamental_data = extract_fundamental_data(info)
+        
+        # Calculate risk assessment
+        risk_assessment = calculate_risk_assessment(symbol, hist, technical_indicators, info)
+        
+        # Detect breakouts
+        breakout_data = detect_advanced_breakout(symbol, hist, technical_indicators)
+        
+        # Get sector information
+        sector = NSE_SYMBOLS.get(symbol, "Unknown")
+        
+        # Prepare chart data for different timeframes
+        chart_data = {
+            "1mo": hist.tail(30).reset_index().to_dict('records'),
+            "3mo": hist.tail(90).reset_index().to_dict('records'),
+            "6mo": hist.tail(180).reset_index().to_dict('records'),
+            "1y": hist.reset_index().to_dict('records')
+        }
         
         return {
             "symbol": symbol,
@@ -228,18 +485,22 @@ async def fetch_stock_data(symbol: str) -> Optional[Dict]:
             "change_percent": float(change_percent),
             "volume": int(hist['Volume'].iloc[-1]),
             "market_cap": info.get('marketCap'),
+            "sector": sector,
             "technical_indicators": technical_indicators,
+            "fundamental_data": fundamental_data,
+            "risk_assessment": risk_assessment,
             "breakout_data": breakout_data,
+            "chart_data": chart_data,
             "info": info
         }
     except Exception as e:
-        logger.error(f"Error fetching data for {symbol}: {str(e)}")
+        logger.error(f"Error fetching comprehensive data for {symbol}: {str(e)}")
         return None
 
 # API Routes
 @api_router.get("/")
 async def root():
-    return {"message": "Indian Stock Breakout Screener API"}
+    return {"message": "Indian Stock Breakout Screener API - Enhanced Version"}
 
 @api_router.post("/status", response_model=StatusCheck)
 async def create_status_check(input: StatusCheckCreate):
@@ -255,39 +516,137 @@ async def get_status_checks():
 
 @api_router.get("/stocks/symbols")
 async def get_nse_symbols():
-    """Get list of NSE symbols being tracked"""
-    return {"symbols": NSE_SYMBOLS, "count": len(NSE_SYMBOLS)}
+    """Get list of NSE symbols with sectors"""
+    symbols_with_sectors = [{"symbol": symbol, "sector": sector} for symbol, sector in NSE_SYMBOLS.items()]
+    return {
+        "symbols": list(NSE_SYMBOLS.keys()), 
+        "symbols_with_sectors": symbols_with_sectors,
+        "count": len(NSE_SYMBOLS),
+        "sectors": list(set(NSE_SYMBOLS.values()))
+    }
+
+@api_router.get("/stocks/search")
+async def search_stocks(q: str):
+    """Search stocks by symbol or name"""
+    query = q.upper()
+    matching_symbols = [
+        {"symbol": symbol, "sector": sector} 
+        for symbol, sector in NSE_SYMBOLS.items() 
+        if query in symbol
+    ]
+    return {"results": matching_symbols[:10], "query": q}
 
 @api_router.get("/stocks/{symbol}")
 async def get_stock_data(symbol: str):
     """Get detailed data for a specific stock"""
     symbol = symbol.upper()
-    stock_data = await fetch_stock_data(symbol)
+    stock_data = await fetch_comprehensive_stock_data(symbol)
     
     if not stock_data:
         raise HTTPException(status_code=404, detail=f"Stock data not found for {symbol}")
     
     return stock_data
 
+@api_router.get("/stocks/{symbol}/chart")
+async def get_stock_chart(symbol: str, timeframe: str = "1mo"):
+    """Get chart data for a specific stock and timeframe"""
+    symbol = symbol.upper()
+    
+    try:
+        ticker_symbol = f"{symbol}.NS"
+        
+        period_map = {
+            "1d": "1d",
+            "5d": "5d", 
+            "1mo": "1mo",
+            "3mo": "3mo",
+            "6mo": "6mo",
+            "1y": "1y",
+            "2y": "2y"
+        }
+        
+        period = period_map.get(timeframe, "1mo")
+        
+        loop = asyncio.get_event_loop()
+        
+        def get_chart_data():
+            ticker = yf.Ticker(ticker_symbol)
+            hist = ticker.history(period=period, interval="1d")
+            return hist
+        
+        hist = await loop.run_in_executor(executor, get_chart_data)
+        
+        if hist.empty:
+            raise HTTPException(status_code=404, detail=f"Chart data not found for {symbol}")
+        
+        # Calculate indicators for chart
+        technical_indicators = calculate_advanced_technical_indicators(hist)
+        
+        # Prepare chart data
+        chart_data = []
+        for index, row in hist.iterrows():
+            chart_data.append({
+                "date": index.strftime("%Y-%m-%d"),
+                "open": float(row['Open']),
+                "high": float(row['High']),
+                "low": float(row['Low']),
+                "close": float(row['Close']),
+                "volume": int(row['Volume'])
+            })
+        
+        return {
+            "symbol": symbol,
+            "timeframe": timeframe,
+            "data": chart_data,
+            "indicators": technical_indicators
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching chart data for {symbol}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error fetching chart data")
+
 @api_router.get("/stocks/breakouts/scan")
-async def scan_breakout_stocks():
-    """Scan NSE stocks for breakout opportunities"""
+async def scan_breakout_stocks(
+    sector: Optional[str] = None,
+    min_confidence: float = 0.5,
+    risk_level: Optional[str] = None,
+    limit: int = 50
+):
+    """Enhanced breakout scanning with filters"""
     breakout_stocks = []
     
-    # Limit to first 20 stocks for demo to avoid timeout
-    symbols_to_scan = NSE_SYMBOLS[:20]
+    # Filter symbols by sector if specified
+    symbols_to_scan = list(NSE_SYMBOLS.keys())[:limit]
+    if sector and sector != "All":
+        symbols_to_scan = [s for s, sect in NSE_SYMBOLS.items() if sect == sector][:limit]
     
     # Fetch data for all symbols concurrently
-    tasks = [fetch_stock_data(symbol) for symbol in symbols_to_scan]
+    tasks = [fetch_comprehensive_stock_data(symbol) for symbol in symbols_to_scan]
     results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    sector_breakouts = {}
     
     for i, result in enumerate(results):
         if isinstance(result, dict) and result.get('breakout_data'):
             symbol = symbols_to_scan[i]
             breakout_data = result['breakout_data']
-            technical_indicators = result['technical_indicators']
             
-            # Create breakout stock entry
+            # Apply confidence filter
+            if breakout_data['confidence'] < min_confidence:
+                continue
+            
+            # Apply risk level filter
+            if risk_level and result.get('risk_assessment', {}).get('risk_level') != risk_level:
+                continue
+            
+            stock_sector = result.get('sector', 'Unknown')
+            technical_indicators = result['technical_indicators']
+            fundamental_data = result['fundamental_data']
+            risk_assessment = result['risk_assessment']
+            
+            # Count breakouts by sector
+            sector_breakouts[stock_sector] = sector_breakouts.get(stock_sector, 0) + 1
+            
             breakout_stock = {
                 "symbol": symbol,
                 "name": result['name'],
@@ -297,7 +656,10 @@ async def scan_breakout_stocks():
                 "confidence_score": breakout_data['confidence'],
                 "change_percent": result['change_percent'],
                 "volume": result['volume'],
+                "sector": stock_sector,
                 "technical_data": technical_indicators,
+                "fundamental_data": fundamental_data,
+                "risk_assessment": risk_assessment,
                 "reason": f"Breakout above {breakout_data['type']} level with {breakout_data['confidence']*100:.0f}% confidence"
             }
             
@@ -310,22 +672,55 @@ async def scan_breakout_stocks():
         "breakout_stocks": breakout_stocks,
         "total_scanned": len(symbols_to_scan),
         "breakouts_found": len(breakout_stocks),
+        "sector_breakdown": sector_breakouts,
+        "filters_applied": {
+            "sector": sector,
+            "min_confidence": min_confidence,
+            "risk_level": risk_level
+        },
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
 
 @api_router.get("/stocks/market-overview")
 async def get_market_overview():
-    """Get market overview with key indices"""
+    """Enhanced market overview with sector performance"""
     try:
         # Fetch NIFTY 50 data
-        nifty_data = await fetch_stock_data("^NSEI")
+        nifty_data = await fetch_comprehensive_stock_data("^NSEI")
+        
+        # Calculate sector performance (simplified)
+        sector_performance = {}
+        top_sectors = ["IT", "Banking", "FMCG", "Auto", "Pharma"]
+        
+        for sector in top_sectors:
+            sector_symbols = [s for s, sect in NSE_SYMBOLS.items() if sect == sector][:3]
+            sector_changes = []
+            
+            for symbol in sector_symbols:
+                try:
+                    stock_data = await fetch_comprehensive_stock_data(symbol)
+                    if stock_data:
+                        sector_changes.append(stock_data['change_percent'])
+                except:
+                    continue
+            
+            if sector_changes:
+                sector_performance[sector] = sum(sector_changes) / len(sector_changes)
+        
+        market_sentiment = "Neutral"
+        if nifty_data and nifty_data['change_percent'] > 1:
+            market_sentiment = "Bullish"
+        elif nifty_data and nifty_data['change_percent'] < -1:
+            market_sentiment = "Bearish"
         
         return {
             "nifty_50": {
                 "current": nifty_data['current_price'] if nifty_data else 0,
                 "change_percent": nifty_data['change_percent'] if nifty_data else 0
             },
-            "market_status": "Open" if datetime.now().hour < 16 else "Closed",
+            "market_status": "Open" if 9 <= datetime.now().hour < 16 else "Closed",
+            "market_sentiment": market_sentiment,
+            "sector_performance": sector_performance,
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
@@ -333,8 +728,74 @@ async def get_market_overview():
         return {
             "nifty_50": {"current": 0, "change_percent": 0},
             "market_status": "Unknown",
+            "market_sentiment": "Neutral",
+            "sector_performance": {},
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
+
+@api_router.get("/watchlist")
+async def get_watchlist():
+    """Get user's watchlist"""
+    try:
+        watchlist = await db.watchlist.find().to_list(1000)
+        return {"watchlist": watchlist, "count": len(watchlist)}
+    except Exception as e:
+        logger.error(f"Error fetching watchlist: {str(e)}")
+        return {"watchlist": [], "count": 0}
+
+@api_router.post("/watchlist")
+async def add_to_watchlist(symbol: str, target_price: Optional[float] = None, stop_loss: Optional[float] = None, notes: Optional[str] = None):
+    """Add stock to watchlist"""
+    try:
+        symbol = symbol.upper()
+        
+        # Get current stock data
+        stock_data = await fetch_comprehensive_stock_data(symbol)
+        if not stock_data:
+            raise HTTPException(status_code=404, detail=f"Stock not found: {symbol}")
+        
+        # Check if already in watchlist
+        existing = await db.watchlist.find_one({"symbol": symbol})
+        if existing:
+            raise HTTPException(status_code=400, detail=f"{symbol} is already in watchlist")
+        
+        watchlist_item = {
+            "id": str(uuid.uuid4()),
+            "symbol": symbol,
+            "name": stock_data['name'],
+            "added_price": stock_data['current_price'],
+            "target_price": target_price,
+            "stop_loss": stop_loss,
+            "notes": notes,
+            "added_date": datetime.now(timezone.utc)
+        }
+        
+        await db.watchlist.insert_one(watchlist_item)
+        return {"message": f"Added {symbol} to watchlist", "item": watchlist_item}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error adding to watchlist: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error adding to watchlist")
+
+@api_router.delete("/watchlist/{symbol}")
+async def remove_from_watchlist(symbol: str):
+    """Remove stock from watchlist"""
+    try:
+        symbol = symbol.upper()
+        result = await db.watchlist.delete_one({"symbol": symbol})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail=f"{symbol} not found in watchlist")
+        
+        return {"message": f"Removed {symbol} from watchlist"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error removing from watchlist: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error removing from watchlist")
 
 # Include the router in the main app
 app.include_router(api_router)
