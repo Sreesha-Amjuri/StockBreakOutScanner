@@ -186,8 +186,13 @@ const Dashboard = () => {
     }
   };
 
-  const isInWatchlist = (symbol) => {
-    return watchlist.some(item => item.symbol === symbol);
+  const getActionColor = (action) => {
+    switch (action) {
+      case 'BUY': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'WAIT': return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'AVOID': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
   };
 
   return (
