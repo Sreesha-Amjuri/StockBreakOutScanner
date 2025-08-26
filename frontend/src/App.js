@@ -246,10 +246,15 @@ const Dashboard = () => {
                     </div>
                   </div>
                   
-                  <Badge variant={marketOverview.market_status === 'Open' ? 'default' : 'secondary'}>
-                    <Activity className="w-3 h-3 mr-1" />
-                    {marketOverview.market_status}
-                  </Badge>
+                  {marketOverview.market_status && (
+                    <Badge variant={
+                      marketOverview.market_status.status === 'OPEN' ? 'default' : 
+                      marketOverview.market_status.status === 'PRE_OPEN' ? 'secondary' : 'outline'
+                    }>
+                      <Activity className="w-3 h-3 mr-1" />
+                      {marketOverview.market_status.status}
+                    </Badge>
+                  )}
                 </div>
               )}
             </div>
