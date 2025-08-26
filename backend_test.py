@@ -474,6 +474,11 @@ class StockBreakoutAPITester:
         print("-" * 30)
         self.test_error_handling()
         
+        # NEW: Comprehensive Data Validation Tests
+        print("\n🔍 COMPREHENSIVE DATA VALIDATION TESTING")
+        print("-" * 50)
+        self.test_comprehensive_data_validation()
+        
         # Print final results
         print("\n" + "=" * 60)
         print("📊 FINAL TEST RESULTS")
