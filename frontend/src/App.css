@@ -13,39 +13,73 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.6;
+  background-color: #fefefe;
 }
 
 .App {
   min-height: 100vh;
 }
 
-/* Custom scrollbar */
+/* Enhanced Pastel Color System */
+:root {
+  /* Soft Pastels */
+  --pastel-blue: #e1f2ff;
+  --pastel-green: #e8f5e8;
+  --pastel-purple: #f0e6ff;
+  --pastel-pink: #ffeef7;
+  --pastel-orange: #fff4e6;
+  --pastel-yellow: #fffbeb;
+  --pastel-teal: #e0f7fa;
+  --pastel-lavender: #f3f0ff;
+  
+  /* Soft Text Colors */
+  --text-primary: #2d3748;
+  --text-secondary: #4a5568;
+  --text-muted: #718096;
+  --text-light: #a0aec0;
+  
+  /* Soft Accent Colors */
+  --accent-blue: #4299e1;
+  --accent-green: #48bb78;
+  --accent-purple: #9f7aea;
+  --accent-orange: #ed8936;
+  --accent-teal: #38b2ac;
+  --accent-pink: #ed64a6;
+  
+  /* Background Colors */
+  --bg-primary: #ffffff;
+  --bg-secondary: #f7fafc;
+  --bg-tertiary: #edf2f7;
+  --bg-soft: rgba(255, 255, 255, 0.8);
+}
+
+/* Custom scrollbar with soft colors */
 ::-webkit-scrollbar {
   width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: var(--pastel-blue);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: var(--accent-blue);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #3182ce;
 }
 
 /* Animation utilities */
 .animate-fadeIn {
-  animation: fadeIn 0.5s ease-in-out;
+  animation: fadeIn 0.6s ease-in-out;
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -53,39 +87,85 @@ body {
   }
 }
 
-/* Custom button hover effects */
+/* Enhanced button hover effects */
 button:not(:disabled) {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 button:not(:disabled):hover {
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 button:not(:disabled):active {
   transform: translateY(0);
 }
 
-/* Table hover effects */
+/* Table hover effects with soft colors */
 .hover\\:bg-slate-50\\/50:hover {
-  background-color: rgba(248, 250, 252, 0.5);
-  transition: background-color 0.15s ease-in-out;
+  background-color: var(--pastel-blue);
+  transition: background-color 0.2s ease-in-out;
 }
 
-/* Card glass effect enhancement */
+/* Enhanced card glass effect */
 .bg-white\\/60 {
-  background-color: rgba(255, 255, 255, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .bg-white\\/80 {
-  background-color: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
-/* Progress bar animation */
+/* Soft pastel badge styles */
+.bg-emerald-100 {
+  background-color: var(--pastel-green) !important;
+  color: var(--accent-green) !important;
+  border-color: rgba(72, 187, 120, 0.3) !important;
+}
+
+.bg-blue-100 {
+  background-color: var(--pastel-blue) !important;
+  color: var(--accent-blue) !important;
+  border-color: rgba(66, 153, 225, 0.3) !important;
+}
+
+.bg-purple-100 {
+  background-color: var(--pastel-purple) !important;
+  color: var(--accent-purple) !important;
+  border-color: rgba(159, 122, 234, 0.3) !important;
+}
+
+.bg-amber-100 {
+  background-color: var(--pastel-orange) !important;
+  color: var(--accent-orange) !important;
+  border-color: rgba(237, 137, 54, 0.3) !important;
+}
+
+.bg-red-100 {
+  background-color: var(--pastel-pink) !important;
+  color: #e53e3e !important;
+  border-color: rgba(229, 62, 62, 0.3) !important;
+}
+
+.bg-pink-100 {
+  background-color: var(--pastel-pink) !important;
+  color: var(--accent-pink) !important;
+  border-color: rgba(237, 100, 166, 0.3) !important;
+}
+
+.bg-gray-100 {
+  background-color: var(--bg-tertiary) !important;
+  color: var(--text-secondary) !important;
+  border-color: rgba(113, 128, 150, 0.3) !important;
+}
+
+/* Progress bar animation with soft colors */
 @keyframes progressLoad {
   from {
     width: 0%;
@@ -93,28 +173,12 @@ button:not(:disabled):active {
 }
 
 .bg-gradient-to-r.from-emerald-500.to-emerald-600 {
-  animation: progressLoad 0.8s ease-out;
-}
-
-/* Badge styles */
-.border-emerald-200 {
-  border: 1px solid #a7f3d0;
-}
-
-.border-blue-200 {
-  border: 1px solid #bfdbfe;
-}
-
-.border-purple-200 {
-  border: 1px solid #e9d5ff;
-}
-
-.border-gray-200 {
-  border: 1px solid #e5e7eb;
+  background: linear-gradient(to right, var(--accent-green), #38a169) !important;
+  animation: progressLoad 1s ease-out;
 }
 
 /* Loading spinner enhancement */
-@keyframes spinSlow {
+@keyframes spinSoft {
   from {
     transform: rotate(0deg);
   }
@@ -123,11 +187,11 @@ button:not(:disabled):active {
   }
 }
 
-.animate-spin-slow {
-  animation: spinSlow 2s linear infinite;
+.animate-spin-soft {
+  animation: spinSoft 2s linear infinite;
 }
 
-/* Responsive table */
+/* Responsive table with soft styling */
 @media (max-width: 768px) {
   .overflow-x-auto {
     overflow-x: auto;
@@ -135,29 +199,185 @@ button:not(:disabled):active {
   }
   
   table {
-    min-width: 800px;
+    min-width: 1200px;
+  }
+  
+  th, td {
+    padding: 8px 12px;
+    font-size: 14px;
   }
 }
 
-/* Focus states */
+/* Focus states with soft colors */
 button:focus-visible,
 input:focus-visible {
-  outline: 2px solid #3b82f6;
+  outline: 2px solid var(--accent-blue);
   outline-offset: 2px;
 }
 
-/* Premium gradient backgrounds */
+/* Enhanced gradient backgrounds with pastels */
 .bg-gradient-to-br.from-slate-50.via-blue-50.to-indigo-50 {
-  background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #eef2ff 100%);
+  background: linear-gradient(135deg, 
+    #fefefe 0%, 
+    var(--pastel-blue) 25%,
+    var(--pastel-lavender) 75%,
+    #f0f4ff 100%);
 }
 
-/* Text selection */
+/* Market status indicators */
+.market-status-open {
+  background-color: var(--pastel-green);
+  color: var(--accent-green);
+  border: 2px solid rgba(72, 187, 120, 0.3);
+}
+
+.market-status-closed {
+  background-color: var(--pastel-pink);
+  color: #e53e3e;
+  border: 2px solid rgba(229, 62, 62, 0.3);
+}
+
+.market-status-pre-open {
+  background-color: var(--pastel-orange);
+  color: var(--accent-orange);
+  border: 2px solid rgba(237, 137, 54, 0.3);
+}
+
+/* Enhanced table styling */
+table {
+  background-color: var(--bg-soft);
+  backdrop-filter: blur(12px);
+}
+
+thead th {
+  background-color: rgba(247, 250, 252, 0.95);
+  color: var(--text-primary);
+  font-weight: 600;
+  border-bottom: 2px solid var(--pastel-blue);
+}
+
+tbody tr:nth-child(even) {
+  background-color: rgba(247, 250, 252, 0.3);
+}
+
+tbody tr:hover {
+  background-color: var(--pastel-blue) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Text selection with soft color */
 ::selection {
-  background-color: #3b82f6;
-  color: white;
+  background-color: var(--pastel-purple);
+  color: var(--text-primary);
 }
 
 ::-moz-selection {
-  background-color: #3b82f6;
+  background-color: var(--pastel-purple);
+  color: var(--text-primary);
+}
+
+/* Card shadows with soft effect */
+.card-soft-shadow {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.card-soft-shadow:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* Soft action buttons */
+.btn-soft-primary {
+  background: linear-gradient(135deg, var(--accent-blue), #3182ce);
   color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-soft-primary:hover {
+  background: linear-gradient(135deg, #3182ce, #2c5aa0);
+  transform: translateY(-2px);
+}
+
+.btn-soft-success {
+  background: linear-gradient(135deg, var(--accent-green), #38a169);
+  color: white;
+  border: none;
+}
+
+.btn-soft-success:hover {
+  background: linear-gradient(135deg, #38a169, #2f855a);
+}
+
+/* Notification styles with pastels */
+.toast-success {
+  background-color: var(--pastel-green);
+  color: var(--accent-green);
+  border-left: 4px solid var(--accent-green);
+}
+
+.toast-error {
+  background-color: var(--pastel-pink);
+  color: #e53e3e;
+  border-left: 4px solid #e53e3e;
+}
+
+.toast-info {
+  background-color: var(--pastel-blue);
+  color: var(--accent-blue);
+  border-left: 4px solid var(--accent-blue);
+}
+
+/* Stats card enhancements */
+.stats-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+.stats-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Icon containers with soft colors */
+.icon-container-emerald {
+  background: linear-gradient(135deg, var(--pastel-green), rgba(72, 187, 120, 0.2));
+  color: var(--accent-green);
+}
+
+.icon-container-blue {
+  background: linear-gradient(135deg, var(--pastel-blue), rgba(66, 153, 225, 0.2));
+  color: var(--accent-blue);
+}
+
+.icon-container-purple {
+  background: linear-gradient(135deg, var(--pastel-purple), rgba(159, 122, 234, 0.2));
+  color: var(--accent-purple);
+}
+
+.icon-container-orange {
+  background: linear-gradient(135deg, var(--pastel-orange), rgba(237, 137, 54, 0.2));
+  color: var(--accent-orange);
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --accent-blue: #0066cc;
+    --accent-green: #006600;
+    --accent-purple: #6600cc;
+  }
 }
