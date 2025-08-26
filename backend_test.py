@@ -193,6 +193,291 @@ class StockBreakoutAPITester:
             target_price = trading_rec['target_price']
             action = trading_rec['action']
             
+            self.log_test(f"Trading Recommendation - {symbol}", True, 
+                        f"Entry ₹{entry_price}, Stop ₹{stop_loss}, Target ₹{target_price}, Action {action}")
+
+    def test_data_validation_info(self, symbol, data_validation):
+        """Test data validation information structure and content"""
+        required_fields = ['source', 'timestamp']
+        missing_fields = [field for field in required_fields if field not in data_validation]
+        
+        if missing_fields:
+            self.log_test(f"Data Validation Info - {symbol}", False, f"Missing fields: {missing_fields}")
+        else:
+            source = data_validation.get('source', '')
+            timestamp = data_validation.get('timestamp', '')
+            data_age_warning = data_validation.get('data_age_warning')
+            
+            # Check if data source is valid
+            valid_sources = ['Yahoo Finance', 'Yahoo Finance Real-time', 'Yahoo Finance Historical']
+            source_valid = any(valid_source in source for valid_source in valid_sources)
+            
+            # Check timestamp format
+            timestamp_valid = len(timestamp) > 0
+            
+            details = f"Source: {source}, Timestamp: {timestamp}"
+            if data_age_warning:
+                details += f", Warning: {data_age_warning}"
+            
+            self.log_test(f"Data Validation Info - {symbol}", source_valid and timestamp_valid, details)
+
+    def test_stock_data_validation_endpoint(self):
+        """Test the new validation endpoint for cross-source data validation"""
+        test_symbols = ['RELIANCE', 'TCS', 'MPHASIS', 'HDFCLIFE', 'HINDUNILVR']
+        successful_validations = 0
+        
+        for symbol in test_symbols:
+            success, data = self.test_api_endpoint(f"Data Validation - {symbol}", "GET", f"stocks/{symbol}/validate", timeout=45)
+            
+            if success:
+                successful_validations += 1
+                
+                # Test validation result structure
+                required_keys = ['symbol', 'validation_timestamp', 'data_quality_score', 'quality_level']
+                missing_keys = [key for key in required_keys if key not in data]
+                
+                if missing_keys:
+                    self.log_test(f"Validation Structure - {symbol}", False, f"Missing keys: {missing_keys}")
+                else:
+                    quality_score = data.get('data_quality_score', 0)
+                    quality_level = data.get('quality_level', 'Unknown')
+                    warnings = data.get('warnings', [])
+                    
+                    # Test data quality score range (should be 0-100)
+                    score_valid = 0 <= quality_score <= 100
+                    
+                    # Test quality level values
+                    valid_levels = ['Excellent', 'Good', 'Fair', 'Poor', 'Failed']
+                    level_valid = quality_level in valid_levels
+                    
+                    self.log_test(f"Validation Quality - {symbol}", score_valid and level_valid, 
+                                f"Score: {quality_score}/100, Level: {quality_level}, Warnings: {len(warnings)}")
+                    
+                    # Test cross-source validation if available
+                    yahoo_data = data.get('yahoo_finance')
+                    nse_data = data.get('nse_crosscheck')
+                    
+                    if yahoo_data and nse_data:
+                        self.test_cross_source_validation(symbol, yahoo_data, nse_data)
+                    
+                    # Test data freshness warnings
+                    if warnings:
+                        self.test_data_freshness_warnings(symbol, warnings)
+        
+        return successful_validations > 0
+
+    def test_cross_source_validation(self, symbol, yahoo_data, nse_data):
+        """Test cross-source price validation"""
+        yahoo_price = yahoo_data.get('current_price')
+        nse_price = nse_data.get('current_price')
+        
+        if yahoo_price and nse_price:
+            price_diff = abs(yahoo_price - nse_price)
+            price_diff_percent = (price_diff / yahoo_price) * 100
+            
+            # Acceptable variance is 5% as mentioned in requirements
+            acceptable_variance = price_diff_percent <= 5.0
+            
+            self.log_test(f"Cross-Source Price Validation - {symbol}", acceptable_variance, 
+                        f"Yahoo: ₹{yahoo_price:.2f}, NSE: ₹{nse_price:.2f}, Diff: {price_diff_percent:.2f}%")
+        else:
+            self.log_test(f"Cross-Source Price Validation - {symbol}", False, 
+                        "Missing price data from one or both sources")
+
+    def test_data_freshness_warnings(self, symbol, warnings):
+        """Test data freshness warning system"""
+        freshness_warnings = [w for w in warnings if 'hours old' in w or 'stale' in w.lower()]
+        
+        if freshness_warnings:
+            self.log_test(f"Data Freshness Warnings - {symbol}", True, 
+                        f"Found {len(freshness_warnings)} freshness warnings: {freshness_warnings[0]}")
+        else:
+            self.log_test(f"Data Freshness - {symbol}", True, "Data appears fresh (no age warnings)")
+
+    def test_real_time_data_accuracy(self):
+        """Test real-time data accuracy against expected market conditions"""
+        print("\n🔍 REAL-TIME DATA ACCURACY TESTS")
+        print("-" * 40)
+        
+        # Test during different market conditions
+        success, market_data = self.test_api_endpoint("Market Status Check", "GET", "stocks/market-overview")
+        
+        if success:
+            market_status = market_data.get('market_status', {})
+            is_trading_hours = market_status.get('is_trading_hours', False)
+            
+            self.log_test("Market Hours Detection", True, 
+                        f"Trading Hours: {is_trading_hours}, Status: {market_status.get('status', 'Unknown')}")
+            
+            # Test data accuracy expectations based on market hours
+            if is_trading_hours:
+                self.log_test("Real-time Data Expectation", True, 
+                            "Market is open - expecting real-time or near real-time data")
+            else:
+                self.log_test("Delayed Data Expectation", True, 
+                            "Market is closed - delayed data is acceptable")
+        
+        # Test specific stocks for data quality during current market conditions
+        test_symbols = ['RELIANCE', 'TCS', 'MPHASIS']
+        for symbol in test_symbols:
+            success, validation_data = self.test_api_endpoint(f"Real-time Validation - {symbol}", "GET", f"stocks/{symbol}/validate")
+            
+            if success:
+                quality_score = validation_data.get('data_quality_score', 0)
+                warnings = validation_data.get('warnings', [])
+                
+                # For trading decisions, we need quality score >= 60 as mentioned in requirements
+                trading_suitable = quality_score >= 60
+                
+                self.log_test(f"Trading Suitability - {symbol}", trading_suitable, 
+                            f"Quality Score: {quality_score}/100 ({'Suitable' if trading_suitable else 'Not suitable'} for trading)")
+                
+                # Check for stale data warnings (should warn if data > 1 hour old)
+                stale_warnings = [w for w in warnings if 'hour' in w and ('old' in w or 'stale' in w)]
+                if stale_warnings:
+                    self.log_test(f"Stale Data Warning - {symbol}", True, f"Properly warned about stale data: {stale_warnings[0]}")
+
+    def test_trading_impact_analysis(self):
+        """Test if data accuracy would affect trading recommendations"""
+        print("\n📊 TRADING IMPACT ANALYSIS")
+        print("-" * 40)
+        
+        test_symbols = ['RELIANCE', 'TCS', 'MPHASIS', 'HDFCLIFE', 'HINDUNILVR']
+        reliable_recommendations = 0
+        total_recommendations = 0
+        
+        for symbol in test_symbols:
+            # Get stock data with trading recommendation
+            success, stock_data = self.test_api_endpoint(f"Trading Data - {symbol}", "GET", f"stocks/{symbol}")
+            
+            if success:
+                trading_rec = stock_data.get('trading_recommendation')
+                data_validation = stock_data.get('data_validation', {})
+                
+                if trading_rec:
+                    total_recommendations += 1
+                    
+                    # Get validation data
+                    val_success, validation_data = self.test_api_endpoint(f"Trading Validation - {symbol}", "GET", f"stocks/{symbol}/validate")
+                    
+                    if val_success:
+                        quality_score = validation_data.get('data_quality_score', 0)
+                        quality_level = validation_data.get('quality_level', 'Unknown')
+                        warnings = validation_data.get('warnings', [])
+                        
+                        # Check if recommendation is based on reliable data
+                        data_reliable = quality_score >= 70 and quality_level in ['Excellent', 'Good']
+                        
+                        if data_reliable:
+                            reliable_recommendations += 1
+                        
+                        # Test if entry/stop/target prices are calculated from accurate base data
+                        entry_price = trading_rec.get('entry_price', 0)
+                        current_price = stock_data.get('current_price', 0)
+                        
+                        # Entry price should be reasonably close to current price (within 5%)
+                        price_alignment = abs(entry_price - current_price) / current_price <= 0.05 if current_price > 0 else False
+                        
+                        self.log_test(f"Trading Price Alignment - {symbol}", price_alignment, 
+                                    f"Entry: ₹{entry_price:.2f}, Current: ₹{current_price:.2f}, Quality: {quality_level}")
+                        
+                        # Test if poor data quality affects system confidence
+                        action = trading_rec.get('action', 'UNKNOWN')
+                        if quality_score < 60:
+                            conservative_action = action in ['WAIT', 'AVOID']
+                            self.log_test(f"Low Quality Response - {symbol}", conservative_action, 
+                                        f"Low quality data (Score: {quality_score}) should result in conservative action, got: {action}")
+        
+        # Overall trading reliability assessment
+        reliability_rate = (reliable_recommendations / total_recommendations * 100) if total_recommendations > 0 else 0
+        
+        self.log_test("Overall Trading Reliability", reliability_rate >= 60, 
+                    f"{reliable_recommendations}/{total_recommendations} recommendations based on reliable data ({reliability_rate:.1f}%)")
+
+    def test_technical_indicator_validation(self):
+        """Test technical indicator calculations using accurate price data"""
+        print("\n📈 TECHNICAL INDICATOR VALIDATION")
+        print("-" * 40)
+        
+        test_symbols = ['RELIANCE', 'TCS']
+        
+        for symbol in test_symbols:
+            success, data = self.test_api_endpoint(f"Technical Indicators - {symbol}", "GET", f"stocks/{symbol}")
+            
+            if success:
+                technical_data = data.get('technical_indicators', {})
+                current_price = data.get('current_price', 0)
+                
+                # Test RSI calculation validity (should be 0-100)
+                rsi = technical_data.get('rsi')
+                if rsi is not None:
+                    rsi_valid = 0 <= rsi <= 100
+                    self.log_test(f"RSI Validity - {symbol}", rsi_valid, f"RSI: {rsi:.2f}")
+                
+                # Test moving averages (should be reasonable compared to current price)
+                sma_20 = technical_data.get('sma_20')
+                sma_50 = technical_data.get('sma_50')
+                sma_200 = technical_data.get('sma_200')
+                
+                if sma_20 and current_price:
+                    # SMA should be within reasonable range of current price (±50%)
+                    sma_reasonable = 0.5 <= (sma_20 / current_price) <= 1.5
+                    self.log_test(f"SMA-20 Reasonableness - {symbol}", sma_reasonable, 
+                                f"SMA-20: ₹{sma_20:.2f}, Current: ₹{current_price:.2f}")
+                
+                # Test volume data accuracy
+                volume = data.get('volume', 0)
+                volume_ratio = technical_data.get('volume_ratio')
+                
+                if volume > 0:
+                    self.log_test(f"Volume Data - {symbol}", True, f"Volume: {volume:,}, Ratio: {volume_ratio:.2f}" if volume_ratio else f"Volume: {volume:,}")
+                
+                # Test breakout detection reliability
+                breakout_data = data.get('breakout_data')
+                if breakout_data:
+                    confidence = breakout_data.get('confidence', 0)
+                    breakout_type = breakout_data.get('type', 'unknown')
+                    
+                    # High confidence breakouts should have supporting volume
+                    if confidence > 0.8 and volume_ratio:
+                        volume_support = volume_ratio > 1.2  # Above average volume
+                        self.log_test(f"Breakout Volume Support - {symbol}", volume_support, 
+                                    f"High confidence ({confidence:.2f}) breakout with volume ratio: {volume_ratio:.2f}")
+
+    def test_comprehensive_data_validation(self):
+        """Run comprehensive data validation tests as requested"""
+        print("\n🔍 COMPREHENSIVE DATA VALIDATION TESTING")
+        print("=" * 50)
+        
+        # Test 1: Stock Price Accuracy Testing
+        self.test_real_time_data_accuracy()
+        
+        # Test 2: Cross-Source Validation
+        self.test_stock_data_validation_endpoint()
+        
+        # Test 3: Technical Indicator Validation
+        self.test_technical_indicator_validation()
+        
+        # Test 4: Trading Impact Analysis
+        self.test_trading_impact_analysis()
+        
+        return True
+
+    def test_individual_trading_recommendation(self, symbol, trading_rec):
+        """Test individual stock trading recommendation"""
+        required_fields = ['entry_price', 'stop_loss', 'target_price', 'risk_reward_ratio', 
+                         'position_size_percent', 'action', 'entry_rationale', 'stop_loss_rationale']
+        
+        missing_fields = [field for field in required_fields if field not in trading_rec]
+        
+        if missing_fields:
+            self.log_test(f"Trading Recommendation - {symbol}", False, f"Missing fields: {missing_fields}")
+        else:
+            entry_price = trading_rec['entry_price']
+            stop_loss = trading_rec['stop_loss']
+            target_price = trading_rec['target_price']
+            action = trading_rec['action']
+            
             # Check if this matches expected values from review request
             expected_values = {
                 'MPHASIS': {'entry': 2873.20, 'stop': 2730.71, 'target': 3300.66, 'action': 'BUY'},
