@@ -737,7 +737,16 @@ async def get_market_overview():
 async def get_watchlist():
     """Get user's watchlist"""
     try:
-        watchlist = await db.watchlist.find().to_list(1000)
+        watchlist_items = await db.watchlist.find().to_list(1000)
+        # Convert ObjectId to string for JSON serialization
+        watchlist = []
+        for item in watchlist_items:
+            if '_id' in item:
+                del item['_id']  # Remove MongoDB ObjectId
+            # Convert datetime to ISO string
+            if 'added_date' in item and hasattr(item['added_date'], 'isoformat'):
+                item['added_date'] = item['added_date'].isoformat()
+            watchlist.append(item)
         return {"watchlist": watchlist, "count": len(watchlist)}
     except Exception as e:
         logger.error(f"Error fetching watchlist: {str(e)}")
