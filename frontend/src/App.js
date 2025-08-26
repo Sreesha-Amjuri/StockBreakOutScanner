@@ -73,6 +73,11 @@ const Dashboard = () => {
   };
 
   const scanBreakouts = async () => {
+    if (loading) {
+      console.log('Scan already in progress, skipping...');
+      return;
+    }
+    
     setLoading(true);
     try {
       toast.info("Scanning stocks for breakout opportunities...");
@@ -92,16 +97,24 @@ const Dashboard = () => {
       
       console.log('Requesting breakout scan with params:', params.toString());
       
-      const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`);
+      const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`, {
+        timeout: 60000 // 60 second timeout
+      });
       
       console.log('Breakout scan response:', response.data);
       console.log('Number of breakouts found:', response.data.breakouts_found);
       console.log('Breakout stocks array length:', response.data.breakout_stocks?.length);
       
-      if (response.data && response.data.breakout_stocks) {
+      if (response.data && Array.isArray(response.data.breakout_stocks)) {
         setBreakoutStocks(response.data.breakout_stocks);
         setLastUpdated(new Date().toLocaleTimeString());
-        toast.success(`Found ${response.data.breakouts_found} breakout opportunities!`);
+        
+        const count = response.data.breakout_stocks.length;
+        if (count > 0) {
+          toast.success(`Found ${count} breakout opportunities!`);
+        } else {
+          toast.info("No breakout opportunities found at current settings");
+        }
       } else {
         console.error('Invalid response structure:', response.data);
         toast.error("Invalid response from server");
@@ -110,7 +123,12 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error scanning breakouts:', error);
       console.error('Error response:', error.response?.data);
-      toast.error(`Failed to scan for breakouts: ${error.message}`);
+      
+      if (error.code === 'ECONNABORTED') {
+        toast.error("Request timeout - server is taking too long");
+      } else {
+        toast.error(`Failed to scan for breakouts: ${error.message}`);
+      }
       setBreakoutStocks([]);
     } finally {
       setLoading(false);
