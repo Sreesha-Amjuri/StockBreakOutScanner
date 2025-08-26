@@ -1,23 +1,39 @@
 import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route, useNavigate } from "react-router-dom";
 import "./App.css";
 import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
 import { Button } from "./components/ui/button";
 import { Badge } from "./components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
+import { Input } from "./components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./components/ui/table";
-import { RefreshCw, TrendingUp, BarChart3, DollarSign, Activity, AlertCircle } from "lucide-react";
+import { 
+  RefreshCw, TrendingUp, BarChart3, DollarSign, Activity, AlertCircle, 
+  Search, Filter, Heart, Star, Eye, Zap, Shield
+} from "lucide-react";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
+import StockDetails from "./components/StockDetails";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-function App() {
+const Dashboard = () => {
+  const navigate = useNavigate();
   const [breakoutStocks, setBreakoutStocks] = useState([]);
   const [marketOverview, setMarketOverview] = useState(null);
+  const [watchlist, setWatchlist] = useState([]);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
+  
+  // Filters
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSector, setSelectedSector] = useState('All');
+  const [minConfidence, setMinConfidence] = useState(0.5);
+  const [riskFilter, setRiskFilter] = useState('All');
+  
+  const [sectors, setSectors] = useState([]);
 
   const fetchMarketOverview = async () => {
     try {
@@ -29,11 +45,43 @@ function App() {
     }
   };
 
+  const fetchWatchlist = async () => {
+    try {
+      const response = await axios.get(`${API}/watchlist`);
+      setWatchlist(response.data.watchlist);
+    } catch (error) {
+      console.error('Error fetching watchlist:', error);
+    }
+  };
+
+  const fetchSectors = async () => {
+    try {
+      const response = await axios.get(`${API}/stocks/symbols`);
+      setSectors(['All', ...response.data.sectors]);
+    } catch (error) {
+      console.error('Error fetching sectors:', error);
+    }
+  };
+
   const scanBreakouts = async () => {
     setLoading(true);
     try {
       toast.info("Scanning stocks for breakout opportunities...");
-      const response = await axios.get(`${API}/stocks/breakouts/scan`);
+      
+      const params = new URLSearchParams({
+        min_confidence: minConfidence.toString(),
+        limit: '30'
+      });
+      
+      if (selectedSector !== 'All') {
+        params.append('sector', selectedSector);
+      }
+      
+      if (riskFilter !== 'All') {
+        params.append('risk_level', riskFilter);
+      }
+      
+      const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`);
       setBreakoutStocks(response.data.breakout_stocks);
       setLastUpdated(new Date().toLocaleTimeString());
       toast.success(`Found ${response.data.breakouts_found} breakout opportunities!`);
@@ -45,10 +93,52 @@ function App() {
     }
   };
 
+  const searchStocks = async (query) => {
+    if (!query.trim()) return;
+    
+    try {
+      const response = await axios.get(`${API}/stocks/search?q=${query}`);
+      // You could show search results in a dropdown or modal
+      console.log('Search results:', response.data.results);
+    } catch (error) {
+      console.error('Error searching stocks:', error);
+    }
+  };
+
+  const addToWatchlist = async (symbol) => {
+    try {
+      await axios.post(`${API}/watchlist?symbol=${symbol}`);
+      await fetchWatchlist();
+      toast.success(`Added ${symbol} to watchlist`);
+    } catch (error) {
+      console.error('Error adding to watchlist:', error);
+      toast.error("Failed to add to watchlist");
+    }
+  };
+
+  const removeFromWatchlist = async (symbol) => {
+    try {
+      await axios.delete(`${API}/watchlist/${symbol}`);
+      await fetchWatchlist();
+      toast.success(`Removed ${symbol} from watchlist`);
+    } catch (error) {
+      console.error('Error removing from watchlist:', error);
+      toast.error("Failed to remove from watchlist");
+    }
+  };
+
   useEffect(() => {
     fetchMarketOverview();
+    fetchWatchlist();
+    fetchSectors();
     scanBreakouts();
   }, []);
+
+  // Filter breakout stocks based on search term
+  const filteredBreakoutStocks = breakoutStocks.filter(stock =>
+    stock.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    stock.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', {
@@ -70,17 +160,34 @@ function App() {
       case '200_dma': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
       case 'resistance': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'momentum': return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'bollinger_upper': return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'stochastic': return 'bg-pink-100 text-pink-800 border-pink-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getBreakoutTypeLabel = (type) => {
     switch (type) {
-      case '200_dma': return '200 DMA Breakout';
-      case 'resistance': return 'Resistance Breakout';
-      case 'momentum': return 'Momentum Breakout';
+      case '200_dma': return '200 DMA';
+      case 'resistance': return 'Resistance';
+      case 'momentum': return 'Momentum';
+      case 'bollinger_upper': return 'Bollinger';
+      case 'stochastic': return 'Stochastic';
       default: return type;
     }
+  };
+
+  const getRiskColor = (riskLevel) => {
+    switch (riskLevel) {
+      case 'Low': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+      case 'Medium': return 'bg-amber-100 text-amber-800 border-amber-200';
+      case 'High': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const isInWatchlist = (symbol) => {
+    return watchlist.some(item => item.symbol === symbol);
   };
 
   return (
@@ -101,29 +208,42 @@ function App() {
               </div>
             </div>
             
-            {marketOverview && (
-              <div className="flex items-center space-x-6">
-                <div className="text-right">
-                  <p className="text-sm text-slate-600">NIFTY 50</p>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-semibold text-slate-900">
-                      {marketOverview.nifty_50.current.toFixed(2)}
-                    </span>
-                    <span className={`text-sm font-medium ${
-                      marketOverview.nifty_50.change_percent >= 0 ? 'text-emerald-600' : 'text-red-600'
-                    }`}>
-                      {marketOverview.nifty_50.change_percent >= 0 ? '+' : ''}
-                      {marketOverview.nifty_50.change_percent.toFixed(2)}%
-                    </span>
-                  </div>
-                </div>
-                
-                <Badge variant={marketOverview.market_status === 'Open' ? 'default' : 'secondary'}>
-                  <Activity className="w-3 h-3 mr-1" />
-                  {marketOverview.market_status}
-                </Badge>
+            {/* Search Bar */}
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input
+                  placeholder="Search stocks..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 w-64"
+                />
               </div>
-            )}
+              
+              {marketOverview && (
+                <div className="flex items-center space-x-6">
+                  <div className="text-right">
+                    <p className="text-sm text-slate-600">NIFTY 50</p>
+                    <div className="flex items-center space-x-2">
+                      <span className="font-semibold text-slate-900">
+                        {marketOverview.nifty_50.current.toFixed(2)}
+                      </span>
+                      <span className={`text-sm font-medium ${
+                        marketOverview.nifty_50.change_percent >= 0 ? 'text-emerald-600' : 'text-red-600'
+                      }`}>
+                        {marketOverview.nifty_50.change_percent >= 0 ? '+' : ''}
+                        {marketOverview.nifty_50.change_percent.toFixed(2)}%
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <Badge variant={marketOverview.market_status === 'Open' ? 'default' : 'secondary'}>
+                    <Activity className="w-3 h-3 mr-1" />
+                    {marketOverview.market_status}
+                  </Badge>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -132,13 +252,13 @@ function App() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-600 mb-1">Breakouts Found</p>
-                  <p className="text-2xl font-bold text-slate-900">{breakoutStocks.length}</p>
+                  <p className="text-2xl font-bold text-slate-900">{filteredBreakoutStocks.length}</p>
                 </div>
                 <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-emerald-600" />
@@ -152,7 +272,7 @@ function App() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-600 mb-1">Stocks Scanned</p>
-                  <p className="text-2xl font-bold text-slate-900">20</p>
+                  <p className="text-2xl font-bold text-slate-900">30</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                   <BarChart3 className="w-6 h-6 text-blue-600" />
@@ -165,13 +285,27 @@ function App() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-600 mb-1">Success Rate</p>
-                  <p className="text-2xl font-bold text-slate-900">
-                    {breakoutStocks.length > 0 ? ((breakoutStocks.length / 20) * 100).toFixed(0) : 0}%
-                  </p>
+                  <p className="text-sm text-slate-600 mb-1">Watchlist</p>
+                  <p className="text-2xl font-bold text-slate-900">{watchlist.length}</p>
                 </div>
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <DollarSign className="w-6 h-6 text-purple-600" />
+                  <Heart className="w-6 h-6 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-slate-600 mb-1">Market Sentiment</p>
+                  <p className="text-lg font-semibold text-slate-900">
+                    {marketOverview?.market_sentiment || 'Neutral'}
+                  </p>
+                </div>
+                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
+                  <Zap className="w-6 h-6 text-amber-600" />
                 </div>
               </div>
             </CardContent>
@@ -197,6 +331,78 @@ function App() {
           </Card>
         </div>
 
+        {/* Filters */}
+        <Card className="bg-white/60 backdrop-blur-sm border-slate-200 mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Filter className="w-5 h-5 text-slate-600" />
+              <span>Filters</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Sector</label>
+                <Select value={selectedSector} onValueChange={setSelectedSector}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select sector" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sectors.map(sector => (
+                      <SelectItem key={sector} value={sector}>{sector}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Min Confidence</label>
+                <Select value={minConfidence.toString()} onValueChange={(v) => setMinConfidence(parseFloat(v))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0.5">50%</SelectItem>
+                    <SelectItem value="0.6">60%</SelectItem>
+                    <SelectItem value="0.7">70%</SelectItem>
+                    <SelectItem value="0.8">80%</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Risk Level</label>
+                <Select value={riskFilter} onValueChange={setRiskFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">All Risk Levels</SelectItem>
+                    <SelectItem value="Low">Low Risk</SelectItem>
+                    <SelectItem value="Medium">Medium Risk</SelectItem>
+                    <SelectItem value="High">High Risk</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex items-end">
+                <Button 
+                  onClick={scanBreakouts}
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800"
+                >
+                  {loading ? (
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Search className="w-4 h-4 mr-2" />
+                  )}
+                  {loading ? 'Scanning...' : 'Apply Filters'}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Breakout Stocks Table */}
         <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
           <CardHeader>
@@ -207,7 +413,7 @@ function App() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {breakoutStocks.length > 0 ? (
+            {filteredBreakoutStocks.length > 0 ? (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
@@ -216,15 +422,15 @@ function App() {
                       <TableHead>Current Price</TableHead>
                       <TableHead>Change %</TableHead>
                       <TableHead>Breakout Type</TableHead>
-                      <TableHead>Breakout Level</TableHead>
                       <TableHead>Confidence</TableHead>
-                      <TableHead>Volume</TableHead>
+                      <TableHead>Risk Level</TableHead>
                       <TableHead>RSI</TableHead>
-                      <TableHead>Action</TableHead>
+                      <TableHead>Sector</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {breakoutStocks.map((stock, index) => (
+                    {filteredBreakoutStocks.map((stock, index) => (
                       <TableRow key={index} className="hover:bg-slate-50/50">
                         <TableCell>
                           <div>
@@ -248,9 +454,6 @@ function App() {
                             {getBreakoutTypeLabel(stock.breakout_type)}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-medium">
-                          {formatPrice(stock.breakout_price)}
-                        </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <div className="w-full bg-slate-200 rounded-full h-2">
@@ -264,8 +467,11 @@ function App() {
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-sm">
-                          {formatLargeNumber(stock.volume)}
+                        <TableCell>
+                          <Badge className={getRiskColor(stock.risk_assessment?.risk_level)}>
+                            <Shield className="w-3 h-3 mr-1" />
+                            {stock.risk_assessment?.risk_level || 'Medium'}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <span className={`font-medium ${
@@ -276,9 +482,34 @@ function App() {
                           </span>
                         </TableCell>
                         <TableCell>
-                          <Button size="sm" variant="outline" className="text-xs">
-                            View Details
-                          </Button>
+                          <Badge variant="outline" className="text-xs">
+                            {stock.sector}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center space-x-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => navigate(`/stock/${stock.symbol}`)}
+                              className="text-xs"
+                            >
+                              <Eye className="w-3 h-3 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant={isInWatchlist(stock.symbol) ? "default" : "outline"}
+                              onClick={() => 
+                                isInWatchlist(stock.symbol) 
+                                  ? removeFromWatchlist(stock.symbol)
+                                  : addToWatchlist(stock.symbol)
+                              }
+                              className="text-xs"
+                            >
+                              <Heart className={`w-3 h-3 ${isInWatchlist(stock.symbol) ? 'fill-current' : ''}`} />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -290,7 +521,7 @@ function App() {
                 <AlertCircle className="w-12 h-12 text-slate-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-slate-900 mb-2">No Breakouts Found</h3>
                 <p className="text-slate-600 mb-4">
-                  {loading ? "Scanning stocks for breakout opportunities..." : "No stocks are showing breakout signals at the moment."}
+                  {loading ? "Scanning stocks for breakout opportunities..." : "No stocks match your current filters."}
                 </p>
                 <Button 
                   onClick={scanBreakouts} 
@@ -305,6 +536,32 @@ function App() {
           </CardContent>
         </Card>
 
+        {/* Sector Performance */}
+        {marketOverview?.sector_performance && (
+          <Card className="mt-8 bg-white/60 backdrop-blur-sm border-slate-200">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <BarChart3 className="w-5 h-5 text-blue-600" />
+                <span>Sector Performance</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {Object.entries(marketOverview.sector_performance).map(([sector, performance]) => (
+                  <div key={sector} className="text-center">
+                    <p className="text-sm font-medium text-slate-700 mb-1">{sector}</p>
+                    <p className={`text-lg font-bold ${
+                      performance >= 0 ? 'text-emerald-600' : 'text-red-600'
+                    }`}>
+                      {performance >= 0 ? '+' : ''}{performance.toFixed(2)}%
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Disclaimer */}
         <Card className="mt-8 bg-amber-50/50 border-amber-200">
           <CardContent className="p-4">
@@ -315,7 +572,8 @@ function App() {
                 <p className="text-sm text-amber-800">
                   This tool is for educational purposes only. Past performance does not guarantee future results. 
                   Always consult with a qualified financial advisor before making investment decisions. 
-                  Invest only what you can afford to lose.
+                  Invest only what you can afford to lose. All risk assessments are algorithmic and should not be 
+                  considered as professional financial advice.
                 </p>
               </div>
             </div>
@@ -323,6 +581,19 @@ function App() {
         </Card>
       </main>
     </div>
+  );
+};
+
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/stock/:symbol" element={<StockDetails />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
