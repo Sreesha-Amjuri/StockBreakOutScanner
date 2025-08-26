@@ -304,7 +304,7 @@ class StockBreakoutAPITester:
                     f"{valid_recommendations}/{stocks_with_recommendations} recommendations are structurally valid")
 
     def test_market_overview(self):
-        """Test market overview endpoint"""
+        """Test enhanced market overview endpoint with detailed market status"""
         success, data = self.test_api_endpoint("Market Overview", "GET", "stocks/market-overview")
         
         if success:
@@ -315,10 +315,47 @@ class StockBreakoutAPITester:
                 self.log_test("Market Overview Structure", False, f"Missing keys: {missing_keys}")
             else:
                 nifty_data = data.get('nifty_50', {})
+                market_status = data.get('market_status', {})
+                
                 self.log_test("Market Overview Structure", True, 
-                            f"NIFTY: {nifty_data.get('current', 'N/A')}, Status: {data.get('market_status', 'N/A')}")
+                            f"NIFTY: {nifty_data.get('current', 'N/A')}, Sentiment: {data.get('market_sentiment', 'N/A')}")
+                
+                # Test enhanced market status structure
+                self.test_enhanced_market_status(market_status)
         
         return success
+
+    def test_enhanced_market_status(self, market_status):
+        """Test enhanced market status structure"""
+        required_status_fields = ['status', 'message', 'current_time', 'is_trading_hours']
+        missing_fields = [field for field in required_status_fields if field not in market_status]
+        
+        if missing_fields:
+            self.log_test("Market Status Structure", False, f"Missing fields: {missing_fields}")
+        else:
+            status = market_status.get('status')
+            current_time = market_status.get('current_time')
+            is_trading = market_status.get('is_trading_hours')
+            message = market_status.get('message')
+            
+            # Validate status values
+            valid_statuses = ['OPEN', 'CLOSED', 'PRE_OPEN']
+            status_valid = status in valid_statuses
+            
+            # Validate IST time format
+            ist_valid = 'IST' in current_time if current_time else False
+            
+            self.log_test("Market Status Values", status_valid and ist_valid, 
+                        f"Status: {status}, Time: {current_time}, Trading: {is_trading}")
+            
+            # Test additional fields based on status
+            if status == 'OPEN' and 'time_to_close' in market_status:
+                self.log_test("Market Open Details", True, f"Time to close: {market_status['time_to_close']}s")
+            elif status in ['CLOSED', 'PRE_OPEN'] and 'next_open' in market_status:
+                self.log_test("Market Closed Details", True, f"Next open: {market_status['next_open']}")
+            
+            self.log_test("Market Status Message", len(message) > 0 if message else False, 
+                        f"Message: {message}")
 
     def test_watchlist_operations(self):
         """Test watchlist CRUD operations"""
