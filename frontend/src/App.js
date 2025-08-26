@@ -468,6 +468,7 @@ const Dashboard = () => {
                     <TableRow>
                       <TableHead>Symbol</TableHead>
                       <TableHead>Current Price</TableHead>
+                      <TableHead>Change %</TableHead>
                       <TableHead>Entry Price</TableHead>
                       <TableHead>Stop Loss</TableHead>
                       <TableHead>Target</TableHead>
@@ -476,6 +477,9 @@ const Dashboard = () => {
                       <TableHead>Position Size</TableHead>
                       <TableHead>Breakout Type</TableHead>
                       <TableHead>Confidence</TableHead>
+                      <TableHead>Risk Level</TableHead>
+                      <TableHead>RSI</TableHead>
+                      <TableHead>Sector</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
