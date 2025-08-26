@@ -694,6 +694,13 @@ async def fetch_comprehensive_stock_data(symbol: str) -> Optional[Dict]:
         # Detect breakouts
         breakout_data = detect_advanced_breakout(symbol, hist, technical_indicators)
         
+        # Calculate trading recommendations if breakout detected
+        trading_recommendation = None
+        if breakout_data:
+            trading_recommendation = calculate_trading_recommendation(
+                symbol, current_price, breakout_data, technical_indicators, risk_assessment
+            )
+        
         # Get sector information
         sector = NSE_SYMBOLS.get(symbol, "Unknown")
         
