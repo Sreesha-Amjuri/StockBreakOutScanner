@@ -475,89 +475,98 @@ const Dashboard = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredBreakoutStocks.map((stock, index) => (
-                      <TableRow key={index} className="hover:bg-slate-50/50">
-                        <TableCell>
-                          <div>
-                            <span className="font-semibold text-slate-900">{stock.symbol}</span>
-                            <p className="text-sm text-slate-600 truncate max-w-32">{stock.name}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-semibold">
-                          {formatPrice(stock.current_price)}
-                        </TableCell>
-                        <TableCell>
-                          <span className={`font-medium ${
-                            stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-600'
-                          }`}>
-                            {stock.change_percent >= 0 ? '+' : ''}
-                            {stock.change_percent.toFixed(2)}%
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getBreakoutTypeColor(stock.breakout_type)}>
-                            {getBreakoutTypeLabel(stock.breakout_type)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <div className="w-full bg-slate-200 rounded-full h-2">
-                              <div 
-                                className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-2 rounded-full" 
-                                style={{ width: `${stock.confidence_score * 100}%` }}
-                              ></div>
+                    {filteredBreakoutStocks.map((stock, index) => {
+                      const trading = stock.trading_recommendation;
+                      return (
+                        <TableRow key={index} className="hover:bg-slate-50/50">
+                          <TableCell>
+                            <div>
+                              <span className="font-semibold text-slate-900">{stock.symbol}</span>
+                              <p className="text-sm text-slate-600 truncate max-w-32">{stock.name}</p>
+                              <Badge variant="outline" className="text-xs mt-1">
+                                {stock.sector}
+                              </Badge>
                             </div>
-                            <span className="text-sm font-medium text-slate-700">
-                              {(stock.confidence_score * 100).toFixed(0)}%
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getRiskColor(stock.risk_assessment?.risk_level)}>
-                            <Shield className="w-3 h-3 mr-1" />
-                            {stock.risk_assessment?.risk_level || 'Medium'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`font-medium ${
-                            stock.technical_data.rsi > 70 ? 'text-red-600' : 
-                            stock.technical_data.rsi > 50 ? 'text-emerald-600' : 'text-slate-600'
-                          }`}>
-                            {stock.technical_data.rsi ? stock.technical_data.rsi.toFixed(1) : '-'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">
-                            {stock.sector}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center space-x-2">
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => navigate(`/stock/${stock.symbol}`)}
-                              className="text-xs"
-                            >
-                              <Eye className="w-3 h-3 mr-1" />
-                              View
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant={isInWatchlist(stock.symbol) ? "default" : "outline"}
-                              onClick={() => 
-                                isInWatchlist(stock.symbol) 
-                                  ? removeFromWatchlist(stock.symbol)
-                                  : addToWatchlist(stock.symbol)
-                              }
-                              className="text-xs"
-                            >
-                              <Heart className={`w-3 h-3 ${isInWatchlist(stock.symbol) ? 'fill-current' : ''}`} />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell className="font-semibold">
+                            <div>
+                              {formatPrice(stock.current_price)}
+                              <div className={`text-sm font-medium ${
+                                stock.change_percent >= 0 ? 'text-emerald-600' : 'text-red-600'
+                              }`}>
+                                {stock.change_percent >= 0 ? '+' : ''}
+                                {stock.change_percent.toFixed(2)}%
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-semibold text-blue-600">
+                            {trading ? formatPrice(trading.entry_price) : '-'}
+                          </TableCell>
+                          <TableCell className="font-semibold text-red-600">
+                            {trading ? formatPrice(trading.stop_loss) : '-'}
+                          </TableCell>
+                          <TableCell className="font-semibold text-emerald-600">
+                            {trading ? formatPrice(trading.target_price) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {trading ? (
+                              <Badge className={getActionColor(trading.action)}>
+                                {trading.action}
+                              </Badge>
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {trading ? `1:${trading.risk_reward_ratio}` : '-'}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {trading ? `${trading.position_size_percent}%` : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getBreakoutTypeColor(stock.breakout_type)}>
+                              {getBreakoutTypeLabel(stock.breakout_type)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-full bg-slate-200 rounded-full h-2">
+                                <div 
+                                  className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-2 rounded-full" 
+                                  style={{ width: `${stock.confidence_score * 100}%` }}
+                                ></div>
+                              </div>
+                              <span className="text-sm font-medium text-slate-700">
+                                {(stock.confidence_score * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center space-x-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => navigate(`/stock/${stock.symbol}`)}
+                                className="text-xs"
+                              >
+                                <Eye className="w-3 h-3 mr-1" />
+                                View
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant={isInWatchlist(stock.symbol) ? "default" : "outline"}
+                                onClick={() => 
+                                  isInWatchlist(stock.symbol) 
+                                    ? removeFromWatchlist(stock.symbol)
+                                    : addToWatchlist(stock.symbol)
+                                }
+                                className="text-xs"
+                              >
+                                <Heart className={`w-3 h-3 ${isInWatchlist(stock.symbol) ? 'fill-current' : ''}`} />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
