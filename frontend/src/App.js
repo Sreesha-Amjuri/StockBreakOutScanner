@@ -37,11 +37,20 @@ const Dashboard = () => {
 
   const fetchMarketOverview = async () => {
     try {
+      console.log('Fetching market overview...');
       const response = await axios.get(`${API}/stocks/market-overview`);
+      console.log('Market overview response:', response.data);
       setMarketOverview(response.data);
     } catch (error) {
       console.error('Error fetching market overview:', error);
+      console.error('Error response:', error.response?.data);
       toast.error("Failed to fetch market overview");
+      // Set fallback market overview
+      setMarketOverview({
+        nifty_50: { current: 24000, change_percent: 0 },
+        market_status: { status: "UNKNOWN", message: "Unable to fetch market status" },
+        market_sentiment: "Neutral"
+      });
     }
   };
 
