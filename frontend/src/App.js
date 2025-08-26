@@ -152,10 +152,15 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    fetchMarketOverview();
-    fetchWatchlist();
-    fetchSectors();
-    scanBreakouts();
+    const initializeApp = async () => {
+      console.log('Initializing app...');
+      await fetchMarketOverview();
+      await fetchWatchlist();
+      await fetchSectors();
+      await scanBreakouts();
+    };
+    
+    initializeApp();
   }, []);
 
   // Filter breakout stocks based on search term
