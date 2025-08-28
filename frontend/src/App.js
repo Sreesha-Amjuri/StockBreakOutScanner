@@ -246,8 +246,115 @@ const Dashboard = () => {
     }
   };
 
-  const isInWatchlist = (symbol) => {
-    return watchlist.some(item => item.symbol === symbol);
+  // Sorting function
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc'); // Default to descending for most fields
+    }
+  };
+
+  // Sort the filtered stocks
+  const sortedBreakoutStocks = React.useMemo(() => {
+    const filtered = breakoutStocks.filter(stock =>
+      stock.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      stock.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return [...filtered].sort((a, b) => {
+      let aValue, bValue;
+
+      switch (sortField) {
+        case 'symbol':
+          aValue = a.symbol;
+          bValue = b.symbol;
+          break;
+        case 'current_price':
+          aValue = a.current_price;
+          bValue = b.current_price;
+          break;
+        case 'change_percent':
+          aValue = a.change_percent;
+          bValue = b.change_percent;
+          break;
+        case 'entry_price':
+          aValue = a.trading_recommendation?.entry_price || 0;
+          bValue = b.trading_recommendation?.entry_price || 0;
+          break;
+        case 'stop_loss':
+          aValue = a.trading_recommendation?.stop_loss || 0;
+          bValue = b.trading_recommendation?.stop_loss || 0;
+          break;
+        case 'target_price':
+          aValue = a.trading_recommendation?.target_price || 0;
+          bValue = b.trading_recommendation?.target_price || 0;
+          break;
+        case 'action':
+          aValue = a.trading_recommendation?.action || 'WAIT';
+          bValue = b.trading_recommendation?.action || 'WAIT';
+          break;
+        case 'risk_reward_ratio':
+          aValue = a.trading_recommendation?.risk_reward_ratio || 0;
+          bValue = b.trading_recommendation?.risk_reward_ratio || 0;
+          break;
+        case 'position_size_percent':
+          aValue = a.trading_recommendation?.position_size_percent || 0;
+          bValue = b.trading_recommendation?.position_size_percent || 0;
+          break;
+        case 'breakout_type':
+          aValue = a.breakout_type;
+          bValue = b.breakout_type;
+          break;
+        case 'confidence_score':
+          aValue = a.confidence_score;
+          bValue = b.confidence_score;
+          break;
+        case 'risk_level':
+          aValue = a.risk_assessment?.risk_level || 'Medium';
+          bValue = b.risk_assessment?.risk_level || 'Medium';
+          break;
+        case 'rsi':
+          aValue = a.technical_data.rsi || 0;
+          bValue = b.technical_data.rsi || 0;
+          break;
+        case 'support_level':
+          aValue = a.technical_data.support_level || 0;
+          bValue = b.technical_data.support_level || 0;
+          break;
+        case 'resistance_level':
+          aValue = a.technical_data.resistance_level || 0;
+          bValue = b.technical_data.resistance_level || 0;
+          break;
+        case 'sector':
+          aValue = a.sector;
+          bValue = b.sector;
+          break;
+        default:
+          aValue = a.confidence_score;
+          bValue = b.confidence_score;
+      }
+
+      // Handle string vs number comparison
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc' 
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+    });
+  }, [breakoutStocks, searchTerm, sortField, sortDirection]);
+
+  // Get sort icon
+  const getSortIcon = (field) => {
+    if (sortField !== field) {
+      return <span className="text-slate-400 ml-1">↕</span>;
+    }
+    return sortDirection === 'asc' 
+      ? <span className="text-blue-600 ml-1">↑</span>
+      : <span className="text-blue-600 ml-1">↓</span>;
   };
 
   return (
