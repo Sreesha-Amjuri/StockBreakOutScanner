@@ -88,7 +88,7 @@ const Dashboard = () => {
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
-        limit: '50'  // Increased limit to get more results
+        limit: '100'  // Increased to scan 100 stocks (NIFTY 100)
       });
       
       if (selectedSector !== 'All') {
