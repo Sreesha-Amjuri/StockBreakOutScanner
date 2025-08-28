@@ -33,6 +33,10 @@ const Dashboard = () => {
   const [minConfidence, setMinConfidence] = useState(0.5);
   const [riskFilter, setRiskFilter] = useState('All');
   
+  // Sorting
+  const [sortField, setSortField] = useState('confidence_score');
+  const [sortDirection, setSortDirection] = useState('desc');
+  
   const [sectors, setSectors] = useState([]);
 
   const fetchMarketOverview = async () => {
