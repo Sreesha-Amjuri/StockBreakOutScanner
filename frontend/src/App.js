@@ -482,7 +482,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-600 mb-1">Stocks Scanned</p>
-                  <p className="text-2xl font-bold text-slate-900">30</p>
+                  <p className="text-2xl font-bold text-slate-900">100</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                   <BarChart3 className="w-6 h-6 text-blue-600" />
