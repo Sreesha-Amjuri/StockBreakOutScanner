@@ -156,47 +156,87 @@ class AlertRequest(BaseModel):
     condition: str  # "above", "below"
     email: Optional[str] = None
 
-# NSE stock symbols with sectors
+# NSE NIFTY 100 stock symbols with sectors (Complete list)
 NSE_SYMBOLS = {
     # IT Sector
     "TCS": "IT", "INFOSYS": "IT", "HCLTECH": "IT", "WIPRO": "IT", "TECHM": "IT",
-    "LTIM": "IT", "PERSISTENT": "IT", "MPHASIS": "IT", "LTTS": "IT",
+    "LTIM": "IT", "PERSISTENT": "IT", "MPHASIS": "IT", "LTTS": "IT", "COFORGE": "IT",
+    "MINDTREE": "IT", "INFY": "IT",
     
-    # Banking & Financial
+    # Banking & Financial Services
     "HDFCBANK": "Banking", "ICICIBANK": "Banking", "SBIN": "Banking", "AXISBANK": "Banking",
     "KOTAKBANK": "Banking", "INDUSINDBK": "Banking", "BAJFINANCE": "Finance",
     "BAJAJFINSV": "Finance", "HDFCLIFE": "Insurance", "SBILIFE": "Insurance", "LICI": "Insurance",
+    "BAJAJHOLD": "Finance", "MUTHOOTFIN": "Finance", "CHOLAFIN": "Finance",
+    "FEDERALBNK": "Banking", "BANDHANBNK": "Banking", "IDFCFIRSTB": "Banking",
     
-    # FMCG
+    # FMCG & Consumer Goods
     "HINDUNILVR": "FMCG", "ITC": "FMCG", "NESTLEIND": "FMCG", "BRITANNIA": "FMCG",
     "TATACONSUM": "FMCG", "GODREJCP": "FMCG", "MARICO": "FMCG", "DABUR": "FMCG",
+    "COLPAL": "FMCG", "EMAMILTD": "FMCG", "RADICO": "FMCG", "UBL": "FMCG",
     
-    # Auto
+    # Auto & Auto Ancillaries
     "MARUTI": "Auto", "TATAMOTORS": "Auto", "M&M": "Auto", "BAJAJ-AUTO": "Auto",
-    "EICHERMOT": "Auto", "HEROMOTOCO": "Auto", "TVSMOTORS": "Auto",
+    "EICHERMOT": "Auto", "HEROMOTOCO": "Auto", "TVSMOTORS": "Auto", "ASHOKLEY": "Auto",
+    "ESCORTS": "Auto", "BALKRISIND": "Auto", "MRF": "Auto", "APOLLOTYRE": "Auto",
     
-    # Pharma
+    # Pharmaceuticals & Healthcare
     "SUNPHARMA": "Pharma", "DRREDDY": "Pharma", "CIPLA": "Pharma", "DIVISLAB": "Pharma",
-    "APOLLOHOSP": "Healthcare", "FORTIS": "Healthcare",
+    "APOLLOHOSP": "Healthcare", "FORTIS": "Healthcare", "BIOCON": "Pharma", "ALKEM": "Pharma",
+    "CADILAHC": "Pharma", "LUPIN": "Pharma", "TORNTPHARM": "Pharma", "AUROPHARMA": "Pharma",
     
-    # Energy & Power
+    # Energy & Oil & Gas
     "RELIANCE": "Energy", "ONGC": "Energy", "IOC": "Energy", "BPCL": "Energy",
-    "NTPC": "Power", "POWERGRID": "Power", "COALINDIA": "Mining",
+    "HINDPETRO": "Energy", "GAIL": "Energy", "PETRONET": "Energy", "IGL": "Energy",
+    
+    # Power & Utilities
+    "NTPC": "Power", "POWERGRID": "Power", "TATAPOWER": "Power", "ADANIPOWER": "Power",
+    "TORNTPOWER": "Power",
     
     # Metals & Mining
     "TATASTEEL": "Metals", "JSWSTEEL": "Metals", "HINDALCO": "Metals", "VEDL": "Metals",
-    "SAIL": "Metals", "NMDC": "Mining",
+    "SAIL": "Metals", "NMDC": "Mining", "COALINDIA": "Mining", "JINDALSTEL": "Metals",
+    "NATIONALUM": "Metals",
     
-    # Cement
+    # Cement & Construction
     "ULTRACEMCO": "Cement", "SHREECEM": "Cement", "GRASIM": "Cement", "RAMCOCEM": "Cement",
+    "HEIDELBERG": "Cement", "JKCEMENT": "Cement", "LT": "Infrastructure", "LARSEN": "Infrastructure",
     
-    # Telecom
-    "BHARTIARTL": "Telecom", "IDEA": "Telecom",
+    # Telecom & Communication
+    "BHARTIARTL": "Telecom", "IDEA": "Telecom", "INDUSINDBK": "Telecom",
+    
+    # Chemicals & Petrochemicals
+    "PIDILITIND": "Chemicals", "ASIANPAINT": "Paints", "BERGER": "Paints", "AKZONOBEL": "Paints",
+    "TATACHEM": "Chemicals", "DEEPAKNTR": "Chemicals", "GNFC": "Chemicals", "BALRAMCHIN": "Chemicals",
+    
+    # Textiles & Apparel
+    "RAYMOND": "Textiles", "ADITBIRLA": "Textiles", "WELSPUNIND": "Textiles",
+    
+    # Consumer Durables & Electronics
+    "TITAN": "Jewelry", "VOLTAS": "Durables", "BLUESTARCO": "Durables", "CROMPTON": "Durables",
+    "HAVELLS": "Durables", "WHIRLPOOL": "Durables",
+    
+    # Real Estate & Housing
+    "DLF": "RealEstate", "GODREJPROP": "RealEstate", "OBEROI": "RealEstate", "SOBHA": "RealEstate",
+    
+    # Retail & E-commerce
+    "AVENUE": "Retail", "TRENT": "Retail", "SHOPERSTOP": "Retail",
+    
+    # Diversified & Conglomerates
+    "ADANIENTS": "Diversified", "ADANIPORTS": "Infrastructure", "IEX": "Diversified",
+    "MOTHERSUMI": "Auto", "BOSCHLTD": "Auto", "EXIDEIND": "Auto",
+    
+    # Agriculture & Fertilizers
+    "UPL": "Agriculture", "COROMANDEL": "Agriculture", "CHAMBLFERT": "Agriculture",
+    
+    # Media & Entertainment
+    "ZEEL": "Media", "SUNTV": "Media", "NETWRK18": "Media",
+    
+    # Airlines & Transportation
+    "INDIGO": "Airlines", "CONCOR": "Transport",
     
     # Others
-    "LT": "Infrastructure", "ASIANPAINT": "Paints", "TITAN": "Jewelry",
-    "PIDILITIND": "Chemicals", "PAGEIND": "FMCG", "ADANIPORTS": "Infrastructure",
-    "ADANIENTS": "Diversified"
+    "PAGEIND": "FMCG", "ABCAPITAL": "Finance", "MCDOWELL": "FMCG", "SIEMENS": "Industrial"
 }
 
 def calculate_advanced_technical_indicators(df: pd.DataFrame) -> Dict[str, Any]:
