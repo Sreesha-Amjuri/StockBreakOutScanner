@@ -448,12 +448,18 @@ const Dashboard = () => {
 
   // Get sort icon
   const getSortIcon = (field) => {
-    if (sortField !== field) {
-      return <span className="text-slate-400 ml-1">↕</span>;
-    }
-    return sortDirection === 'asc' 
-      ? <span className="text-blue-600 ml-1">↑</span>
-      : <span className="text-blue-600 ml-1">↓</span>;
+    const fieldConfig = sortConfig.find(config => config.field === field);
+    if (!fieldConfig) return null;
+    
+    const sortIndex = sortConfig.findIndex(config => config.field === field);
+    const priority = sortConfig.length > 1 ? sortIndex + 1 : null;
+    
+    return (
+      <span className="ml-1 inline-flex items-center">
+        {fieldConfig.direction === 'asc' ? '↑' : '↓'}
+        {priority && <span className="text-xs ml-1 bg-blue-500 text-white rounded-full w-4 h-4 flex items-center justify-center">{priority}</span>}
+      </span>
+    );
   };
 
   const isInWatchlist = (symbol) => {
