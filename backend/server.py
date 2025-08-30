@@ -37,8 +37,21 @@ app = FastAPI()
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
 
-# Thread pool for blocking operations
-executor = ThreadPoolExecutor(max_workers=15)
+# Thread pool for blocking operations - increased for larger dataset
+executor = ThreadPoolExecutor(max_workers=25)
+
+# Enhanced caching configuration for larger stock dataset
+import time
+from functools import lru_cache
+from typing import Union
+
+# Cache for stock data to reduce API calls
+STOCK_DATA_CACHE = {}
+CACHE_EXPIRY_MINUTES = 15  # Cache expires after 15 minutes
+
+# Batch processing configuration
+BATCH_SIZE = 50  # Process stocks in batches of 50
+MAX_CONCURRENT_BATCHES = 3  # Maximum concurrent batch operations
 
 # Define Models
 class StatusCheck(BaseModel):
