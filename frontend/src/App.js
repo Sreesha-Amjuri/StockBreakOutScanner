@@ -94,8 +94,8 @@ const Dashboard = () => {
         params.append('sector', selectedSector);
       }
       
-      if (riskFilter !== 'All') {
-        params.append('risk_level', riskFilter);
+      if (selectedRiskLevel !== 'All') {
+        params.append('risk_level', selectedRiskLevel);
       }
       
       console.log('Requesting breakout scan with params:', params.toString());
