@@ -11,7 +11,7 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 class StockBreakoutAPITester:
-    def __init__(self, base_url="https://breakout-screener.preview.emergentagent.com"):
+    def __init__(self, base_url="https://nse-breakout-scan.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.tests_run = 0
