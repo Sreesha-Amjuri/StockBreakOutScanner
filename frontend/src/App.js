@@ -247,14 +247,125 @@ const Dashboard = () => {
     }
   };
 
-  // Sorting function
-  const handleSort = (field) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+  // Advanced sorting functions
+  const handleSort = (field, event) => {
+    // Check if Shift key is held for multi-column sorting
+    const isMultiSort = event?.shiftKey;
+    
+    let newSortConfig = [...sortConfig];
+    let newSortDirection = { ...sortDirection };
+    
+    if (isMultiSort) {
+      // Multi-column sorting
+      const existingIndex = newSortConfig.findIndex(config => config.field === field);
+      
+      if (existingIndex >= 0) {
+        // Field already in sort config - cycle through directions
+        const currentDirection = newSortConfig[existingIndex].direction;
+        if (currentDirection === 'asc') {
+          newSortConfig[existingIndex].direction = 'desc';
+          newSortDirection[field] = 'desc';
+        } else if (currentDirection === 'desc') {
+          // Remove from sort config
+          newSortConfig.splice(existingIndex, 1);
+          delete newSortDirection[field];
+        }
+      } else {
+        // Add new field to sort config
+        newSortConfig.push({ field, direction: 'asc' });
+        newSortDirection[field] = 'asc';
+      }
     } else {
+      // Single column sorting (replace existing)
+      const currentDirection = sortDirection[field];
+      const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+      
+      newSortConfig = [{ field, direction: newDirection }];
+      newSortDirection = { [field]: newDirection };
+      
+      // Update legacy sort states for backward compatibility
       setSortField(field);
-      setSortDirection('desc'); // Default to descending for most fields
+      setSortDirection(newDirection);
     }
+    
+    setSortConfig(newSortConfig);
+    setSortDirection(newSortDirection);
+  };
+
+  const getSortValue = (stock, field) => {
+    switch (field) {
+      case 'symbol':
+        return stock.symbol;
+      case 'current_price':
+        return parseFloat(stock.current_price) || 0;
+      case 'change_percent':
+        return parseFloat(stock.change_percent) || 0;
+      case 'entry_price':
+        return parseFloat(stock.trading_recommendation?.entry_price) || 0;
+      case 'stop_loss':
+        return parseFloat(stock.trading_recommendation?.stop_loss) || 0;
+      case 'target_price':
+        return parseFloat(stock.trading_recommendation?.target_price) || 0;
+      case 'action':
+        return stock.trading_recommendation?.action || '';
+      case 'risk_reward_ratio':
+        return parseFloat(stock.trading_recommendation?.risk_reward_ratio) || 0;
+      case 'position_size':
+        return parseFloat(stock.trading_recommendation?.position_size_percent) || 0;
+      case 'breakout_type':
+        return stock.breakout_type || '';
+      case 'confidence_score':
+        return parseFloat(stock.confidence_score) || 0;
+      case 'risk_level':
+        return stock.risk_assessment?.risk_level || '';
+      case 'rsi':
+        return parseFloat(stock.technical_data?.rsi) || 0;
+      case 'sector':
+        return stock.sector || '';
+      default:
+        return '';
+    }
+  };
+
+  const applySorting = (stocks) => {
+    if (sortConfig.length === 0) {
+      return stocks;
+    }
+
+    return [...stocks].sort((a, b) => {
+      for (const { field, direction } of sortConfig) {
+        const aValue = getSortValue(a, field);
+        const bValue = getSortValue(b, field);
+        
+        let comparison = 0;
+        
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          comparison = aValue.localeCompare(bValue);
+        } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+          comparison = aValue - bValue;
+        }
+        
+        if (comparison !== 0) {
+          return direction === 'asc' ? comparison : -comparison;
+        }
+      }
+      return 0;
+    });
+  };
+
+  const getSortIcon = (field) => {
+    const fieldConfig = sortConfig.find(config => config.field === field);
+    if (!fieldConfig) return null;
+    
+    const sortIndex = sortConfig.findIndex(config => config.field === field);
+    const priority = sortConfig.length > 1 ? sortIndex + 1 : null;
+    
+    return (
+      <span className="ml-1 inline-flex items-center">
+        {fieldConfig.direction === 'asc' ? '↑' : '↓'}
+        {priority && <span className="text-xs ml-1 bg-blue-500 text-white rounded-full w-4 h-4 flex items-center justify-center">{priority}</span>}
+      </span>
+    );
   };
 
   // Sort the filtered stocks
