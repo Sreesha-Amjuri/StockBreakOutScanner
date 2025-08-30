@@ -739,20 +739,132 @@ const Dashboard = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Symbol</TableHead>
-                      <TableHead>Current Price</TableHead>
-                      <TableHead>Change %</TableHead>
-                      <TableHead>Entry Price</TableHead>
-                      <TableHead>Stop Loss</TableHead>
-                      <TableHead>Target</TableHead>
-                      <TableHead>Action</TableHead>
-                      <TableHead>Risk:Reward</TableHead>
-                      <TableHead>Position Size</TableHead>
-                      <TableHead>Breakout Type</TableHead>
-                      <TableHead>Confidence</TableHead>
-                      <TableHead>Risk Level</TableHead>
-                      <TableHead>RSI</TableHead>
-                      <TableHead>Sector</TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('symbol', e)}
+                      >
+                        <div className="flex items-center">
+                          Symbol
+                          {getSortIcon('symbol')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('current_price', e)}
+                      >
+                        <div className="flex items-center">
+                          Current Price
+                          {getSortIcon('current_price')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('change_percent', e)}
+                      >
+                        <div className="flex items-center">
+                          Change %
+                          {getSortIcon('change_percent')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('entry_price', e)}
+                      >
+                        <div className="flex items-center">
+                          Entry Price
+                          {getSortIcon('entry_price')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('stop_loss', e)}
+                      >
+                        <div className="flex items-center">
+                          Stop Loss
+                          {getSortIcon('stop_loss')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('target_price', e)}
+                      >
+                        <div className="flex items-center">
+                          Target
+                          {getSortIcon('target_price')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('action', e)}
+                      >
+                        <div className="flex items-center">
+                          Action
+                          {getSortIcon('action')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('risk_reward_ratio', e)}
+                      >
+                        <div className="flex items-center">
+                          Risk:Reward
+                          {getSortIcon('risk_reward_ratio')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('position_size', e)}
+                      >
+                        <div className="flex items-center">
+                          Position Size
+                          {getSortIcon('position_size')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('breakout_type', e)}
+                      >
+                        <div className="flex items-center">
+                          Breakout Type
+                          {getSortIcon('breakout_type')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('confidence_score', e)}
+                      >
+                        <div className="flex items-center">
+                          Confidence
+                          {getSortIcon('confidence_score')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('risk_level', e)}
+                      >
+                        <div className="flex items-center">
+                          Risk Level
+                          {getSortIcon('risk_level')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('rsi', e)}
+                      >
+                        <div className="flex items-center">
+                          RSI
+                          {getSortIcon('rsi')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('sector', e)}
+                      >
+                        <div className="flex items-center">
+                          Sector
+                          {getSortIcon('sector')}
+                        </div>
+                      </TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
