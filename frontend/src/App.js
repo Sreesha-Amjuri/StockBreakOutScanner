@@ -30,13 +30,15 @@ const Dashboard = () => {
   const [marketOverview, setMarketOverview] = useState(null);
 
   // Filter states
+  const [searchTerm, setSearchTerm] = useState('');
   const [selectedSector, setSelectedSector] = useState('All');
   const [minConfidence, setMinConfidence] = useState(0.5);
   const [selectedRiskLevel, setSelectedRiskLevel] = useState('All');
 
   // Advanced sorting state
   const [sortConfig, setSortConfig] = useState([]);
-  const [sortDirection, setSortDirection] = useState({}); // Track direction per column
+  const [sortField, setSortField] = useState('confidence_score');
+  const [sortDirection, setSortDirection] = useState('desc');
 
   const fetchMarketOverview = async () => {
     try {
