@@ -1334,14 +1334,57 @@ async def get_status_checks():
 
 @api_router.get("/stocks/symbols")
 async def get_nse_symbols():
-    """Get list of NSE symbols with sectors"""
-    symbols_with_sectors = [{"symbol": symbol, "sector": sector} for symbol, sector in NSE_SYMBOLS.items()]
-    return {
-        "symbols": list(NSE_SYMBOLS.keys()), 
-        "symbols_with_sectors": symbols_with_sectors,
-        "count": len(NSE_SYMBOLS),
-        "sectors": list(set(NSE_SYMBOLS.values()))
-    }
+    """Get comprehensive list of NSE symbols with detailed sector information"""
+    try:
+        # Count stocks by sector
+        sector_counts = {}
+        for symbol, sector in NSE_SYMBOLS.items():
+            sector_counts[sector] = sector_counts.get(sector, 0) + 1
+        
+        # Get symbols with sectors
+        symbols_with_sectors = [
+            {"symbol": symbol, "sector": sector} 
+            for symbol, sector in NSE_SYMBOLS.items()
+        ]
+        
+        # Sort sectors by count (largest first)
+        sorted_sectors = sorted(sector_counts.items(), key=lambda x: x[1], reverse=True)
+        
+        # Get priority symbols
+        priority_symbols = get_symbols_by_priority()[:100]  # Top 100 by priority
+        
+        return {
+            "symbols": list(NSE_SYMBOLS.keys()),
+            "symbols_with_sectors": symbols_with_sectors,
+            "total_stocks": len(NSE_SYMBOLS),
+            "sector_distribution": dict(sorted_sectors),
+            "total_sectors": len(sector_counts),
+            "priority_symbols": priority_symbols,
+            "coverage_info": {
+                "nifty_50_coverage": "Complete",
+                "nifty_next_50_coverage": "Complete", 
+                "nifty_500_coverage": "Extensive",
+                "smallcap_midcap_coverage": "Comprehensive",
+                "total_nse_universe": f"{len(NSE_SYMBOLS)}+ stocks across {len(sector_counts)} sectors"
+            },
+            "largest_sectors": [
+                {"sector": sector, "count": count} 
+                for sector, count in sorted_sectors[:10]
+            ],
+            "cache_info": {
+                "cache_size": len(STOCK_DATA_CACHE),
+                "cache_expiry_minutes": CACHE_EXPIRY_MINUTES
+            },
+            "last_updated": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting NSE symbols: {str(e)}")
+        return {
+            "symbols": list(NSE_SYMBOLS.keys()),
+            "total_stocks": len(NSE_SYMBOLS),
+            "error": "Could not generate detailed statistics",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
 
 @api_router.get("/stocks/search")
 async def search_stocks(q: str):
