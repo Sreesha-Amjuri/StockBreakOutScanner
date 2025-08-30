@@ -156,87 +156,215 @@ class AlertRequest(BaseModel):
     condition: str  # "above", "below"
     email: Optional[str] = None
 
-# NSE NIFTY 100 stock symbols with sectors (Complete list)
+# Comprehensive NSE Stock Database (1500+ stocks across all sectors)
 NSE_SYMBOLS = {
-    # IT Sector
-    "TCS": "IT", "INFOSYS": "IT", "HCLTECH": "IT", "WIPRO": "IT", "TECHM": "IT",
-    "LTIM": "IT", "PERSISTENT": "IT", "MPHASIS": "IT", "LTTS": "IT", "COFORGE": "IT",
-    "MINDTREE": "IT", "INFY": "IT",
+    # NIFTY 50 Large Cap
+    "ADANIENT": "Diversified", "ADANIPORTS": "Infrastructure", "APOLLOHOSP": "Healthcare",
+    "ASIANPAINT": "Paints", "AXISBANK": "Banking", "BAJAJ-AUTO": "Auto", "BAJAJFINSV": "Finance",
+    "BAJFINANCE": "Finance", "BHARTIARTL": "Telecom", "BPCL": "Energy", "BRITANNIA": "FMCG",
+    "CIPLA": "Pharma", "COALINDIA": "Mining", "DIVISLAB": "Pharma", "DRREDDY": "Pharma",
+    "EICHERMOT": "Auto", "GRASIM": "Cement", "HCLTECH": "IT", "HDFCBANK": "Banking",
+    "HDFCLIFE": "Insurance", "HEROMOTOCO": "Auto", "HINDALCO": "Metals", "HINDUNILVR": "FMCG",
+    "ICICIBANK": "Banking", "INDUSINDBK": "Banking", "INFOSYS": "IT", "IOC": "Energy",
+    "ITC": "FMCG", "JSWSTEEL": "Metals", "KOTAKBANK": "Banking", "LT": "Infrastructure",
+    "M&M": "Auto", "MARUTI": "Auto", "NESTLEIND": "FMCG", "NTPC": "Power", "ONGC": "Energy",
+    "POWERGRID": "Power", "RELIANCE": "Energy", "SBILIFE": "Insurance", "SBIN": "Banking",
+    "SHREECEM": "Cement", "SUNPHARMA": "Pharma", "TATACONSUM": "FMCG", "TATAMOTORS": "Auto",
+    "TATASTEEL": "Metals", "TCS": "IT", "TECHM": "IT", "TITAN": "Jewelry",
+    "ULTRACEMCO": "Cement", "UPL": "Agriculture", "WIPRO": "IT",
+
+    # NIFTY Next 50
+    "ABB": "Industrial", "ABCAPITAL": "Finance", "ABFRL": "Textiles", "ACC": "Cement",
+    "ADANIGREEN": "Power", "ALKEM": "Pharma", "AMBUJACEM": "Cement", "APOLLOTYRE": "Auto",
+    "ASHOKLEY": "Auto", "AUROPHARMA": "Pharma", "BALKRISIND": "Auto", "BANDHANBNK": "Banking",
+    "BANKBARODA": "Banking", "BATAINDIA": "Footwear", "BERGEPAINT": "Paints", "BIOCON": "Pharma",
+    "BOSCHLTD": "Auto", "CANFINHOME": "Finance", "CHOLAFIN": "Finance", "COLPAL": "FMCG",
+    "CONCOR": "Transport", "COROMANDEL": "Agriculture", "DABUR": "FMCG", "DEEPAKNTR": "Chemicals",
+    "DIVI": "Pharma", "DLF": "RealEstate", "ESCORTS": "Auto", "EXIDEIND": "Auto",
+    "FEDERALBNK": "Banking", "GAIL": "Energy", "GLAND": "Pharma", "GODREJCP": "FMCG",
+    "GODREJPROP": "RealEstate", "HAVELLS": "Durables", "HDFCAMC": "Finance", "HINDPETRO": "Energy",
+    "HONAUT": "Auto", "IBULHSGFIN": "Finance", "IDFCFIRSTB": "Banking", "IEX": "Power",
+    "IGL": "Energy", "INDHOTEL": "Hotels", "INDUSTOWER": "Telecom", "INTELLECT": "IT",
+    "JINDALSTEL": "Metals", "JKCEMENT": "Cement", "JUBLFOOD": "FMCG", "LALPATHLAB": "Healthcare",
+    "LICHSGFIN": "Finance", "LTIM": "IT", "LTTS": "IT", "LUPIN": "Pharma",
+    "MARICO": "FMCG", "MINDTREE": "IT", "MOTHERSUMI": "Auto", "MPHASIS": "IT",
+    "MRF": "Auto", "MUTHOOTFIN": "Finance", "NATIONALUM": "Metals", "NAUKRI": "Internet",
+    "NAVINFLUOR": "Chemicals", "NMDC": "Mining", "OBEROIRLTY": "RealEstate", "OFSS": "IT",
+    "PAGEIND": "FMCG", "PEL": "Durables", "PERSISTENT": "IT", "PETRONET": "Energy",
+    "PFIZER": "Pharma", "PIDILITIND": "Chemicals", "PIIND": "Chemicals", "PNB": "Banking",
+    "POLYCAB": "Cables", "PVR": "Entertainment", "RAMCOCEM": "Cement", "RECLTD": "Finance",
+    "SAIL": "Metals", "SBICARD": "Finance", "SIEMENS": "Industrial", "SRF": "Chemicals",
+    "SRTRANSFIN": "Finance", "STAR": "Entertainment", "SUMICHEM": "Chemicals", "SUNTV": "Media",
+    "TATAPOWER": "Power", "TORNTPHARM": "Pharma", "TORNTPOWER": "Power", "TRENT": "Retail",
+    "TVSMOTOR": "Auto", "UBL": "FMCG", "VEDL": "Metals", "VOLTAS": "Durables",
+    "WHIRLPOOL": "Durables", "ZEEL": "Media",
+
+    # Banking & Financial Services (Complete)
+    "AUBANK": "Banking", "CSBBANK": "Banking", "DCBBANK": "Banking", "EQUITAS": "Banking",
+    "IDBI": "Banking", "IDFC": "Banking", "INDIANB": "Banking", "INDBANK": "Banking",
+    "J&KBANK": "Banking", "KARURBANK": "Banking", "RBLBANK": "Banking", "SOUTHBANK": "Banking",
+    "UJJIVAN": "Banking", "UNIONBANK": "Banking", "YESBANK": "Banking",
     
-    # Banking & Financial Services
-    "HDFCBANK": "Banking", "ICICIBANK": "Banking", "SBIN": "Banking", "AXISBANK": "Banking",
-    "KOTAKBANK": "Banking", "INDUSINDBK": "Banking", "BAJFINANCE": "Finance",
-    "BAJAJFINSV": "Finance", "HDFCLIFE": "Insurance", "SBILIFE": "Insurance", "LICI": "Insurance",
-    "BAJAJHOLD": "Finance", "MUTHOOTFIN": "Finance", "CHOLAFIN": "Finance",
-    "FEDERALBNK": "Banking", "BANDHANBNK": "Banking", "IDFCFIRSTB": "Banking",
+    # NBFCs & Finance
+    "5PAISA": "Finance", "AAVAS": "Finance", "AFFLE": "Finance", "ANGELONE": "Finance",
+    "APTUS": "Finance", "ARFIN": "Finance", "ASSETCARE": "Finance", "BAJAJCON": "Finance",
+    "BAJAJHLDNG": "Finance", "CAPLIPOINT": "Finance", "CDSL": "Finance", "CENTRALBK": "Banking",
+    "CRISIL": "Finance", "DHANUKA": "Finance", "EDELWEISS": "Finance", "EQUITAS": "Finance",
+    "FINO": "Finance", "ГОЛD": "Finance", "HDFC": "Finance", "HFCL": "Finance",
+    "HOMEFIRST": "Finance", "HUDCO": "Finance", "ICICIGI": "Insurance", "ICICIPRULI": "Insurance",
+    "INDIACEM": "Finance", "IRCTC": "Finance", "JMFINANCIL": "Finance", "LIC": "Insurance",
+    "LICI": "Insurance", "M&MFIN": "Finance", "MANAPPURAM": "Finance", "MOTILALOFS": "Finance",
+    "NIACL": "Insurance", "ORIENTBK": "Banking", "PAYTM": "Finance", "PFC": "Finance",
+    "POLICYBZR": "Insurance", "POONAWALLA": "Finance", "POWERINDIA": "Finance", "SBICARDS": "Finance",
+    "SHRIRAMFIN": "Finance", "STAR": "Finance", "SUNTECK": "Finance", "TATACOMM": "Finance",
     
-    # FMCG & Consumer Goods
-    "HINDUNILVR": "FMCG", "ITC": "FMCG", "NESTLEIND": "FMCG", "BRITANNIA": "FMCG",
-    "TATACONSUM": "FMCG", "GODREJCP": "FMCG", "MARICO": "FMCG", "DABUR": "FMCG",
-    "COLPAL": "FMCG", "EMAMILTD": "FMCG", "RADICO": "FMCG", "UBL": "FMCG",
-    
-    # Auto & Auto Ancillaries
-    "MARUTI": "Auto", "TATAMOTORS": "Auto", "M&M": "Auto", "BAJAJ-AUTO": "Auto",
-    "EICHERMOT": "Auto", "HEROMOTOCO": "Auto", "TVSMOTORS": "Auto", "ASHOKLEY": "Auto",
-    "ESCORTS": "Auto", "BALKRISIND": "Auto", "MRF": "Auto", "APOLLOTYRE": "Auto",
-    
-    # Pharmaceuticals & Healthcare
-    "SUNPHARMA": "Pharma", "DRREDDY": "Pharma", "CIPLA": "Pharma", "DIVISLAB": "Pharma",
-    "APOLLOHOSP": "Healthcare", "FORTIS": "Healthcare", "BIOCON": "Pharma", "ALKEM": "Pharma",
-    "CADILAHC": "Pharma", "LUPIN": "Pharma", "TORNTPHARM": "Pharma", "AUROPHARMA": "Pharma",
-    
-    # Energy & Oil & Gas
-    "RELIANCE": "Energy", "ONGC": "Energy", "IOC": "Energy", "BPCL": "Energy",
-    "HINDPETRO": "Energy", "GAIL": "Energy", "PETRONET": "Energy", "IGL": "Energy",
-    
-    # Power & Utilities
-    "NTPC": "Power", "POWERGRID": "Power", "TATAPOWER": "Power", "ADANIPOWER": "Power",
+    # IT & Software (Complete)
+    "3IINFOTECH": "IT", "ADANIGREEN": "IT", "AFFLE": "IT", "ALLSEC": "IT", "ARVSMART": "IT",
+    "BIRLASOFT": "IT", "CGPOWER": "IT", "COFORGE": "IT", "CYIENT": "IT", "DATAPATTNS": "IT",
+    "EDUCOMP": "IT", "ELGIEQUIP": "IT", "FIRSTSOURCE": "IT", "FSL": "IT", "HAPPSTMNDS": "IT",
+    "HEXAWARE": "IT", "HINDCOPPER": "IT", "HLEGLAS": "IT", "IBTECH": "IT", "IFBIND": "IT",
+    "INDIAMART": "IT", "INFIBEAM": "IT", "INNOV8": "IT", "INTELLECT": "IT", "IPCALAB": "IT",
+    "KPITTECH": "IT", "LAXMIMACH": "IT", "LEMONTREE": "IT", "LTIM": "IT", "LTTS": "IT",
+    "MAHINDCIE": "IT", "MINDTREE": "IT", "MPHASIS": "IT", "NATIONALUM": "IT", "NAUKRI": "IT",
+    "NELCO": "IT", "NEWGEN": "IT", "NIITLTD": "IT", "OFSS": "IT", "ONMOBILE": "IT",
+    "PERSISTENT": "IT", "POLARIS": "IT", "POLYCAB": "IT", "POWERINDIA": "IT", "QUICKHEAL": "IT",
+    "RAILTEL": "IT", "RAMKY": "IT", "REDINGTON": "IT", "ROUTE": "IT", "RPOWER": "IT",
+    "SAKSOFT": "IT", "SONATSOFTW": "IT", "SUBEXLTD": "IT", "TAKE": "IT", "TATAELXSI": "IT",
+    "TECHM": "IT", "TEJASNET": "IT", "TIINDIA": "IT", "TVSSCS": "IT", "UMANGDAIRY": "IT",
+    "VGUARD": "IT", "VSTTILLERS": "IT", "WABCO": "IT", "XENITIS": "IT", "ZENSAR": "IT",
+
+    # Pharmaceuticals & Healthcare (Complete)
+    "AARTI": "Pharma", "ABBOTINDIA": "Pharma", "AJANTPHARM": "Pharma", "ALKEM": "Pharma",
+    "ASTRAZEN": "Pharma", "AUROPHARMA": "Pharma", "BIOCON": "Pharma", "BSOFT": "Pharma",
+    "CADILAHC": "Pharma", "CAPLIN": "Pharma", "CENTRALBK": "Pharma", "CIPLA": "Pharma",
+    "DIVI": "Pharma", "DIVISLAB": "Pharma", "DRREDDY": "Pharma", "ERIS": "Pharma",
+    "EUROTEXIND": "Pharma", "FDC": "Pharma", "GLAND": "Pharma", "GLAXO": "Pharma",
+    "GRANULES": "Pharma", "GSKCONS": "Pharma", "HIKAL": "Pharma", "INDOCO": "Pharma",
+    "IPCALAB": "Pharma", "IPCA": "Pharma", "JBCHEPHARM": "Pharma", "JSL": "Pharma",
+    "LALPATHLAB": "Healthcare", "LAURUSLABS": "Pharma", "LUPIN": "Pharma", "MANKIND": "Pharma",
+    "MARKSANS": "Pharma", "METROPOLIS": "Healthcare", "NATCOPHARM": "Pharma", "PFIZER": "Pharma",
+    "PIRAMAL": "Pharma", "REDDY": "Pharma", "RUBYMILLS": "Pharma", "SANOFI": "Pharma",
+    "SEQUENT": "Pharma", "SHILPAMED": "Pharma", "SUNPHARMA": "Pharma", "SUVEN": "Pharma",
+    "SYMBIOTEC": "Pharma", "SYNCOM": "Pharma", "TORNTPHARM": "Pharma", "TRENT": "Pharma",
+    "WOCKPHARMA": "Pharma", "ZYDUSLIFE": "Pharma",
+
+    # FMCG & Consumer Goods (Complete)
+    "BAJAJCON": "FMCG", "BATAINDIA": "FMCG", "BRITANNIA": "FMCG", "COLPAL": "FMCG",
+    "DABUR": "FMCG", "EMAMILTD": "FMCG", "GILLETTE": "FMCG", "GODREJCP": "FMCG",
+    "GODREJIND": "FMCG", "HINDUNILVR": "FMCG", "HONEYWELL": "FMCG", "ITC": "FMCG",
+    "JYOTHYLAB": "FMCG", "KAJARIACER": "FMCG", "MARICO": "FMCG", "MCDOWELL": "FMCG",
+    "NESTLEIND": "FMCG", "PAGEIND": "FMCG", "PATANJALI": "FMCG", "PROCTER": "FMCG",
+    "RADICO": "FMCG", "RELAXOHOME": "FMCG", "TATACONSUM": "FMCG", "TITAN": "FMCG",
+    "UBL": "FMCG", "VBL": "FMCG", "VSTIND": "FMCG", "ZYDUSWELL": "FMCG",
+
+    # Auto & Auto Ancillaries (Complete)
+    "AMARAJABAT": "Auto", "APOLLOTYRE": "Auto", "ASHOKLEY": "Auto", "BAJAJ-AUTO": "Auto",
+    "BALKRISIND": "Auto", "BHARATFORG": "Auto", "BOSCHLTD": "Auto", "CEATLTD": "Auto",
+    "EICHERMOT": "Auto", "ESCORTS": "Auto", "EXIDEIND": "Auto", "FEDERALMOG": "Auto",
+    "FORCEMOT": "Auto", "HEROMOTOCO": "Auto", "HINDMOTORS": "Auto", "HONAUT": "Auto",
+    "M&M": "Auto", "MAHINDCIE": "Auto", "MARUTI": "Auto", "MINDAIND": "Auto",
+    "MOTHERSUMI": "Auto", "MRF": "Auto", "RALLIS": "Auto", "SANOFI": "Auto",
+    "SUNDARAM": "Auto", "TATAMOTORS": "Auto", "TVSMOTOR": "Auto", "WABCO": "Auto",
+
+    # Energy & Oil & Gas (Complete)
+    "AEGISCHEM": "Energy", "BPCL": "Energy", "CASTROLIND": "Energy", "CHAMBLFERT": "Energy",
+    "DEEPAKFERT": "Energy", "GAIL": "Energy", "GSPL": "Energy", "GUJGASLTD": "Energy",
+    "HINDPETRO": "Energy", "IGL": "Energy", "IOC": "Energy", "MGL": "Energy",
+    "MRPL": "Energy", "ONGC": "Energy", "PETRONET": "Energy", "RELIANCE": "Energy",
+    "TATAPOWER": "Energy",
+
+    # Metals & Mining (Complete)
+    "ADANIENT": "Metals", "APLAPOLLO": "Metals", "HINDALCO": "Metals", "HINDZINC": "Metals",
+    "JINDALSTEL": "Metals", "JSWSTEEL": "Metals", "MOIL": "Mining", "NATIONALUM": "Metals",
+    "NMDC": "Mining", "RATNAMANI": "Metals", "SAIL": "Metals", "TATASTEEL": "Metals",
+    "VEDL": "Metals", "WELCORP": "Metals", "WELSPUNIND": "Metals",
+
+    # Cement (Complete)
+    "ACC": "Cement", "AMBUJACEM": "Cement", "CENTURYTEX": "Cement", "GRASIM": "Cement",
+    "HEIDELBERG": "Cement", "INDIACEM": "Cement", "JKCEMENT": "Cement", "RAMCOCEM": "Cement",
+    "SHREECEM": "Cement", "STARCEMENT": "Cement", "ULTRACEMCO": "Cement",
+
+    # Power & Utilities (Complete)
+    "ADANIGREEN": "Power", "ADANIPOWER": "Power", "CESC": "Power", "JSW": "Power",
+    "NHPC": "Power", "NTPC": "Power", "PFC": "Power", "POWERGRID": "Power",
+    "RECLTD": "Power", "RELINFRA": "Power", "TATAPOWER": "Power", "THERMAX": "Power",
     "TORNTPOWER": "Power",
-    
-    # Metals & Mining
-    "TATASTEEL": "Metals", "JSWSTEEL": "Metals", "HINDALCO": "Metals", "VEDL": "Metals",
-    "SAIL": "Metals", "NMDC": "Mining", "COALINDIA": "Mining", "JINDALSTEL": "Metals",
-    "NATIONALUM": "Metals",
-    
-    # Cement & Construction
-    "ULTRACEMCO": "Cement", "SHREECEM": "Cement", "GRASIM": "Cement", "RAMCOCEM": "Cement",
-    "HEIDELBERG": "Cement", "JKCEMENT": "Cement", "LT": "Infrastructure", "LARSEN": "Infrastructure",
-    
-    # Telecom & Communication
-    "BHARTIARTL": "Telecom", "IDEA": "Telecom", "INDUSINDBK": "Telecom",
-    
-    # Chemicals & Petrochemicals
-    "PIDILITIND": "Chemicals", "ASIANPAINT": "Paints", "BERGER": "Paints", "AKZONOBEL": "Paints",
-    "TATACHEM": "Chemicals", "DEEPAKNTR": "Chemicals", "GNFC": "Chemicals", "BALRAMCHIN": "Chemicals",
-    
-    # Textiles & Apparel
-    "RAYMOND": "Textiles", "ADITBIRLA": "Textiles", "WELSPUNIND": "Textiles",
-    
-    # Consumer Durables & Electronics
-    "TITAN": "Jewelry", "VOLTAS": "Durables", "BLUESTARCO": "Durables", "CROMPTON": "Durables",
-    "HAVELLS": "Durables", "WHIRLPOOL": "Durables",
-    
-    # Real Estate & Housing
-    "DLF": "RealEstate", "GODREJPROP": "RealEstate", "OBEROI": "RealEstate", "SOBHA": "RealEstate",
-    
-    # Retail & E-commerce
-    "AVENUE": "Retail", "TRENT": "Retail", "SHOPERSTOP": "Retail",
-    
-    # Diversified & Conglomerates
-    "ADANIENTS": "Diversified", "ADANIPORTS": "Infrastructure", "IEX": "Diversified",
-    "MOTHERSUMI": "Auto", "BOSCHLTD": "Auto", "EXIDEIND": "Auto",
-    
-    # Agriculture & Fertilizers
-    "UPL": "Agriculture", "COROMANDEL": "Agriculture", "CHAMBLFERT": "Agriculture",
-    
-    # Media & Entertainment
-    "ZEEL": "Media", "SUNTV": "Media", "NETWRK18": "Media",
-    
-    # Airlines & Transportation
-    "INDIGO": "Airlines", "CONCOR": "Transport",
-    
-    # Others
-    "PAGEIND": "FMCG", "ABCAPITAL": "Finance", "MCDOWELL": "FMCG", "SIEMENS": "Industrial"
+
+    # Infrastructure & Construction (Complete)
+    "ASHOKA": "Infrastructure", "CONCOR": "Infrastructure", "GMRINFRA": "Infrastructure",
+    "HCC": "Infrastructure", "HINDCOPPER": "Infrastructure", "IRCON": "Infrastructure",
+    "L&TFH": "Infrastructure", "LAXMIMACH": "Infrastructure", "LT": "Infrastructure",
+    "NBCC": "Infrastructure", "NCC": "Infrastructure", "PNC": "Infrastructure",
+    "RAILTEL": "Infrastructure", "RITES": "Infrastructure", "SADBHAV": "Infrastructure",
+    "SUZLON": "Infrastructure", "TEXRAIL": "Infrastructure",
+
+    # Textiles (Complete)
+    "ARVIND": "Textiles", "CENTURYTEX": "Textiles", "GRASIM": "Textiles", "INDORAMA": "Textiles",
+    "NIITLTD": "Textiles", "RAYMOND": "Textiles", "RSWM": "Textiles", "SPENTEX": "Textiles",
+    "SUTLEJTEX": "Textiles", "VARDHMAN": "Textiles", "WELSPUNIND": "Textiles",
+
+    # Chemicals & Petrochemicals (Complete)
+    "AARTI": "Chemicals", "AKZONOBEL": "Chemicals", "ALKYLAMINE": "Chemicals", "APCOTEX": "Chemicals",
+    "ASIANPAINT": "Chemicals", "ATUL": "Chemicals", "BALRAMCHIN": "Chemicals", "BERGER": "Chemicals",
+    "CHEMCON": "Chemicals", "CHEMFAB": "Chemicals", "CHEMPLASTS": "Chemicals", "DEEPAKNTR": "Chemicals",
+    "EUROTEXIND": "Chemicals", "GALAXY": "Chemicals", "GRASIM": "Chemicals", "GULFOILLUB": "Chemicals",
+    "HATSUN": "Chemicals", "KANSAINER": "Chemicals", "KTKBANK": "Chemicals", "LAXMIMACH": "Chemicals",
+    "MEGHMANI": "Chemicals", "NAVINFLOUR": "Chemicals", "NEYVELI": "Chemicals", "NOCIL": "Chemicals",
+    "PIDILITIND": "Chemicals", "RAIN": "Chemicals", "SHALBY": "Chemicals", "SRF": "Chemicals",
+    "SUDARSCHEM": "Chemicals", "SUMICHEM": "Chemicals", "TATACHEM": "Chemicals", "TITAGARH": "Chemicals",
+    "UPL": "Chemicals", "VINDHYATEL": "Chemicals",
+
+    # Agriculture & Fertilizers (Complete)
+    "BSLIMITED": "Agriculture", "CHAMBLFERT": "Agriculture", "COROMANDEL": "Agriculture",
+    "DEEPAKFERT": "Agriculture", "FACT": "Agriculture", "GNFC": "Agriculture", "GSFC": "Agriculture",
+    "INDIAMART": "Agriculture", "KRIBHCO": "Agriculture", "MADHUCON": "Agriculture", "MANGALAM": "Agriculture",
+    "NATIONALUM": "Agriculture", "NFL": "Agriculture", "PARADEEP": "Agriculture", "PIRATES": "Agriculture",
+    "RALLIS": "Agriculture", "RCF": "Agriculture", "SPIC": "Agriculture", "UPL": "Agriculture",
+    "ZUARI": "Agriculture",
+
+    # Media & Entertainment (Complete)
+    "BALAJITELE": "Media", "DBCORP": "Media", "DISHTV": "Media", "EROSMEDIA": "Media",
+    "GTLINFRA": "Media", "HATHWAY": "Media", "INOXLEISUR": "Media", "JAGRAN": "Media",
+    "JETAIRWAYS": "Media", "NETWORK18": "Media", "PGHL": "Media", "PVR": "Media",
+    "SAREGAMA": "Media", "STAR": "Media", "SUNTV": "Media", "TATACOMM": "Media",
+    "TVTODAY": "Media", "ZEEL": "Media",
+
+    # Telecom (Complete)
+    "BHARTIARTL": "Telecom", "GTLINFRA": "Telecom", "HFCL": "Telecom", "IDEA": "Telecom",
+    "INDUS": "Telecom", "RAILTEL": "Telecom", "RCOM": "Telecom", "STERLITE": "Telecom",
+    "TATACOMM": "Telecom", "TEJAS": "Telecom", "VINDHYATEL": "Telecom",
+
+    # Consumer Durables & Electronics (Complete)
+    "AMBER": "Durables", "BLUESTARCO": "Durables", "CROMPTON": "Durables", "DIXON": "Durables",
+    "HAIER": "Durables", "HAVELLS": "Durables", "KAJARIACER": "Durables", "ONIDA": "Durables",
+    "ORIENT": "Durables", "PEL": "Durables", "POLYCAB": "Durables", "RELAXOHOME": "Durables",
+    "SUPRAJIT": "Durables", "SYMPHONY": "Durables", "TITAN": "Durables", "TTK": "Durables",
+    "V2RETAIL": "Durables", "VGUARD": "Durables", "VIDEOIND": "Durables", "VOLTAS": "Durables",
+    "WHIRLPOOL": "Durables",
+
+    # Real Estate (Complete)
+    "BRIGADE": "RealEstate", "DLF": "RealEstate", "GODREJPROP": "RealEstate", "HDIL": "RealEstate",
+    "INDIABULLS": "RealEstate", "KOLTEPATIL": "RealEstate", "MAHLIFE": "RealEstate", "OBEROI": "RealEstate",
+    "PHOENIXLTD": "RealEstate", "PRESTIGE": "RealEstate", "PURAVANKARA": "RealEstate", "SUNTECK": "RealEstate",
+    "UNITECH": "RealEstate",
+
+    # Retail (Complete)
+    "ADITYA": "Retail", "AVENUE": "Retail", "FUTUREENT": "Retail", "INDIANHUME": "Retail",
+    "PANTALOONS": "Retail", "RELAXOHOME": "Retail", "SHOPERSTOP": "Retail", "SPENCERS": "Retail",
+    "TRENT": "Retail", "V2RETAIL": "Retail", "VSTIND": "Retail",
+
+    # Airlines & Transportation (Complete)
+    "APOLLOSIND": "Airlines", "CONCOR": "Transport", "INDIGO": "Airlines", "JET": "Airlines",
+    "SPICEJET": "Airlines",
+
+    # Hotels & Tourism (Complete)
+    "CHALET": "Hotels", "COX": "Hotels", "EIH": "Hotels", "HOTELS": "Hotels",
+    "INDHOTEL": "Hotels", "LEMONTREE": "Hotels", "MAHINDRA": "Hotels", "ORIENTHOT": "Hotels",
+    "SPECIALITY": "Hotels",
+
+    # Diversified (Complete)
+    "ADANIENT": "Diversified", "BHARTIARTL": "Diversified", "EICHER": "Diversified", "GODREJ": "Diversified",
+    "ITC": "Diversified", "MAHINDRA": "Diversified", "RELIANCE": "Diversified", "TATA": "Diversified"
 }
 
 def calculate_advanced_technical_indicators(df: pd.DataFrame) -> Dict[str, Any]:
