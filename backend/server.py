@@ -1359,77 +1359,138 @@ async def scan_breakout_stocks(
     sector: Optional[str] = None,
     min_confidence: float = 0.5,
     risk_level: Optional[str] = None,
-    limit: int = 50
+    limit: int = 100,
+    use_cache: bool = True
 ):
-    """Enhanced breakout scanning with filters"""
-    breakout_stocks = []
-    
-    # Filter symbols by sector if specified
-    symbols_to_scan = list(NSE_SYMBOLS.keys())[:limit]
-    if sector and sector != "All":
-        symbols_to_scan = [s for s, sect in NSE_SYMBOLS.items() if sect == sector][:limit]
-    
-    # Fetch data for all symbols concurrently
-    tasks = [fetch_comprehensive_stock_data(symbol) for symbol in symbols_to_scan]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    
-    sector_breakouts = {}
-    
-    for i, result in enumerate(results):
-        if isinstance(result, dict) and result.get('breakout_data'):
-            symbol = symbols_to_scan[i]
-            breakout_data = result['breakout_data']
+    """Enhanced breakout scanning with batch processing and caching for full NSE coverage"""
+    try:
+        # Clear old cache entries first
+        if use_cache:
+            clear_old_cache_entries()
+        
+        breakout_stocks = []
+        
+        # Get prioritized symbols list
+        all_symbols = get_symbols_by_priority()
+        
+        # Filter symbols by sector if specified
+        if sector and sector != "All":
+            filtered_symbols = [s for s in all_symbols if NSE_SYMBOLS.get(s) == sector]
+            symbols_to_scan = filtered_symbols[:limit]
+        else:
+            symbols_to_scan = all_symbols[:limit]
+        
+        logger.info(f"Scanning {len(symbols_to_scan)} stocks for breakouts (sector: {sector or 'All'})")
+        
+        # Process symbols in batches for better performance
+        total_processed = 0
+        sector_breakouts = {}
+        
+        for i in range(0, len(symbols_to_scan), BATCH_SIZE):
+            batch_symbols = symbols_to_scan[i:i + BATCH_SIZE]
             
-            # Apply confidence filter
-            if breakout_data['confidence'] < min_confidence:
-                continue
+            logger.info(f"Processing batch {i//BATCH_SIZE + 1}: {len(batch_symbols)} stocks")
             
-            # Apply risk level filter
-            if risk_level and result.get('risk_assessment', {}).get('risk_level') != risk_level:
-                continue
+            # Use batch processing with caching
+            if use_cache:
+                batch_results = await fetch_stock_data_batch(batch_symbols)
+            else:
+                # Fetch data without caching for real-time analysis
+                tasks = [fetch_comprehensive_stock_data(symbol) for symbol in batch_symbols]
+                batch_results = await asyncio.gather(*tasks, return_exceptions=True)
             
-            stock_sector = result.get('sector', 'Unknown')
-            technical_indicators = result['technical_indicators']
-            fundamental_data = result['fundamental_data']
-            risk_assessment = result['risk_assessment']
+            # Process batch results
+            for j, result in enumerate(batch_results):
+                if isinstance(result, dict) and result and result.get('breakout_data'):
+                    symbol = batch_symbols[j]
+                    breakout_data = result['breakout_data']
+                    
+                    # Apply confidence filter
+                    if breakout_data['confidence'] < min_confidence:
+                        continue
+                    
+                    # Apply risk level filter
+                    if risk_level and result.get('risk_assessment', {}).get('risk_level') != risk_level:
+                        continue
+                    
+                    stock_sector = result.get('sector', 'Unknown')
+                    technical_indicators = result['technical_indicators']
+                    fundamental_data = result['fundamental_data']
+                    risk_assessment = result['risk_assessment']
+                    
+                    # Count breakouts by sector
+                    sector_breakouts[stock_sector] = sector_breakouts.get(stock_sector, 0) + 1
+                    
+                    breakout_stock = {
+                        "symbol": symbol,
+                        "name": result['name'],
+                        "current_price": result['current_price'],
+                        "breakout_price": breakout_data['breakout_price'],
+                        "breakout_type": breakout_data['type'],
+                        "confidence_score": breakout_data['confidence'],
+                        "change_percent": result['change_percent'],
+                        "volume": result['volume'],
+                        "sector": stock_sector,
+                        "technical_data": technical_indicators,
+                        "fundamental_data": fundamental_data,
+                        "risk_assessment": risk_assessment,
+                        "trading_recommendation": result.get('trading_recommendation'),
+                        "reason": f"Breakout above {breakout_data['type']} level with {breakout_data['confidence']*100:.0f}% confidence",
+                        "data_source": result.get('data_validation', {}).get('source', 'Yahoo Finance'),
+                        "last_updated": result.get('data_validation', {}).get('timestamp', datetime.now(timezone.utc).isoformat())
+                    }
+                    
+                    breakout_stocks.append(breakout_stock)
+                
+                total_processed += 1
             
-            # Count breakouts by sector
-            sector_breakouts[stock_sector] = sector_breakouts.get(stock_sector, 0) + 1
-            
-            breakout_stock = {
-                "symbol": symbol,
-                "name": result['name'],
-                "current_price": result['current_price'],
-                "breakout_price": breakout_data['breakout_price'],
-                "breakout_type": breakout_data['type'],
-                "confidence_score": breakout_data['confidence'],
-                "change_percent": result['change_percent'],
-                "volume": result['volume'],
-                "sector": stock_sector,
-                "technical_data": technical_indicators,
-                "fundamental_data": fundamental_data,
-                "risk_assessment": risk_assessment,
-                "trading_recommendation": result.get('trading_recommendation'),
-                "reason": f"Breakout above {breakout_data['type']} level with {breakout_data['confidence']*100:.0f}% confidence"
-            }
-            
-            breakout_stocks.append(breakout_stock)
-    
-    # Sort by confidence score
-    breakout_stocks.sort(key=lambda x: x['confidence_score'], reverse=True)
-    
-    return {
-        "breakout_stocks": breakout_stocks,
-        "total_scanned": len(symbols_to_scan),
-        "breakouts_found": len(breakout_stocks),
-        "sector_breakdown": sector_breakouts,
-        "filters_applied": {
-            "sector": sector,
-            "min_confidence": min_confidence,
-            "risk_level": risk_level
-        },
-        "timestamp": datetime.now(timezone.utc).isoformat()
-    }
+            # Add a small delay between batches to manage system resources
+            if i + BATCH_SIZE < len(symbols_to_scan):
+                await asyncio.sleep(0.5)  # 500ms delay between batches
+        
+        # Sort by confidence score
+        breakout_stocks.sort(key=lambda x: x['confidence_score'], reverse=True)
+        
+        # Calculate scan statistics
+        scan_stats = {
+            "total_symbols_in_db": len(NSE_SYMBOLS),
+            "total_scanned": total_processed,
+            "breakouts_found": len(breakout_stocks),
+            "success_rate": f"{(len(breakout_stocks) / max(total_processed, 1)) * 100:.1f}%",
+            "cache_usage": f"{len(STOCK_DATA_CACHE)} cached entries" if use_cache else "Cache disabled"
+        }
+        
+        logger.info(f"Scan completed: {scan_stats}")
+        
+        return {
+            "breakout_stocks": breakout_stocks,
+            "scan_statistics": scan_stats,
+            "sector_breakdown": sector_breakouts,
+            "filters_applied": {
+                "sector": sector or "All",
+                "min_confidence": min_confidence,
+                "risk_level": risk_level or "All",
+                "limit": limit,
+                "use_cache": use_cache
+            },
+            "scanning_info": {
+                "batch_size": BATCH_SIZE,
+                "total_nse_stocks": len(NSE_SYMBOLS),
+                "cache_expiry_minutes": CACHE_EXPIRY_MINUTES,
+                "processing_method": "Batch processing with caching" if use_cache else "Real-time processing"
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in breakout scanning: {str(e)}")
+        return {
+            "error": "Failed to scan stocks for breakouts",
+            "details": str(e),
+            "breakout_stocks": [],
+            "scan_statistics": {"total_scanned": 0, "breakouts_found": 0},
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
 
 @api_router.get("/stocks/market-overview")
 async def get_market_overview():
