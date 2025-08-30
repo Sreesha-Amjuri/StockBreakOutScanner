@@ -583,7 +583,7 @@ const Dashboard = () => {
               
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Risk Level</label>
-                <Select value={riskFilter} onValueChange={setRiskFilter}>
+                <Select value={selectedRiskLevel} onValueChange={setSelectedRiskLevel}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
