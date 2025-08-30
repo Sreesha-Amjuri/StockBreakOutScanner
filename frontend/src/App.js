@@ -355,96 +355,102 @@ const Dashboard = () => {
 
 
 
-  // Sort the filtered stocks
+  // Sort the filtered stocks using advanced sorting
   const sortedBreakoutStocks = React.useMemo(() => {
     const filtered = breakoutStocks.filter(stock =>
       stock.symbol.toLowerCase().includes(searchTerm.toLowerCase()) ||
       stock.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+    
+    // Apply advanced sorting if configured, otherwise use legacy sorting
+    if (sortConfig.length > 0) {
+      return applySorting(filtered);
+    } else {
+      // Legacy single-column sorting for backward compatibility
+      return [...filtered].sort((a, b) => {
+        let aValue, bValue;
 
-    return [...filtered].sort((a, b) => {
-      let aValue, bValue;
+        switch (sortField) {
+          case 'symbol':
+            aValue = a.symbol;
+            bValue = b.symbol;
+            break;
+          case 'current_price':
+            aValue = a.current_price;
+            bValue = b.current_price;
+            break;
+          case 'change_percent':
+            aValue = a.change_percent;
+            bValue = b.change_percent;
+            break;
+          case 'entry_price':
+            aValue = a.trading_recommendation?.entry_price || 0;
+            bValue = b.trading_recommendation?.entry_price || 0;
+            break;
+          case 'stop_loss':
+            aValue = a.trading_recommendation?.stop_loss || 0;
+            bValue = b.trading_recommendation?.stop_loss || 0;
+            break;
+          case 'target_price':
+            aValue = a.trading_recommendation?.target_price || 0;
+            bValue = b.trading_recommendation?.target_price || 0;
+            break;
+          case 'action':
+            aValue = a.trading_recommendation?.action || 'WAIT';
+            bValue = b.trading_recommendation?.action || 'WAIT';
+            break;
+          case 'risk_reward_ratio':
+            aValue = a.trading_recommendation?.risk_reward_ratio || 0;
+            bValue = b.trading_recommendation?.risk_reward_ratio || 0;
+            break;
+          case 'position_size_percent':
+            aValue = a.trading_recommendation?.position_size_percent || 0;
+            bValue = b.trading_recommendation?.position_size_percent || 0;
+            break;
+          case 'breakout_type':
+            aValue = a.breakout_type;
+            bValue = b.breakout_type;
+            break;
+          case 'confidence_score':
+            aValue = a.confidence_score;
+            bValue = b.confidence_score;
+            break;
+          case 'risk_level':
+            aValue = a.risk_assessment?.risk_level || 'Medium';
+            bValue = b.risk_assessment?.risk_level || 'Medium';
+            break;
+          case 'rsi':
+            aValue = a.technical_data.rsi || 0;
+            bValue = b.technical_data.rsi || 0;
+            break;
+          case 'support_level':
+            aValue = a.technical_data.support_level || 0;
+            bValue = b.technical_data.support_level || 0;
+            break;
+          case 'resistance_level':
+            aValue = a.technical_data.resistance_level || 0;
+            bValue = b.technical_data.resistance_level || 0;
+            break;
+          case 'sector':
+            aValue = a.sector;
+            bValue = b.sector;
+            break;
+          default:
+            aValue = a.confidence_score;
+            bValue = b.confidence_score;
+        }
 
-      switch (sortField) {
-        case 'symbol':
-          aValue = a.symbol;
-          bValue = b.symbol;
-          break;
-        case 'current_price':
-          aValue = a.current_price;
-          bValue = b.current_price;
-          break;
-        case 'change_percent':
-          aValue = a.change_percent;
-          bValue = b.change_percent;
-          break;
-        case 'entry_price':
-          aValue = a.trading_recommendation?.entry_price || 0;
-          bValue = b.trading_recommendation?.entry_price || 0;
-          break;
-        case 'stop_loss':
-          aValue = a.trading_recommendation?.stop_loss || 0;
-          bValue = b.trading_recommendation?.stop_loss || 0;
-          break;
-        case 'target_price':
-          aValue = a.trading_recommendation?.target_price || 0;
-          bValue = b.trading_recommendation?.target_price || 0;
-          break;
-        case 'action':
-          aValue = a.trading_recommendation?.action || 'WAIT';
-          bValue = b.trading_recommendation?.action || 'WAIT';
-          break;
-        case 'risk_reward_ratio':
-          aValue = a.trading_recommendation?.risk_reward_ratio || 0;
-          bValue = b.trading_recommendation?.risk_reward_ratio || 0;
-          break;
-        case 'position_size_percent':
-          aValue = a.trading_recommendation?.position_size_percent || 0;
-          bValue = b.trading_recommendation?.position_size_percent || 0;
-          break;
-        case 'breakout_type':
-          aValue = a.breakout_type;
-          bValue = b.breakout_type;
-          break;
-        case 'confidence_score':
-          aValue = a.confidence_score;
-          bValue = b.confidence_score;
-          break;
-        case 'risk_level':
-          aValue = a.risk_assessment?.risk_level || 'Medium';
-          bValue = b.risk_assessment?.risk_level || 'Medium';
-          break;
-        case 'rsi':
-          aValue = a.technical_data.rsi || 0;
-          bValue = b.technical_data.rsi || 0;
-          break;
-        case 'support_level':
-          aValue = a.technical_data.support_level || 0;
-          bValue = b.technical_data.support_level || 0;
-          break;
-        case 'resistance_level':
-          aValue = a.technical_data.resistance_level || 0;
-          bValue = b.technical_data.resistance_level || 0;
-          break;
-        case 'sector':
-          aValue = a.sector;
-          bValue = b.sector;
-          break;
-        default:
-          aValue = a.confidence_score;
-          bValue = b.confidence_score;
-      }
+        // Handle string vs number comparison
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          return sortDirection === 'asc' 
+            ? aValue.localeCompare(bValue)
+            : bValue.localeCompare(aValue);
+        }
 
-      // Handle string vs number comparison
-      if (typeof aValue === 'string' && typeof bValue === 'string') {
-        return sortDirection === 'asc' 
-          ? aValue.localeCompare(bValue)
-          : bValue.localeCompare(aValue);
-      }
-
-      return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
-    });
-  }, [breakoutStocks, searchTerm, sortField, sortDirection]);
+        return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
+      });
+    }
+  }, [breakoutStocks, searchTerm, sortConfig, sortField, sortDirection, applySorting]);
 
   // Get sort icon
   const getSortIcon = (field) => {
