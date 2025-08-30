@@ -353,20 +353,7 @@ const Dashboard = () => {
     });
   };
 
-  const getSortIcon = (field) => {
-    const fieldConfig = sortConfig.find(config => config.field === field);
-    if (!fieldConfig) return null;
-    
-    const sortIndex = sortConfig.findIndex(config => config.field === field);
-    const priority = sortConfig.length > 1 ? sortIndex + 1 : null;
-    
-    return (
-      <span className="ml-1 inline-flex items-center">
-        {fieldConfig.direction === 'asc' ? '↑' : '↓'}
-        {priority && <span className="text-xs ml-1 bg-blue-500 text-white rounded-full w-4 h-4 flex items-center justify-center">{priority}</span>}
-      </span>
-    );
-  };
+
 
   // Sort the filtered stocks
   const sortedBreakoutStocks = React.useMemo(() => {
