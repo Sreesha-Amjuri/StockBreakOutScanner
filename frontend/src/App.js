@@ -727,10 +727,15 @@ const Dashboard = () => {
         {/* Breakout Stocks Table */}
         <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <TrendingUp className="w-5 h-5 text-emerald-600" />
-              <span>Breakout Opportunities</span>
-              {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <TrendingUp className="w-5 h-5 text-emerald-600" />
+                <span>Breakout Opportunities</span>
+                {loading && <RefreshCw className="w-4 h-4 animate-spin" />}
+              </div>
+              <div className="text-sm text-slate-600 font-normal">
+                💡 Click column headers to sort • Hold Shift for multi-column sorting
+              </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
