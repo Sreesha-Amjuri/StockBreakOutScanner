@@ -456,6 +456,119 @@ NSE_SYMBOLS = {
     "BSE": "Finance", "BUTTERFLY": "Durables", "BYKE": "Hotels"
 }
 
+def is_cache_valid(cache_entry: Dict) -> bool:
+    """Check if cache entry is still valid"""
+    if not cache_entry:
+        return False
+    
+    cache_time = cache_entry.get('timestamp', 0)
+    current_time = time.time()
+    
+    return (current_time - cache_time) < (CACHE_EXPIRY_MINUTES * 60)
+
+def get_cached_stock_data(symbol: str) -> Optional[Dict]:
+    """Get cached stock data if valid"""
+    cache_key = f"stock_{symbol}"
+    cache_entry = STOCK_DATA_CACHE.get(cache_key)
+    
+    if is_cache_valid(cache_entry):
+        logger.info(f"Using cached data for {symbol}")
+        return cache_entry['data']
+    
+    return None
+
+def cache_stock_data(symbol: str, data: Dict) -> None:
+    """Cache stock data with timestamp"""
+    cache_key = f"stock_{symbol}"
+    STOCK_DATA_CACHE[cache_key] = {
+        'data': data,
+        'timestamp': time.time()
+    }
+
+async def fetch_stock_data_batch(symbols: List[str]) -> List[Optional[Dict]]:
+    """Fetch stock data for a batch of symbols with caching and rate limiting"""
+    results = []
+    
+    for symbol in symbols:
+        try:
+            # Check cache first
+            cached_data = get_cached_stock_data(symbol)
+            if cached_data:
+                results.append(cached_data)
+                continue
+            
+            # Fetch fresh data
+            stock_data = await fetch_comprehensive_stock_data(symbol)
+            
+            if stock_data:
+                cache_stock_data(symbol, stock_data)
+                results.append(stock_data)
+            else:
+                results.append(None)
+            
+            # Add small delay to prevent rate limiting
+            await asyncio.sleep(0.1)  # 100ms delay between API calls
+            
+        except Exception as e:
+            logger.error(f"Error fetching data for {symbol} in batch: {str(e)}")
+            results.append(None)
+    
+    return results
+
+def get_symbols_by_priority() -> List[str]:
+    """Get NSE symbols ordered by priority (large cap first, then mid/small cap)"""
+    # Define priority order: NIFTY 50 first, then Next 50, then rest
+    nifty_50 = [
+        "ADANIENT", "ADANIPORTS", "APOLLOHOSP", "ASIANPAINT", "AXISBANK", "BAJAJ-AUTO",
+        "BAJAJFINSV", "BAJFINANCE", "BHARTIARTL", "BPCL", "BRITANNIA", "CIPLA", "COALINDIA",
+        "DIVISLAB", "DRREDDY", "EICHERMOT", "GRASIM", "HCLTECH", "HDFCBANK", "HDFCLIFE",
+        "HEROMOTOCO", "HINDALCO", "HINDUNILVR", "ICICIBANK", "INDUSINDBK", "INFOSYS", "IOC",
+        "ITC", "JSWSTEEL", "KOTAKBANK", "LT", "M&M", "MARUTI", "NESTLEIND", "NTPC", "ONGC",
+        "POWERGRID", "RELIANCE", "SBILIFE", "SBIN", "SHREECEM", "SUNPHARMA", "TATACONSUM",
+        "TATAMOTORS", "TATASTEEL", "TCS", "TECHM", "TITAN", "ULTRACEMCO", "UPL", "WIPRO"
+    ]
+    
+    nifty_next_50 = [
+        "ABB", "ABCAPITAL", "ABFRL", "ACC", "ADANIGREEN", "ALKEM", "AMBUJACEM", "APOLLOTYRE",
+        "ASHOKLEY", "AUROPHARMA", "BALKRISIND", "BANDHANBNK", "BANKBARODA", "BATAINDIA",
+        "BERGEPAINT", "BIOCON", "BOSCHLTD", "CANFINHOME", "CHOLAFIN", "COLPAL", "CONCOR",
+        "COROMANDEL", "DABUR", "DEEPAKNTR", "DIVI", "DLF", "ESCORTS", "EXIDEIND", "FEDERALBNK",
+        "GAIL", "GLAND", "GODREJCP", "GODREJPROP", "HAVELLS", "HDFCAMC", "HINDPETRO", "HONAUT",
+        "IBULHSGFIN", "IDFCFIRSTB", "IEX", "IGL", "INDHOTEL", "INDUSTOWER", "INTELLECT",
+        "JINDALSTEL", "JKCEMENT", "JUBLFOOD", "LALPATHLAB", "LICHSGFIN", "LTIM", "LTTS", "LUPIN"
+    ]
+    
+    # Get all symbols and prioritize
+    all_symbols = list(NSE_SYMBOLS.keys())
+    priority_symbols = []
+    
+    # Add NIFTY 50 first
+    priority_symbols.extend([s for s in nifty_50 if s in all_symbols])
+    
+    # Add NIFTY Next 50
+    priority_symbols.extend([s for s in nifty_next_50 if s in all_symbols and s not in priority_symbols])
+    
+    # Add remaining symbols
+    remaining_symbols = [s for s in all_symbols if s not in priority_symbols]
+    priority_symbols.extend(remaining_symbols)
+    
+    return priority_symbols
+
+def clear_old_cache_entries():
+    """Clear expired cache entries to manage memory"""
+    current_time = time.time()
+    expired_keys = []
+    
+    for key, entry in STOCK_DATA_CACHE.items():
+        if (current_time - entry.get('timestamp', 0)) > (CACHE_EXPIRY_MINUTES * 60):
+            expired_keys.append(key)
+    
+    for key in expired_keys:
+        del STOCK_DATA_CACHE[key]
+    
+    if expired_keys:
+        logger.info(f"Cleared {len(expired_keys)} expired cache entries")
+
 def calculate_advanced_technical_indicators(df: pd.DataFrame) -> Dict[str, Any]:
     """Calculate comprehensive technical indicators"""
     try:
