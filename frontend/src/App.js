@@ -21,23 +21,22 @@ const API = `${BACKEND_URL}/api`;
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  // Existing state
   const [breakoutStocks, setBreakoutStocks] = useState([]);
-  const [marketOverview, setMarketOverview] = useState(null);
   const [watchlist, setWatchlist] = useState([]);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
-  
-  // Filters
-  const [searchTerm, setSearchTerm] = useState('');
+  const [sectors, setSectors] = useState([]);
+  const [marketOverview, setMarketOverview] = useState(null);
+
+  // Filter states
   const [selectedSector, setSelectedSector] = useState('All');
   const [minConfidence, setMinConfidence] = useState(0.5);
-  const [riskFilter, setRiskFilter] = useState('All');
-  
-  // Sorting
-  const [sortField, setSortField] = useState('confidence_score');
-  const [sortDirection, setSortDirection] = useState('desc');
-  
-  const [sectors, setSectors] = useState([]);
+  const [selectedRiskLevel, setSelectedRiskLevel] = useState('All');
+
+  // Advanced sorting state
+  const [sortConfig, setSortConfig] = useState([]);
+  const [sortDirection, setSortDirection] = useState({}); // Track direction per column
 
   const fetchMarketOverview = async () => {
     try {
