@@ -101,8 +101,12 @@ class EnhancedNSECoverageTester:
             
             # Verify sector distribution
             sectors = set()
-            for symbol, sector in symbols_with_sectors.items():
-                sectors.add(sector)
+            if isinstance(symbols_with_sectors, dict):
+                for symbol, sector in symbols_with_sectors.items():
+                    sectors.add(sector)
+            else:
+                # Handle case where symbols_with_sectors might be a different structure
+                sectors = set(data.get('sector_distribution', {}).keys())
             
             sector_count = len(sectors)
             expected_sectors = ['IT', 'Banking', 'Pharma', 'Auto', 'Energy', 'FMCG', 'Metals', 'Cement']
