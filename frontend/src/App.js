@@ -1247,6 +1247,61 @@ const Dashboard = () => {
                               {stock.technical_data.rsi ? stock.technical_data.rsi.toFixed(1) : '-'}
                             </span>
                           </TableCell>
+                          
+                          {/* MACD Signal */}
+                          <TableCell>
+                            <span className={`text-xs font-medium px-2 py-1 rounded ${
+                              stock.technical_data.macd_histogram > 0 ? 'bg-emerald-100 text-emerald-700' : 
+                              stock.technical_data.macd_histogram < 0 ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {stock.technical_data.macd_histogram ? 
+                                (stock.technical_data.macd_histogram > 0 ? 'BUY' : 'SELL') : 'NEUTRAL'}
+                            </span>
+                          </TableCell>
+                          
+                          {/* Bollinger Bands Position */}
+                          <TableCell>
+                            <span className={`text-xs font-medium ${
+                              stock.current_price > stock.technical_data.bollinger_upper ? 'text-red-600' :
+                              stock.current_price < stock.technical_data.bollinger_lower ? 'text-emerald-600' : 'text-slate-600'
+                            }`}>
+                              {stock.technical_data.bollinger_upper && stock.technical_data.bollinger_lower ? (
+                                stock.current_price > stock.technical_data.bollinger_upper ? 'UPPER' :
+                                stock.current_price < stock.technical_data.bollinger_lower ? 'LOWER' : 'MIDDLE'
+                              ) : '-'}
+                            </span>
+                          </TableCell>
+                          
+                          {/* Stochastic %K */}
+                          <TableCell>
+                            <span className={`font-medium ${
+                              stock.technical_data.stochastic_k > 80 ? 'text-red-600' : 
+                              stock.technical_data.stochastic_k < 20 ? 'text-emerald-600' : 'text-slate-600'
+                            }`}>
+                              {stock.technical_data.stochastic_k ? stock.technical_data.stochastic_k.toFixed(1) : '-'}
+                            </span>
+                          </TableCell>
+                          
+                          {/* VWAP Position */}
+                          <TableCell>
+                            <span className={`text-xs font-medium px-2 py-1 rounded ${
+                              stock.current_price > stock.technical_data.vwap ? 'bg-emerald-100 text-emerald-700' : 
+                              stock.current_price < stock.technical_data.vwap ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {stock.technical_data.vwap ? 
+                                (stock.current_price > stock.technical_data.vwap ? 'ABOVE' : 'BELOW') : '-'}
+                            </span>
+                          </TableCell>
+                          
+                          {/* ATR (Volatility) */}
+                          <TableCell>
+                            <span className={`font-medium text-xs ${
+                              stock.technical_data.atr > stock.current_price * 0.03 ? 'text-orange-600' : 'text-slate-600'
+                            }`}>
+                              {stock.technical_data.atr ? 
+                                `₹${stock.technical_data.atr.toFixed(2)}` : '-'}
+                            </span>
+                          </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="text-xs">
                               {stock.sector}
