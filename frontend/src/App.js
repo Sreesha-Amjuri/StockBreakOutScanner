@@ -262,6 +262,22 @@ const Dashboard = () => {
         return stock.risk_assessment?.risk_level || '';
       case 'rsi':
         return parseFloat(stock.technical_data?.rsi) || 0;
+      case 'macd':
+        return parseFloat(stock.technical_data?.macd_histogram) || 0;
+      case 'bollinger_position':
+        const price = parseFloat(stock.current_price) || 0;
+        const upper = parseFloat(stock.technical_data?.bollinger_upper) || 0;
+        const lower = parseFloat(stock.technical_data?.bollinger_lower) || 0;
+        if (!upper || !lower) return 0;
+        return price > upper ? 1 : price < lower ? -1 : 0;
+      case 'stochastic':
+        return parseFloat(stock.technical_data?.stochastic_k) || 0;
+      case 'vwap_position':
+        const currentPrice = parseFloat(stock.current_price) || 0;
+        const vwap = parseFloat(stock.technical_data?.vwap) || 0;
+        return vwap ? (currentPrice - vwap) : 0;
+      case 'atr':
+        return parseFloat(stock.technical_data?.atr) || 0;
       case 'sector':
         return stock.sector || '';
       default:
