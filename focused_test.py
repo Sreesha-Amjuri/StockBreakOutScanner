@@ -293,8 +293,9 @@ class FocusedStockBreakoutTester:
                                                  params={"sector": sector, "limit": "100"}, timeout=45)
             
             if success:
-                total_scanned = data.get('total_scanned', 0)
-                breakouts_found = data.get('breakouts_found', 0)
+                scan_stats = data.get('scan_statistics', {})
+                total_scanned = scan_stats.get('total_scanned', 0)
+                breakouts_found = len(data.get('breakout_stocks', []))
                 
                 # Verify sector filtering is working (should scan some stocks in each major sector)
                 sector_has_stocks = total_scanned > 0
