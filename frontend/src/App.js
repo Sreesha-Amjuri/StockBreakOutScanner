@@ -291,7 +291,212 @@ const Dashboard = () => {
     }
   }, [breakoutStocks, searchTerm, selectedSector, selectedRiskLevel, sortConfig, sortField, sortDirection, applySorting]);
 
-  const formatPrice = (price) => {
+  const fetchSectors = async () => {
+    try {
+      const response = await axios.get(`${API}/stocks/symbols`);
+      setSectors(['All', ...response.data.sectors]);
+    } catch (error) {
+      console.error('Error fetching sectors:', error);
+    }
+  };
+
+  const scanBreakouts = async () => {
+    if (loading) {
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      toast.info("Scanning stocks for breakout opportunities...");
+      
+      const params = new URLSearchParams({
+        min_confidence: minConfidence.toString(),
+        limit: '100'  // Increased to scan 100 stocks (NIFTY 100)
+      });
+      
+      if (selectedSector !== 'All') {
+        params.append('sector', selectedSector);
+      }
+      
+      if (selectedRiskLevel !== 'All') {
+        params.append('risk_level', selectedRiskLevel);
+      }
+      
+      console.log('Requesting breakout scan with params:', params.toString());
+      
+      const response = await axios.get(`${API}/stocks/breakouts/scan`, {
+        params: Object.fromEntries(params),
+        timeout: 120000 // 2 minute timeout
+      });
+      
+      if (response.data && response.data.breakout_stocks) {
+        setBreakoutStocks(response.data.breakout_stocks);
+        setLastUpdated(new Date().toLocaleTimeString());
+        
+        const count = response.data.breakout_stocks.length;
+        if (count > 0) {
+          toast.success(`Found ${count} breakout opportunities!`);
+        } else {
+          toast.info("No breakout opportunities found with current filters.");
+        }
+      }
+    } catch (error) {
+      console.error('Error scanning breakouts:', error);
+      if (error.code === 'ECONNABORTED') {
+        toast.error('Request timeout. The scan is taking longer than expected.');
+      } else if (error.response?.status === 404) {
+        toast.error('API endpoint not found. Please check the backend is running.');
+      } else if (error.response?.status >= 500) {
+        toast.error('Server error. Please try again later.');
+      } else {
+        toast.error('Error scanning breakouts. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addToWatchlist = async (symbol) => {
+    try {
+      await axios.post(`${API}/watchlist`, null, { 
+        params: { symbol }
+      });
+      
+      // Refresh watchlist
+      const response = await axios.get(`${API}/watchlist`);
+      setWatchlist(response.data.watchlist);
+      
+      toast.success(`${symbol} added to watchlist`);
+    } catch (error) {
+      console.error('Error adding to watchlist:', error);
+      if (error.response?.data?.detail?.includes('already in watchlist')) {
+        toast.warning(`${symbol} is already in your watchlist`);
+      } else {
+        toast.error('Error adding to watchlist');
+      }
+    }
+  };
+
+  const removeFromWatchlist = async (symbol) => {
+    try {
+      await axios.delete(`${API}/watchlist/${symbol}`);
+      
+      // Refresh watchlist
+      const response = await axios.get(`${API}/watchlist`);
+      setWatchlist(response.data.watchlist);
+      
+      toast.success(`${symbol} removed from watchlist`);
+    } catch (error) {
+      console.error('Error removing from watchlist:', error);
+      toast.error('Error removing from watchlist');
+    }
+  };
+
+  // Advanced sorting functions
+  const handleSort = (field, event) => {
+    // Check if Shift key is held for multi-column sorting
+    const isMultiSort = event?.shiftKey;
+    
+    let newSortConfig = [...sortConfig];
+    let newSortDirection = { ...sortDirection };
+    
+    if (isMultiSort) {
+      // Multi-column sorting
+      const existingIndex = newSortConfig.findIndex(config => config.field === field);
+      
+      if (existingIndex >= 0) {
+        // Field already in sort config - cycle through directions
+        const currentDirection = newSortConfig[existingIndex].direction;
+        if (currentDirection === 'asc') {
+          newSortConfig[existingIndex].direction = 'desc';
+          newSortDirection[field] = 'desc';
+        } else if (currentDirection === 'desc') {
+          // Remove from sort config
+          newSortConfig.splice(existingIndex, 1);
+          delete newSortDirection[field];
+        }
+      } else {
+        // Add new field to sort config
+        newSortConfig.push({ field, direction: 'asc' });
+        newSortDirection[field] = 'asc';
+      }
+    } else {
+      // Single column sorting (replace existing)
+      const currentDirection = sortDirection[field];
+      const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+      
+      newSortConfig = [{ field, direction: newDirection }];
+      newSortDirection = { [field]: newDirection };
+      
+      // Update legacy sort states for backward compatibility
+      setSortField(field);
+      setSortDirection(newDirection);
+    }
+    
+    setSortConfig(newSortConfig);
+    setSortDirection(newSortDirection);
+  };
+
+  const getSortValue = (stock, field) => {
+    switch (field) {
+      case 'symbol':
+        return stock.symbol;
+      case 'current_price':
+        return parseFloat(stock.current_price) || 0;
+      case 'change_percent':
+        return parseFloat(stock.change_percent) || 0;
+      case 'entry_price':
+        return parseFloat(stock.trading_recommendation?.entry_price) || 0;
+      case 'stop_loss':
+        return parseFloat(stock.trading_recommendation?.stop_loss) || 0;
+      case 'target_price':
+        return parseFloat(stock.trading_recommendation?.target_price) || 0;
+      case 'action':
+        return stock.trading_recommendation?.action || '';
+      case 'risk_reward_ratio':
+        return parseFloat(stock.trading_recommendation?.risk_reward_ratio) || 0;
+      case 'position_size':
+        return parseFloat(stock.trading_recommendation?.position_size_percent) || 0;
+      case 'breakout_type':
+        return stock.breakout_type || '';
+      case 'confidence_score':
+        return parseFloat(stock.confidence_score) || 0;
+      case 'risk_level':
+        return stock.risk_assessment?.risk_level || '';
+      case 'rsi':
+        return parseFloat(stock.technical_data?.rsi) || 0;
+      case 'sector':
+        return stock.sector || '';
+      default:
+        return '';
+    }
+  };
+
+  const applySorting = (stocks) => {
+    if (sortConfig.length === 0) {
+      return stocks;
+    }
+
+    return [...stocks].sort((a, b) => {
+      for (const { field, direction } of sortConfig) {
+        const aValue = getSortValue(a, field);
+        const bValue = getSortValue(b, field);
+        
+        let comparison = 0;
+        
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          comparison = aValue.localeCompare(bValue);
+        } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+          comparison = aValue - bValue;
+        }
+        
+        if (comparison !== 0) {
+          return direction === 'asc' ? comparison : -comparison;
+        }
+      }
+      return 0;
+    });
+  };
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
