@@ -161,9 +161,9 @@ class FocusedStockBreakoutTester:
                                                  params={"limit": str(limit)}, timeout=60)
             
             if success:
-                total_scanned = data.get('total_scanned', 0)
-                breakouts_found = data.get('breakouts_found', 0)
                 scan_stats = data.get('scan_statistics', {})
+                total_scanned = scan_stats.get('total_scanned', 0)
+                breakouts_found = len(data.get('breakout_stocks', []))
                 scan_time = scan_stats.get('scan_time_seconds', 0)
                 
                 # Performance expectations
