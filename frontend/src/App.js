@@ -78,6 +78,53 @@ const Dashboard = () => {
     }
   };
 
+  // Enhanced watchlist with detailed stock data
+  const fetchEnhancedWatchlist = async () => {
+    if (watchlist.length === 0) return;
+    
+    setWatchlistLoading(true);
+    try {
+      const promises = watchlist.map(async (item) => {
+        try {
+          const response = await axios.get(`${API}/stocks/${item.symbol}`);
+          return {
+            ...item,
+            ...response.data,
+            lastUpdated: new Date()
+          };
+        } catch (error) {
+          console.error(`Error fetching data for ${item.symbol}:`, error);
+          return { ...item, error: true };
+        }
+      });
+      
+      const enhancedData = await Promise.all(promises);
+      setWatchlistData(enhancedData);
+    } catch (error) {
+      console.error('Error fetching enhanced watchlist:', error);
+    } finally {
+      setWatchlistLoading(false);
+    }
+  };
+
+  // Auto-refresh watchlist data
+  useEffect(() => {
+    if (autoRefresh && watchlist.length > 0) {
+      fetchEnhancedWatchlist();
+      const interval = setInterval(fetchEnhancedWatchlist, refreshInterval * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [autoRefresh, refreshInterval, watchlist.length]);
+
+  // Fetch enhanced data when watchlist changes
+  useEffect(() => {
+    if (watchlist.length > 0) {
+      fetchEnhancedWatchlist();
+    } else {
+      setWatchlistData([]);
+    }
+  }, [watchlist]);
+
   const fetchSectors = async () => {
     try {
       const response = await axios.get(`${API}/stocks/symbols`);
