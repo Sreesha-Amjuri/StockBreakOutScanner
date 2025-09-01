@@ -878,7 +878,7 @@ const Dashboard = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredBreakoutStocks.map((stock, index) => {
+                    {processedBreakoutStocks.map((stock, index) => {
                       const trading = stock.trading_recommendation;
                       return (
                         <TableRow key={index} className="hover:bg-slate-50/50">
