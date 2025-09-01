@@ -74,8 +74,10 @@ class FocusedStockBreakoutTester:
         success, data = self.test_api_endpoint("NSE Symbols Coverage", "GET", "stocks/symbols")
         
         if success:
-            total_symbols = data.get('count', 0)
-            sectors = data.get('sectors', [])
+            symbols = data.get('symbols', [])
+            symbols_with_sectors = data.get('symbols_with_sectors', {})
+            total_symbols = len(symbols)
+            sectors = list(set(symbols_with_sectors.values())) if symbols_with_sectors else []
             
             # Test coverage requirements
             full_coverage = total_symbols >= 594
@@ -88,7 +90,6 @@ class FocusedStockBreakoutTester:
                         f"Found {len(sectors)} sectors (required: 35+)")
             
             # Test specific expected symbols
-            symbols = data.get('symbols', [])
             expected_symbols = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFOSYS', 'HINDUNILVR']
             found_symbols = [s for s in expected_symbols if s in symbols]
             
