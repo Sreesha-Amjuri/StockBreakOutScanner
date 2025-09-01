@@ -552,6 +552,403 @@ class StockBreakoutAPITester:
         
         return success1 and success2 and success3
 
+    def test_full_nse_coverage_scanning(self):
+        """Test Full NSE Coverage - scan ALL NSE stocks (600+) as requested"""
+        print("\n🔍 FULL NSE COVERAGE TESTING")
+        print("-" * 40)
+        
+        # Test 1: Scan with limit=600 to get ALL NSE stocks
+        success1, data1 = self.test_api_endpoint("Full NSE Scan - 600 stocks", "GET", "stocks/breakouts/scan", 
+                                                params={"limit": "600"}, timeout=120)
+        
+        if success1:
+            total_scanned = data1.get('total_scanned', 0)
+            breakouts_found = data1.get('breakouts_found', 0)
+            scan_stats = data1.get('scan_statistics', {})
+            
+            # Verify we're scanning 594+ stocks (as mentioned in requirements)
+            full_coverage = total_scanned >= 594
+            self.log_test("Full NSE Coverage", full_coverage, 
+                        f"Scanned {total_scanned} stocks (expected 594+)")
+            
+            # Test scan statistics
+            if scan_stats:
+                sectors_scanned = scan_stats.get('sectors_scanned', 0)
+                self.log_test("Sector Coverage", sectors_scanned >= 35, 
+                            f"Scanned {sectors_scanned} sectors")
+        
+        # Test 2: Test with different sector filters to ensure full coverage works
+        test_sectors = ['IT', 'Banking', 'Pharma', 'Auto', 'Energy']
+        sector_results = {}
+        
+        for sector in test_sectors:
+            success, data = self.test_api_endpoint(f"Full Coverage - {sector} Sector", "GET", "stocks/breakouts/scan", 
+                                                 params={"limit": "600", "sector": sector}, timeout=90)
+            if success:
+                sector_results[sector] = data.get('breakouts_found', 0)
+                total_in_sector = data.get('total_scanned', 0)
+                self.log_test(f"{sector} Sector Full Scan", True, 
+                            f"Found {sector_results[sector]} breakouts from {total_in_sector} {sector} stocks")
+        
+        # Test 3: Performance with large dataset
+        success3, data3 = self.test_api_endpoint("Performance - Large Dataset", "GET", "stocks/breakouts/scan", 
+                                                params={"limit": "500"}, timeout=100)
+        
+        if success3:
+            scan_time = data3.get('scan_statistics', {}).get('scan_time_seconds', 0)
+            if scan_time > 0:
+                self.log_test("Large Dataset Performance", scan_time < 120, 
+                            f"Scan completed in {scan_time:.2f} seconds (should be < 120s)")
+        
+        return success1
+
+    def test_enhanced_technical_indicators(self):
+        """Test all enhanced technical indicators as requested"""
+        print("\n📈 ENHANCED TECHNICAL INDICATORS TESTING")
+        print("-" * 45)
+        
+        # Test symbols with various market conditions
+        test_symbols = ['RELIANCE', 'TCS', 'MPHASIS', 'HDFCLIFE', 'HINDUNILVR']
+        
+        for symbol in test_symbols:
+            success, data = self.test_api_endpoint(f"Enhanced Indicators - {symbol}", "GET", f"stocks/{symbol}")
+            
+            if success:
+                technical_data = data.get('technical_indicators', {})
+                current_price = data.get('current_price', 0)
+                
+                # Test all required indicators from the review request
+                required_indicators = {
+                    'rsi': 'RSI',
+                    'macd': 'MACD',
+                    'macd_signal': 'MACD Signal',
+                    'macd_histogram': 'MACD Histogram',
+                    'bollinger_upper': 'Bollinger Upper',
+                    'bollinger_middle': 'Bollinger Middle', 
+                    'bollinger_lower': 'Bollinger Lower',
+                    'stochastic_k': 'Stochastic %K',
+                    'stochastic_d': 'Stochastic %D',
+                    'vwap': 'VWAP',
+                    'atr': 'ATR',
+                    'support_level': 'Support Level',
+                    'resistance_level': 'Resistance Level'
+                }
+                
+                missing_indicators = []
+                present_indicators = []
+                
+                for key, name in required_indicators.items():
+                    value = technical_data.get(key)
+                    if value is not None:
+                        present_indicators.append(name)
+                        
+                        # Validate indicator values are reasonable
+                        if key == 'rsi' and not (0 <= value <= 100):
+                            self.log_test(f"{symbol} RSI Range", False, f"RSI {value} outside 0-100 range")
+                        elif key in ['bollinger_upper', 'bollinger_middle', 'bollinger_lower', 'support_level', 'resistance_level', 'vwap'] and current_price > 0:
+                            # Price-based indicators should be within reasonable range of current price
+                            ratio = value / current_price
+                            if not (0.5 <= ratio <= 2.0):
+                                self.log_test(f"{symbol} {name} Range", False, f"{name} {value} seems unreasonable vs price {current_price}")
+                        elif key in ['stochastic_k', 'stochastic_d'] and not (0 <= value <= 100):
+                            self.log_test(f"{symbol} {name} Range", False, f"{name} {value} outside 0-100 range")
+                    else:
+                        missing_indicators.append(name)
+                
+                # Log results
+                coverage_rate = len(present_indicators) / len(required_indicators) * 100
+                self.log_test(f"{symbol} Indicator Coverage", coverage_rate >= 80, 
+                            f"{len(present_indicators)}/{len(required_indicators)} indicators present ({coverage_rate:.1f}%)")
+                
+                if missing_indicators:
+                    self.log_test(f"{symbol} Missing Indicators", False, f"Missing: {', '.join(missing_indicators)}")
+                
+                # Test MACD components consistency
+                macd = technical_data.get('macd')
+                macd_signal = technical_data.get('macd_signal')
+                macd_histogram = technical_data.get('macd_histogram')
+                
+                if all(x is not None for x in [macd, macd_signal, macd_histogram]):
+                    expected_histogram = macd - macd_signal
+                    histogram_accurate = abs(macd_histogram - expected_histogram) < 0.01
+                    self.log_test(f"{symbol} MACD Consistency", histogram_accurate, 
+                                f"MACD: {macd:.3f}, Signal: {macd_signal:.3f}, Histogram: {macd_histogram:.3f}")
+                
+                # Test Bollinger Bands consistency
+                bb_upper = technical_data.get('bollinger_upper')
+                bb_middle = technical_data.get('bollinger_middle')
+                bb_lower = technical_data.get('bollinger_lower')
+                
+                if all(x is not None for x in [bb_upper, bb_middle, bb_lower]):
+                    bands_ordered = bb_lower < bb_middle < bb_upper
+                    self.log_test(f"{symbol} Bollinger Bands Order", bands_ordered, 
+                                f"Lower: {bb_lower:.2f}, Middle: {bb_middle:.2f}, Upper: {bb_upper:.2f}")
+        
+        return True
+
+    def test_enhanced_watchlist_backend(self):
+        """Test enhanced watchlist backend with full technical analysis"""
+        print("\n⭐ ENHANCED WATCHLIST BACKEND TESTING")
+        print("-" * 42)
+        
+        # Test adding multiple stocks to watchlist
+        test_symbols = ['RELIANCE', 'TCS', 'MPHASIS']
+        
+        # Clear watchlist first
+        self.test_api_endpoint("Clear Watchlist", "GET", "watchlist")
+        
+        # Add stocks to watchlist
+        for symbol in test_symbols:
+            success, data = self.test_api_endpoint(f"Add to Watchlist - {symbol}", "POST", "watchlist", 
+                                                 params={"symbol": symbol})
+            if success:
+                self.log_test(f"Watchlist Add - {symbol}", True, f"Added {symbol} to watchlist")
+        
+        # Get watchlist with full technical analysis
+        success, watchlist_data = self.test_api_endpoint("Enhanced Watchlist - Full Data", "GET", "watchlist")
+        
+        if success:
+            watchlist_items = watchlist_data.get('watchlist', [])
+            
+            # Test that watchlist includes full technical analysis for each stock
+            for item in watchlist_items:
+                symbol = item.get('symbol')
+                
+                # Check if technical data is included
+                if 'technical_indicators' in item:
+                    technical_data = item['technical_indicators']
+                    
+                    # Verify key indicators are present
+                    key_indicators = ['rsi', 'macd', 'bollinger_upper', 'bollinger_lower', 'vwap']
+                    present_indicators = [ind for ind in key_indicators if technical_data.get(ind) is not None]
+                    
+                    coverage = len(present_indicators) / len(key_indicators) * 100
+                    self.log_test(f"Watchlist Technical Data - {symbol}", coverage >= 60, 
+                                f"Technical coverage: {coverage:.1f}% ({len(present_indicators)}/{len(key_indicators)} indicators)")
+                else:
+                    # Test individual stock endpoint to verify technical data is available
+                    stock_success, stock_data = self.test_api_endpoint(f"Watchlist Stock Data - {symbol}", "GET", f"stocks/{symbol}")
+                    if stock_success and 'technical_indicators' in stock_data:
+                        self.log_test(f"Watchlist Technical Access - {symbol}", True, 
+                                    "Technical data available via individual endpoint")
+        
+        # Test multiple stocks in watchlist simultaneously
+        if len(test_symbols) > 1:
+            self.log_test("Multiple Stocks Watchlist", len(watchlist_items) >= 2, 
+                        f"Watchlist contains {len(watchlist_items)} stocks")
+        
+        # Clean up - remove test stocks
+        for symbol in test_symbols:
+            self.test_api_endpoint(f"Remove from Watchlist - {symbol}", "DELETE", f"watchlist/{symbol}")
+        
+        return success
+
+    def test_performance_and_scaling(self):
+        """Test backend performance with increased load (600 vs 100 stocks)"""
+        print("\n⚡ PERFORMANCE & SCALING TESTING")
+        print("-" * 35)
+        
+        # Test 1: Compare performance between different limits
+        performance_tests = [
+            {"limit": 100, "name": "Standard Load"},
+            {"limit": 300, "name": "Medium Load"}, 
+            {"limit": 600, "name": "Full Load"}
+        ]
+        
+        performance_results = {}
+        
+        for test in performance_tests:
+            limit = test["limit"]
+            name = test["name"]
+            
+            success, data = self.test_api_endpoint(f"Performance - {name} ({limit} stocks)", "GET", "stocks/breakouts/scan", 
+                                                 params={"limit": str(limit)}, timeout=150)
+            
+            if success:
+                scan_stats = data.get('scan_statistics', {})
+                scan_time = scan_stats.get('scan_time_seconds', 0)
+                total_scanned = data.get('total_scanned', 0)
+                
+                if scan_time > 0:
+                    stocks_per_second = total_scanned / scan_time
+                    performance_results[limit] = {
+                        'time': scan_time,
+                        'stocks': total_scanned,
+                        'rate': stocks_per_second
+                    }
+                    
+                    # Performance benchmarks
+                    acceptable_time = limit * 0.2  # 0.2 seconds per stock max
+                    performance_good = scan_time <= acceptable_time
+                    
+                    self.log_test(f"Performance Benchmark - {name}", performance_good, 
+                                f"{total_scanned} stocks in {scan_time:.2f}s ({stocks_per_second:.1f} stocks/sec)")
+        
+        # Test 2: Caching system effectiveness
+        if 100 in performance_results:
+            # First call (cold cache)
+            success1, data1 = self.test_api_endpoint("Cache Test - Cold", "GET", "stocks/breakouts/scan", 
+                                                   params={"limit": "100"}, timeout=60)
+            
+            # Second call (warm cache)
+            success2, data2 = self.test_api_endpoint("Cache Test - Warm", "GET", "stocks/breakouts/scan", 
+                                                   params={"limit": "100"}, timeout=60)
+            
+            if success1 and success2:
+                time1 = data1.get('scan_statistics', {}).get('scan_time_seconds', 0)
+                time2 = data2.get('scan_statistics', {}).get('scan_time_seconds', 0)
+                
+                if time1 > 0 and time2 > 0:
+                    cache_improvement = (time1 - time2) / time1 * 100
+                    cache_effective = cache_improvement > 10  # At least 10% improvement
+                    
+                    self.log_test("Caching System Effectiveness", cache_effective, 
+                                f"Cache improved performance by {cache_improvement:.1f}% ({time1:.2f}s → {time2:.2f}s)")
+        
+        # Test 3: Concurrent requests stability
+        import threading
+        import time
+        
+        concurrent_results = []
+        
+        def concurrent_request():
+            try:
+                success, data = self.test_api_endpoint("Concurrent Request", "GET", "stocks/breakouts/scan", 
+                                                     params={"limit": "50"}, timeout=30)
+                concurrent_results.append(success)
+            except:
+                concurrent_results.append(False)
+        
+        # Launch 3 concurrent requests
+        threads = []
+        for i in range(3):
+            thread = threading.Thread(target=concurrent_request)
+            threads.append(thread)
+            thread.start()
+        
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join()
+        
+        concurrent_success_rate = sum(concurrent_results) / len(concurrent_results) * 100
+        self.log_test("Concurrent Request Stability", concurrent_success_rate >= 80, 
+                    f"{sum(concurrent_results)}/{len(concurrent_results)} concurrent requests succeeded ({concurrent_success_rate:.1f}%)")
+        
+        return True
+
+    def test_data_quality_comprehensive(self):
+        """Test data quality - verify all technical indicators have reasonable values"""
+        print("\n🔍 COMPREHENSIVE DATA QUALITY TESTING")
+        print("-" * 42)
+        
+        # Test a diverse set of stocks across different sectors and market caps
+        test_symbols = ['RELIANCE', 'TCS', 'MPHASIS', 'HDFCLIFE', 'HINDUNILVR', 'BAJFINANCE', 'ASIANPAINT']
+        
+        quality_scores = []
+        
+        for symbol in test_symbols:
+            success, data = self.test_api_endpoint(f"Data Quality - {symbol}", "GET", f"stocks/{symbol}")
+            
+            if success:
+                symbol_quality_score = 0
+                max_possible_score = 0
+                
+                # Test 1: Basic data completeness
+                basic_fields = ['current_price', 'change_percent', 'volume', 'symbol', 'name']
+                basic_complete = all(data.get(field) is not None for field in basic_fields)
+                if basic_complete:
+                    symbol_quality_score += 20
+                max_possible_score += 20
+                
+                # Test 2: Technical indicators quality
+                technical_data = data.get('technical_indicators', {})
+                if technical_data:
+                    # RSI quality (should be 0-100)
+                    rsi = technical_data.get('rsi')
+                    if rsi is not None and 0 <= rsi <= 100:
+                        symbol_quality_score += 10
+                    max_possible_score += 10
+                    
+                    # Moving averages quality (should be reasonable vs current price)
+                    current_price = data.get('current_price', 0)
+                    sma_20 = technical_data.get('sma_20')
+                    if sma_20 and current_price > 0:
+                        ratio = sma_20 / current_price
+                        if 0.7 <= ratio <= 1.3:  # Within 30% of current price
+                            symbol_quality_score += 10
+                    max_possible_score += 10
+                    
+                    # Bollinger Bands quality (proper ordering)
+                    bb_upper = technical_data.get('bollinger_upper')
+                    bb_middle = technical_data.get('bollinger_middle')
+                    bb_lower = technical_data.get('bollinger_lower')
+                    if all(x is not None for x in [bb_upper, bb_middle, bb_lower]):
+                        if bb_lower < bb_middle < bb_upper:
+                            symbol_quality_score += 10
+                    max_possible_score += 10
+                    
+                    # VWAP quality (should be reasonable vs current price)
+                    vwap = technical_data.get('vwap')
+                    if vwap and current_price > 0:
+                        vwap_ratio = vwap / current_price
+                        if 0.8 <= vwap_ratio <= 1.2:  # Within 20% of current price
+                            symbol_quality_score += 10
+                    max_possible_score += 10
+                    
+                    # Stochastic quality (should be 0-100)
+                    stoch_k = technical_data.get('stochastic_k')
+                    stoch_d = technical_data.get('stochastic_d')
+                    if stoch_k is not None and 0 <= stoch_k <= 100:
+                        symbol_quality_score += 5
+                    if stoch_d is not None and 0 <= stoch_d <= 100:
+                        symbol_quality_score += 5
+                    max_possible_score += 10
+                
+                # Test 3: No null/undefined values in critical fields
+                critical_fields = ['current_price', 'change_percent', 'volume']
+                no_nulls = all(data.get(field) is not None and str(data.get(field)) != 'null' for field in critical_fields)
+                if no_nulls:
+                    symbol_quality_score += 20
+                max_possible_score += 20
+                
+                # Test 4: Trading recommendation quality (if present)
+                trading_rec = data.get('trading_recommendation')
+                if trading_rec:
+                    entry_price = trading_rec.get('entry_price', 0)
+                    stop_loss = trading_rec.get('stop_loss', 0)
+                    target_price = trading_rec.get('target_price', 0)
+                    
+                    # Logical consistency: stop < entry < target
+                    if stop_loss > 0 and entry_price > 0 and target_price > 0:
+                        if stop_loss < entry_price < target_price:
+                            symbol_quality_score += 10
+                max_possible_score += 10
+                
+                # Calculate quality percentage
+                quality_percentage = (symbol_quality_score / max_possible_score * 100) if max_possible_score > 0 else 0
+                quality_scores.append(quality_percentage)
+                
+                # Quality assessment
+                if quality_percentage >= 90:
+                    quality_level = "Excellent"
+                elif quality_percentage >= 75:
+                    quality_level = "Good"
+                elif quality_percentage >= 60:
+                    quality_level = "Fair"
+                else:
+                    quality_level = "Poor"
+                
+                self.log_test(f"Data Quality Score - {symbol}", quality_percentage >= 75, 
+                            f"{quality_percentage:.1f}% ({quality_level}) - {symbol_quality_score}/{max_possible_score} points")
+        
+        # Overall data quality assessment
+        if quality_scores:
+            avg_quality = sum(quality_scores) / len(quality_scores)
+            self.log_test("Overall Data Quality", avg_quality >= 75, 
+                        f"Average quality score: {avg_quality:.1f}% across {len(quality_scores)} stocks")
+        
+        return True
+
     def test_trading_recommendations_in_breakouts(self, breakout_stocks):
         """Test trading recommendations structure in breakout results"""
         stocks_with_recommendations = 0
