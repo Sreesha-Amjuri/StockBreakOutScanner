@@ -1156,7 +1156,16 @@ class StockBreakoutAPITester:
         print("-" * 30)
         self.test_error_handling()
         
-        # NEW: Comprehensive Data Validation Tests
+        # NEW: Enhanced StockBreak Pro Testing (as per review request)
+        print("\n🚀 ENHANCED STOCKBREAK PRO TESTING")
+        print("-" * 50)
+        self.test_full_nse_coverage_scanning()
+        self.test_enhanced_technical_indicators()
+        self.test_enhanced_watchlist_backend()
+        self.test_performance_and_scaling()
+        self.test_data_quality_comprehensive()
+        
+        # Original comprehensive data validation tests
         print("\n🔍 COMPREHENSIVE DATA VALIDATION TESTING")
         print("-" * 50)
         self.test_comprehensive_data_validation()
