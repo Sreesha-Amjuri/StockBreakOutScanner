@@ -75,9 +75,16 @@ class FocusedStockBreakoutTester:
         
         if success:
             symbols = data.get('symbols', [])
-            symbols_with_sectors = data.get('symbols_with_sectors', {})
+            symbols_with_sectors = data.get('symbols_with_sectors', [])
             total_symbols = len(symbols)
-            sectors = list(set(symbols_with_sectors.values())) if symbols_with_sectors else []
+            
+            # Extract unique sectors from symbols_with_sectors array
+            sectors = []
+            if isinstance(symbols_with_sectors, list):
+                for item in symbols_with_sectors:
+                    if isinstance(item, dict) and 'sector' in item:
+                        sectors.append(item['sector'])
+            sectors = list(set(sectors))
             
             # Test coverage requirements
             full_coverage = total_symbols >= 594
