@@ -743,7 +743,7 @@ const Dashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {filteredBreakoutStocks.length > 0 ? (
+            {processedBreakoutStocks.length > 0 ? (
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
