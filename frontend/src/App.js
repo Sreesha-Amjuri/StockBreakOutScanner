@@ -712,6 +712,199 @@ const Dashboard = () => {
           </Card>
         </div>
 
+        {/* Professional Watchlist - Zerodha/Upstox Style */}
+        {watchlist.length > 0 && (
+          <Card className="bg-white/60 backdrop-blur-sm border-slate-200 mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Heart className="w-5 h-5 text-purple-600" />
+                  <span>Professional Watchlist ({watchlist.length} stocks)</span>
+                  {watchlistLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    size="sm"
+                    variant={autoRefresh ? "default" : "outline"}
+                    onClick={() => setAutoRefresh(!autoRefresh)}
+                    className="text-xs"
+                  >
+                    Auto Refresh {autoRefresh ? 'ON' : 'OFF'}
+                  </Button>
+                  <Select value={watchlistView} onValueChange={setWatchlistView}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="compact">Compact</SelectItem>
+                      <SelectItem value="detailed">Detailed</SelectItem>
+                      <SelectItem value="chart">Chart View</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {watchlistView === 'compact' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {watchlistData.map((stock, index) => (
+                    <div key={stock.symbol || index} className="border rounded-lg p-4 hover:bg-slate-50 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h3 className="font-semibold text-slate-900">{stock.symbol}</h3>
+                          <p className="text-sm text-slate-600">{stock.sector || 'N/A'}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => removeFromWatchlist(stock.symbol)}
+                          className="text-xs"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      
+                      {stock.current_price && (
+                        <div className="mt-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg font-bold">₹{parseFloat(stock.current_price).toFixed(2)}</span>
+                            <span className={`text-sm px-2 py-1 rounded ${
+                              parseFloat(stock.change_percent || 0) >= 0 
+                                ? 'bg-emerald-100 text-emerald-700' 
+                                : 'bg-red-100 text-red-700'
+                            }`}>
+                              {parseFloat(stock.change_percent || 0) >= 0 ? '+' : ''}{parseFloat(stock.change_percent || 0).toFixed(2)}%
+                            </span>
+                          </div>
+                          
+                          {stock.technical_data && (
+                            <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
+                              <div>RSI: <span className={`font-medium ${
+                                stock.technical_data.rsi > 70 ? 'text-red-600' : 
+                                stock.technical_data.rsi < 30 ? 'text-emerald-600' : 'text-slate-600'
+                              }`}>
+                                {stock.technical_data.rsi ? stock.technical_data.rsi.toFixed(1) : 'N/A'}
+                              </span></div>
+                              <div>Vol: <span className={`font-medium ${
+                                stock.technical_data.volume_ratio > 1.5 ? 'text-orange-600' : 'text-slate-600'
+                              }`}>
+                                {stock.technical_data.volume_ratio ? (stock.technical_data.volume_ratio * 100).toFixed(0) + '%' : 'N/A'}
+                              </span></div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {watchlistView === 'detailed' && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Symbol</TableHead>
+                      <TableHead>Price</TableHead>
+                      <TableHead>Change</TableHead>
+                      <TableHead>RSI</TableHead>
+                      <TableHead>MACD</TableHead>
+                      <TableHead>Volume</TableHead>
+                      <TableHead>Support</TableHead>
+                      <TableHead>Resistance</TableHead>
+                      <TableHead>Action</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {watchlistData.map((stock, index) => (
+                      <TableRow key={stock.symbol || index}>
+                        <TableCell className="font-medium">{stock.symbol}</TableCell>
+                        <TableCell>
+                          {stock.current_price ? `₹${parseFloat(stock.current_price).toFixed(2)}` : 'Loading...'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={parseFloat(stock.change_percent || 0) >= 0 ? 'default' : 'destructive'}>
+                            {parseFloat(stock.change_percent || 0) >= 0 ? '+' : ''}{parseFloat(stock.change_percent || 0).toFixed(2)}%
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`font-medium ${
+                            stock.technical_data?.rsi > 70 ? 'text-red-600' : 
+                            stock.technical_data?.rsi < 30 ? 'text-emerald-600' : 'text-slate-600'
+                          }`}>
+                            {stock.technical_data?.rsi ? stock.technical_data.rsi.toFixed(1) : 'N/A'}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`font-medium text-xs ${
+                            stock.technical_data?.macd_histogram > 0 ? 'text-emerald-600' : 'text-red-600'
+                          }`}>
+                            {stock.technical_data?.macd_histogram ? 
+                              (stock.technical_data.macd_histogram > 0 ? 'BUY' : 'SELL') : 'N/A'}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`font-medium ${
+                            stock.technical_data?.volume_ratio > 1.5 ? 'text-orange-600' : 'text-slate-600'
+                          }`}>
+                            {stock.technical_data?.volume_ratio ? 
+                              (stock.technical_data.volume_ratio * 100).toFixed(0) + '%' : 'N/A'}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {stock.technical_data?.support_level ? 
+                            `₹${stock.technical_data.support_level.toFixed(2)}` : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {stock.technical_data?.resistance_level ? 
+                            `₹${stock.technical_data.resistance_level.toFixed(2)}` : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            stock.trading_recommendation?.action === 'BUY' ? 'default' : 
+                            stock.trading_recommendation?.action === 'SELL' ? 'destructive' : 'secondary'
+                          }>
+                            {stock.trading_recommendation?.action || 'HOLD'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex space-x-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => navigate(`/stock/${stock.symbol}`)}
+                              className="text-xs"
+                            >
+                              <Eye className="w-3 h-3 mr-1" />
+                              View
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => removeFromWatchlist(stock.symbol)}
+                              className="text-xs"
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+
+              {watchlistView === 'chart' && (
+                <div className="text-center py-8">
+                  <BarChart3 className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                  <p className="text-slate-600">Chart view coming soon!</p>
+                  <p className="text-sm text-slate-500">Interactive charts with technical analysis</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Filters */}
         <Card className="bg-white/60 backdrop-blur-sm border-slate-200 mb-8">
           <CardHeader>
