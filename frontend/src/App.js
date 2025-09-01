@@ -29,11 +29,15 @@ const Dashboard = () => {
   const [sectors, setSectors] = useState([]);
   const [marketOverview, setMarketOverview] = useState(null);
 
-  // Filter states
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSector, setSelectedSector] = useState('All');
-  const [minConfidence, setMinConfidence] = useState(0.5);
-  const [selectedRiskLevel, setSelectedRiskLevel] = useState('All');
+  // Enhanced watchlist state for professional features
+  const [watchlistView, setWatchlistView] = useState('compact'); // 'compact', 'detailed', 'chart'
+  const [watchlistData, setWatchlistData] = useState([]);
+  const [watchlistLoading, setWatchlistLoading] = useState(false);
+
+  // Professional trading features state
+  const [selectedWatchlistStock, setSelectedWatchlistStock] = useState(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshInterval, setRefreshInterval] = useState(30); // seconds
 
   // Advanced sorting state
   const [sortConfig, setSortConfig] = useState([]);
