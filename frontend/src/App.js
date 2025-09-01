@@ -85,11 +85,11 @@ const Dashboard = () => {
     
     setLoading(true);
     try {
-      toast.info("Scanning stocks for breakout opportunities...");
+      toast.info("Scanning ALL NSE stocks for breakout opportunities...");
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
-        limit: '100'  // Increased to scan 100 stocks (NIFTY 100)
+        limit: '600'  // Scan ALL NSE stocks (594+ available)
       });
       
       if (selectedSector !== 'All') {
@@ -100,25 +100,28 @@ const Dashboard = () => {
         params.append('risk_level', selectedRiskLevel);
       }
       
-      console.log('Requesting breakout scan with params:', params.toString());
+      console.log('Requesting FULL NSE breakout scan with params:', params.toString());
       
       const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`, {
-        timeout: 60000 // 60 second timeout
+        timeout: 180000 // 3 minute timeout for full scan
       });
       
-      console.log('Breakout scan response:', response.data);
-      console.log('Number of breakouts found:', response.data.breakouts_found);
-      console.log('Breakout stocks array length:', response.data.breakout_stocks?.length);
+      console.log('Full NSE scan response:', response.data);
+      console.log('Total stocks scanned:', response.data.scan_statistics?.total_scanned);
+      console.log('Breakouts found:', response.data.breakouts_found);
       
       if (response.data && Array.isArray(response.data.breakout_stocks)) {
         setBreakoutStocks(response.data.breakout_stocks);
         setLastUpdated(new Date().toLocaleTimeString());
         
         const count = response.data.breakout_stocks.length;
+        const scanned = response.data.scan_statistics?.total_scanned || 'Unknown';
+        
         if (count > 0) {
-          toast.success(`Found ${count} breakout opportunities!`);
+          toast.success(`Found ${count} breakout opportunities from ${scanned} stocks scanned!`);
         } else {
-          toast.info("No breakout opportunities found at current settings");
+          toast.info(`No breakout opportunities found from ${scanned} stocks scanned with current filters`);
+        }
         }
       } else {
         console.error('Invalid response structure:', response.data);
