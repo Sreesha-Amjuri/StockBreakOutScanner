@@ -497,6 +497,8 @@ const Dashboard = () => {
       return 0;
     });
   };
+
+  const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
