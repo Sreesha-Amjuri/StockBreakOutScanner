@@ -122,7 +122,6 @@ const Dashboard = () => {
         } else {
           toast.info(`No breakout opportunities found from ${scanned} stocks scanned with current filters`);
         }
-        }
       } else {
         console.error('Invalid response structure:', response.data);
         toast.error("Invalid response from server");
