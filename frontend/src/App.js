@@ -1116,6 +1116,51 @@ const Dashboard = () => {
                       </TableHead>
                       <TableHead 
                         className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('macd', e)}
+                      >
+                        <div className="flex items-center">
+                          MACD
+                          {getSortIcon('macd')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('bollinger_position', e)}
+                      >
+                        <div className="flex items-center">
+                          Bollinger
+                          {getSortIcon('bollinger_position')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('stochastic', e)}
+                      >
+                        <div className="flex items-center">
+                          Stoch %K
+                          {getSortIcon('stochastic')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('vwap_position', e)}
+                      >
+                        <div className="flex items-center">
+                          VWAP
+                          {getSortIcon('vwap_position')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        onClick={(e) => handleSort('atr', e)}
+                      >
+                        <div className="flex items-center">
+                          ATR
+                          {getSortIcon('atr')}
+                        </div>
+                      </TableHead>
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
                         onClick={(e) => handleSort('sector', e)}
                       >
                         <div className="flex items-center">
