@@ -251,7 +251,10 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Search Functionality Fix"
+    - "Table Sorting Fix"
+    - "Search and Sort Integration"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
