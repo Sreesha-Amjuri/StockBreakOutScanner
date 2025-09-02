@@ -255,7 +255,161 @@ const Dashboard = () => {
     }
   };
 
-  // Helper functions for sorting - defined before useMemo
+  // Advanced professional functions
+  const exportToExcel = () => {
+    const csvContent = [
+      ['Symbol', 'Current Price', 'Change %', 'Entry Price', 'Stop Loss', 'Target', 'Action', 'Risk:Reward', 'RSI', 'MACD', 'Sector'],
+      ...processedBreakoutStocks.map(stock => [
+        stock.symbol,
+        stock.current_price,
+        stock.change_percent,
+        stock.trading_recommendation?.entry_price || '',
+        stock.trading_recommendation?.stop_loss || '',
+        stock.trading_recommendation?.target_price || '',
+        stock.trading_recommendation?.action || '',
+        stock.trading_recommendation?.risk_reward_ratio || '',
+        stock.technical_data?.rsi || '',
+        stock.technical_data?.macd_histogram > 0 ? 'BUY' : 'SELL',
+        stock.sector
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `stockbreak_analysis_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    toast.success('Analysis exported to CSV successfully!');
+  };
+
+  const generatePDFReport = () => {
+    const reportContent = `
+      StockBreak Pro - Market Analysis Report
+      Generated: ${new Date().toLocaleString()}
+      
+      SUMMARY:
+      - Total Stocks Scanned: ${systemStats.totalScans || processedBreakoutStocks.length}
+      - Breakout Opportunities: ${processedBreakoutStocks.length}
+      - Market Sentiment: ${marketOverview?.market_sentiment || 'Neutral'}
+      - Watchlist Size: ${watchlist.length}
+      
+      TOP BREAKOUT OPPORTUNITIES:
+      ${processedBreakoutStocks.slice(0, 10).map((stock, idx) => 
+        `${idx + 1}. ${stock.symbol} - ₹${stock.current_price} (${stock.change_percent}%) - ${stock.trading_recommendation?.action || 'HOLD'}`
+      ).join('\n')}
+      
+      DISCLAIMER: This analysis is for educational purposes only.
+    `;
+    
+    const blob = new Blob([reportContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `stockbreak_report_${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    toast.success('PDF report generated successfully!');
+  };
+
+  const addPriceAlert = async (symbol, targetPrice, alertType = 'above') => {
+    try {
+      const newAlert = {
+        id: Date.now(),
+        symbol: symbol.toUpperCase(),
+        targetPrice: parseFloat(targetPrice),
+        alertType, // 'above' or 'below'
+        createdAt: new Date(),
+        triggered: false
+      };
+      
+      setPriceAlerts(prev => [...prev, newAlert]);
+      toast.success(`Price alert set for ${symbol} at ₹${targetPrice}`);
+    } catch (error) {
+      toast.error('Error setting price alert');
+    }
+  };
+
+  const checkPriceAlerts = () => {
+    processedBreakoutStocks.forEach(stock => {
+      const currentPrice = parseFloat(stock.current_price);
+      
+      priceAlerts.forEach(alert => {
+        if (alert.symbol === stock.symbol && !alert.triggered) {
+          const shouldTrigger = (alert.alertType === 'above' && currentPrice >= alert.targetPrice) ||
+                               (alert.alertType === 'below' && currentPrice <= alert.targetPrice);
+          
+          if (shouldTrigger) {
+            toast.success(`🚨 PRICE ALERT: ${stock.symbol} reached ₹${currentPrice}!`, {
+              duration: 10000,
+              action: {
+                label: 'View Stock',
+                onClick: () => navigate(`/stock/${stock.symbol}`)
+              }
+            });
+            
+            // Mark alert as triggered
+            setPriceAlerts(prev => 
+              prev.map(a => a.id === alert.id ? { ...a, triggered: true } : a)
+            );
+          }
+        }
+      });
+    });
+  };
+
+  // Auto-scanning functionality
+  useEffect(() => {
+    if (autoScanEnabled) {
+      const interval = setInterval(() => {
+        console.log('Auto-scanning triggered');
+        scanBreakouts();
+      }, autoScanInterval * 1000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [autoScanEnabled, autoScanInterval]);
+
+  // Price alerts checking
+  useEffect(() => {
+    if (processedBreakoutStocks.length > 0 && priceAlerts.length > 0) {
+      checkPriceAlerts();
+    }
+  }, [processedBreakoutStocks, priceAlerts]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if (e.ctrlKey) {
+        switch (e.key) {
+          case 'r':
+            e.preventDefault();
+            scanBreakouts();
+            break;
+          case 'e':
+            e.preventDefault();
+            exportToExcel();
+            break;
+          case 'd':
+            e.preventDefault();
+            setDarkMode(!darkMode);
+            break;
+          default:
+            break;
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [darkMode]);
   const getSortValue = (stock, field) => {
     switch (field) {
       case 'symbol':
