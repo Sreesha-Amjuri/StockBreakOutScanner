@@ -17,7 +17,10 @@ import { toast } from "sonner";
 import StockDetails from "./components/StockDetails";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+
+// Fallback to localhost if environment variable is not set
+const API_BASE = BACKEND_URL || 'http://localhost:8001';
+const API = `${API_BASE}/api`;
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -88,7 +91,7 @@ const Dashboard = () => {
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
-        limit: '100'  // Increased to scan 100 stocks (NIFTY 100)
+        limit: '200'  // Increased to scan 200 stocks (expanded NSE coverage)
       });
       
       if (selectedSector !== 'All') {
@@ -102,7 +105,7 @@ const Dashboard = () => {
       console.log('Requesting breakout scan with params:', params.toString());
       
       const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`, {
-        timeout: 60000 // 60 second timeout
+        timeout: 120000 // 120 second timeout for expanded scanning
       });
       
       console.log('Breakout scan response:', response.data);
@@ -114,10 +117,11 @@ const Dashboard = () => {
         setLastUpdated(new Date().toLocaleTimeString());
         
         const count = response.data.breakout_stocks.length;
+        const scanned = response.data.total_scanned || 0;
         if (count > 0) {
-          toast.success(`Found ${count} breakout opportunities!`);
+          toast.success(`Found ${count} breakout opportunities from ${scanned} stocks!`);
         } else {
-          toast.info("No breakout opportunities found at current settings");
+          toast.info(`No breakout opportunities found from ${scanned} stocks scanned`);
         }
       } else {
         console.error('Invalid response structure:', response.data);
@@ -129,7 +133,7 @@ const Dashboard = () => {
       console.error('Error response:', error.response?.data);
       
       if (error.code === 'ECONNABORTED') {
-        toast.error("Request timeout - server is taking too long");
+        toast.error("Request timeout - scanning large stock universe takes time");
       } else {
         toast.error(`Failed to scan for breakouts: ${error.message}`);
       }
@@ -482,7 +486,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-600 mb-1">Stocks Scanned</p>
-                  <p className="text-2xl font-bold text-slate-900">100</p>
+                  <p className="text-2xl font-bold text-slate-900">200+</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                   <BarChart3 className="w-6 h-6 text-blue-600" />
