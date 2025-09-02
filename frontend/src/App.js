@@ -40,10 +40,27 @@ const Dashboard = () => {
   const [watchlistData, setWatchlistData] = useState([]);
   const [watchlistLoading, setWatchlistLoading] = useState(false);
 
-  // Professional trading features state
-  const [selectedWatchlistStock, setSelectedWatchlistStock] = useState(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(30); // seconds
+  // Enhanced professional features state
+  const [darkMode, setDarkMode] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [alerts, setAlerts] = useState([]);
+  const [portfolio, setPortfolio] = useState([]);
+  const [newsData, setNewsData] = useState([]);
+  
+  // Advanced settings
+  const [autoScanEnabled, setAutoScanEnabled] = useState(false);
+  const [autoScanInterval, setAutoScanInterval] = useState(300); // 5 minutes
+  const [priceAlerts, setPriceAlerts] = useState([]);
+  const [exportFormat, setExportFormat] = useState('excel');
+
+  // Performance tracking
+  const [scanHistory, setScanHistory] = useState([]);
+  const [systemStats, setSystemStats] = useState({
+    totalScans: 0,
+    successfulBreakouts: 0,
+    totalProfit: 0,
+    winRate: 0
+  });
 
   // Advanced sorting state
   const [sortConfig, setSortConfig] = useState([]);
