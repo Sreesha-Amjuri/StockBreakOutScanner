@@ -513,6 +513,16 @@ echo $REACT_APP_BACKEND_URL
 # Clear browser cache and reload
 ```
 
+**Issue**: npm install fails with "Could not read package.json"
+```bash
+# The npm install command must be run from the frontend directory
+cd frontend
+npm install
+
+# Or use the root-level script to install all dependencies
+npm run install-all
+```
+
 **Issue**: Charts not loading
 ```bash
 # Check if chart data endpoint works
