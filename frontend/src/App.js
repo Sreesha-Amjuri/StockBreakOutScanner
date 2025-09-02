@@ -824,6 +824,134 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
+        
+        {/* Advanced Professional Control Panel */}
+        <Card className="bg-white/60 backdrop-blur-sm border-slate-200 mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Zap className="w-5 h-5 text-blue-600" />
+                <span>Professional Trading Controls</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  size="sm"
+                  variant={darkMode ? "default" : "outline"}
+                  onClick={() => setDarkMode(!darkMode)}
+                  className="text-xs"
+                >
+                  {darkMode ? '☀️ Light' : '🌙 Dark'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={autoScanEnabled ? "default" : "outline"}
+                  onClick={() => setAutoScanEnabled(!autoScanEnabled)}
+                  className="text-xs"
+                >
+                  Auto-Scan {autoScanEnabled ? 'ON' : 'OFF'}
+                </Button>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Quick Actions */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Quick Actions</label>
+                <div className="space-y-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={exportToExcel}
+                    className="w-full text-xs"
+                  >
+                    📊 Export Excel
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    onClick={generatePDFReport}
+                    className="w-full text-xs"
+                  >
+                    📄 PDF Report
+                  </Button>
+                </div>
+              </div>
+
+              {/* Auto-Scan Settings */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Auto-Scan Interval</label>
+                <Select 
+                  value={autoScanInterval.toString()} 
+                  onValueChange={(v) => setAutoScanInterval(parseInt(v))}
+                  disabled={!autoScanEnabled}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="60">1 Minute</SelectItem>
+                    <SelectItem value="300">5 Minutes</SelectItem>
+                    <SelectItem value="600">10 Minutes</SelectItem>
+                    <SelectItem value="1800">30 Minutes</SelectItem>
+                    <SelectItem value="3600">1 Hour</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* System Statistics */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">System Stats</label>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-slate-50 p-2 rounded">
+                    <div className="font-medium text-emerald-600">{processedBreakoutStocks.length}</div>
+                    <div className="text-slate-600">Active Signals</div>
+                  </div>
+                  <div className="bg-slate-50 p-2 rounded">
+                    <div className="font-medium text-blue-600">{priceAlerts.filter(a => !a.triggered).length}</div>
+                    <div className="text-slate-600">Price Alerts</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Keyboard Shortcuts */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Shortcuts</label>
+                <div className="text-xs space-y-1">
+                  <div>Ctrl+R: Refresh Scan</div>
+                  <div>Ctrl+E: Export Data</div>
+                  <div>Ctrl+D: Toggle Theme</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Price Alerts Panel */}
+            {priceAlerts.length > 0 && (
+              <div className="mt-4 p-4 bg-slate-50 rounded-lg">
+                <h4 className="font-medium text-slate-700 mb-2">Active Price Alerts ({priceAlerts.filter(a => !a.triggered).length})</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  {priceAlerts.filter(a => !a.triggered).slice(0, 6).map(alert => (
+                    <div key={alert.id} className="flex items-center justify-between bg-white p-2 rounded text-xs">
+                      <span className="font-medium">{alert.symbol}</span>
+                      <span className="text-slate-600">
+                        {alert.alertType === 'above' ? '↗️' : '↘️'} ₹{alert.targetPrice}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setPriceAlerts(prev => prev.filter(a => a.id !== alert.id))}
+                        className="text-xs p-1 h-6 w-6"
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
