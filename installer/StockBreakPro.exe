@@ -1,0 +1,67 @@
+@echo off
+title StockBreak Pro - Professional Stock Analysis Platform
+color 0A
+
+REM Set installation directory
+set "APP_DIR=%~dp0"
+cd /d "%APP_DIR%"
+
+echo.
+echo ========================================
+echo     StockBreak Pro v2.0
+echo   Professional Stock Analysis Platform
+echo ========================================
+echo.
+echo [1/4] Starting MongoDB service...
+
+REM Start MongoDB if not running
+tasklist /FI "IMAGENAME eq mongod.exe" 2>NUL | find /I /N "mongod.exe">NUL
+if "%ERRORLEVEL%"=="0" (
+    echo [✓] MongoDB already running
+) else (
+    echo Starting MongoDB...
+    start "" /B "C:\Program Files\MongoDB\Server\7.0\bin\mongod.exe" --dbpath "C:\data\db" --logpath "C:\data\db\mongodb.log"
+    timeout /t 5 >nul
+    echo [✓] MongoDB started
+)
+
+echo.
+echo [2/4] Starting backend services...
+cd /d "%APP_DIR%\backend"
+start "" /B python server.py
+timeout /t 3 >nul
+echo [✓] Backend API server started on http://localhost:8001
+
+echo.
+echo [3/4] Starting frontend application...
+cd /d "%APP_DIR%\frontend"
+start "" /B npm start
+timeout /t 5 >nul
+echo [✓] Frontend started on http://localhost:3000
+
+echo.
+echo [4/4] Opening StockBreak Pro in browser...
+timeout /t 8 >nul
+start "" "http://localhost:3000"
+
+echo.
+echo ========================================
+echo    StockBreak Pro is now running!
+echo ========================================
+echo.
+echo Dashboard: http://localhost:3000
+echo API Server: http://localhost:8001
+echo.
+echo Features:
+echo [✓] Full NSE Stock Coverage (594+ stocks)
+echo [✓] Professional Watchlist Management  
+echo [✓] 13+ Technical Indicators
+echo [✓] Real-time Market Data
+echo [✓] Advanced Breakout Detection
+echo [✓] Trading Recommendations
+echo [✓] Export ^& Reporting Tools
+echo.
+echo Press Ctrl+C to stop all services
+echo or simply close this window
+echo.
+pause
