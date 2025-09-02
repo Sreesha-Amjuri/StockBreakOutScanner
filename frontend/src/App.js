@@ -40,6 +40,11 @@ const Dashboard = () => {
   const [watchlistData, setWatchlistData] = useState([]);
   const [watchlistLoading, setWatchlistLoading] = useState(false);
 
+  // Professional trading features state
+  const [selectedWatchlistStock, setSelectedWatchlistStock] = useState(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
+  const [refreshInterval, setRefreshInterval] = useState(30); // seconds
+  
   // Enhanced professional features state
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState([]);
