@@ -21,10 +21,24 @@ import json
 import requests_cache
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+import time
+import random
 
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
+
+# Enhanced rate limiting and retry configuration
+MAX_RETRIES = 5
+INITIAL_WAIT = 0.5  # Start with 500ms
+MAX_WAIT = 30       # Cap at 30 seconds
+BATCH_DELAY = 0.2   # 200ms between requests in batch
+RATE_LIMIT_BACKOFF = True
+
+# Rate limiting counters
+request_count = 0
+last_request_time = time.time()
+requests_per_minute = 0
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
