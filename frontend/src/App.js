@@ -453,69 +453,6 @@ const Dashboard = () => {
     setSortDirection(newSortDirection);
   };
 
-  const getSortValue = (stock, field) => {
-    switch (field) {
-      case 'symbol':
-        return stock.symbol;
-      case 'current_price':
-        return parseFloat(stock.current_price) || 0;
-      case 'change_percent':
-        return parseFloat(stock.change_percent) || 0;
-      case 'entry_price':
-        return parseFloat(stock.trading_recommendation?.entry_price) || 0;
-      case 'stop_loss':
-        return parseFloat(stock.trading_recommendation?.stop_loss) || 0;
-      case 'target_price':
-        return parseFloat(stock.trading_recommendation?.target_price) || 0;
-      case 'action':
-        return stock.trading_recommendation?.action || '';
-      case 'risk_reward_ratio':
-        return parseFloat(stock.trading_recommendation?.risk_reward_ratio) || 0;
-      case 'position_size':
-        return parseFloat(stock.trading_recommendation?.position_size_percent) || 0;
-      case 'breakout_type':
-        return stock.breakout_type || '';
-      case 'confidence_score':
-        return parseFloat(stock.confidence_score) || 0;
-      case 'risk_level':
-        return stock.risk_assessment?.risk_level || '';
-      case 'rsi':
-        return parseFloat(stock.technical_data?.rsi) || 0;
-      case 'sector':
-        return stock.sector || '';
-      default:
-        return '';
-    }
-  };
-
-  const applySorting = (stocks) => {
-    if (sortConfig.length === 0) {
-      return stocks;
-    }
-
-    return [...stocks].sort((a, b) => {
-      for (const { field, direction } of sortConfig) {
-        const aValue = getSortValue(a, field);
-        const bValue = getSortValue(b, field);
-        
-        let comparison = 0;
-        
-        if (typeof aValue === 'string' && typeof bValue === 'string') {
-          comparison = aValue.localeCompare(bValue);
-        } else if (typeof aValue === 'number' && typeof bValue === 'number') {
-          comparison = aValue - bValue;
-        }
-        
-        if (comparison !== 0) {
-          return direction === 'asc' ? comparison : -comparison;
-        }
-      }
-      return 0;
-    });
-  };
-
-
-
 
 
   // Get sort icon
