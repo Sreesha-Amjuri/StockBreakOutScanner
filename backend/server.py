@@ -499,6 +499,60 @@ def cache_stock_data(symbol: str, data: Dict) -> None:
         'timestamp': time.time()
     }
 
+async def rate_limited_request(func, *args, **kwargs):
+    """Enhanced rate limiting with exponential backoff and jitter"""
+    global request_count, last_request_time, requests_per_minute
+    
+    current_time = time.time()
+    
+    # Reset counter every minute
+    if current_time - last_request_time > 60:
+        requests_per_minute = 0
+        last_request_time = current_time
+    
+    # Check if we're hitting rate limits (conservative: 30 requests per minute)
+    if requests_per_minute >= 30:
+        wait_time = 60 - (current_time - last_request_time)
+        if wait_time > 0:
+            logger.warning(f"Rate limit reached, waiting {wait_time:.1f} seconds")
+            await asyncio.sleep(wait_time)
+            requests_per_minute = 0
+            last_request_time = time.time()
+    
+    # Add base delay between requests
+    await asyncio.sleep(BATCH_DELAY)
+    
+    # Attempt request with exponential backoff
+    for attempt in range(MAX_RETRIES):
+        try:
+            requests_per_minute += 1
+            result = await func(*args, **kwargs)
+            return result
+        except Exception as e:
+            if attempt == MAX_RETRIES - 1:
+                raise e
+            
+            # Calculate exponential backoff with jitter
+            wait_time = min(INITIAL_WAIT * (2 ** attempt), MAX_WAIT)
+            jitter = random.uniform(0, wait_time * 0.1)  # Add up to 10% jitter
+            total_wait = wait_time + jitter
+            
+            logger.warning(f"Request failed (attempt {attempt + 1}/{MAX_RETRIES}), retrying in {total_wait:.2f}s: {str(e)}")
+            await asyncio.sleep(total_wait)
+    
+    return None
+
+async def fetch_with_retry(symbol: str) -> Optional[Dict]:
+    """Fetch stock data with enhanced error handling and retry logic"""
+    async def _fetch():
+        return await fetch_comprehensive_stock_data(symbol)
+    
+    try:
+        return await rate_limited_request(_fetch)
+    except Exception as e:
+        logger.error(f"Failed to fetch data for {symbol} after {MAX_RETRIES} attempts: {str(e)}")
+        return None
+
 async def fetch_stock_data_batch(symbols: List[str]) -> List[Optional[Dict]]:
     """Fetch stock data for a batch of symbols with caching and rate limiting"""
     results = []
