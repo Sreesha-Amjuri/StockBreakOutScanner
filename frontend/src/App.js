@@ -90,7 +90,7 @@ const Dashboard = () => {
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
-        limit: '50'  // Start with 50 stocks for faster response, then increase
+        limit: '10'  // Reduced limit for testing timeout issue
       });
       
       if (selectedSector !== 'All') {
