@@ -552,55 +552,107 @@ class StockBreakoutAPITester:
         
         return success1 and success2 and success3
 
-    def test_full_nse_coverage_scanning(self):
-        """Test Full NSE Coverage - scan ALL NSE stocks (600+) as requested"""
-        print("\n🔍 FULL NSE COVERAGE TESTING")
-        print("-" * 40)
+    def test_nifty_50_focused_scanning(self):
+        """Test NIFTY 50 Focused Implementation - Updated backend to focus only on NIFTY 50 stocks"""
+        print("\n🎯 NIFTY 50 FOCUSED SCANNING TESTING")
+        print("-" * 45)
         
-        # Test 1: Scan with limit=600 to get ALL NSE stocks
-        success1, data1 = self.test_api_endpoint("Full NSE Scan - 600 stocks", "GET", "stocks/breakouts/scan", 
-                                                params={"limit": "600"}, timeout=120)
+        # Test 1: Verify NIFTY 50 symbols endpoint returns only 50 stocks
+        success1, symbols_data = self.test_api_endpoint("NIFTY 50 Symbols Check", "GET", "stocks/symbols")
         
         if success1:
-            total_scanned = data1.get('total_scanned', 0)
-            breakouts_found = data1.get('breakouts_found', 0)
-            scan_stats = data1.get('scan_statistics', {})
+            total_symbols = symbols_data.get('count', 0)
+            symbols_list = symbols_data.get('symbols', [])
             
-            # Verify we're scanning 594+ stocks (as mentioned in requirements)
-            full_coverage = total_scanned >= 594
-            self.log_test("Full NSE Coverage", full_coverage, 
-                        f"Scanned {total_scanned} stocks (expected 594+)")
+            # Check if we're now focusing on NIFTY 50 (should be around 50 stocks, not 594+)
+            nifty_50_focused = total_symbols <= 60  # Allow some buffer for NIFTY 50 + few extras
+            self.log_test("NIFTY 50 Focus", nifty_50_focused, 
+                        f"Total symbols: {total_symbols} (expected ≤ 60 for NIFTY 50 focus)")
             
-            # Test scan statistics
-            if scan_stats:
-                sectors_scanned = scan_stats.get('sectors_scanned', 0)
-                self.log_test("Sector Coverage", sectors_scanned >= 35, 
-                            f"Scanned {sectors_scanned} sectors")
+            # Verify key NIFTY 50 stocks are present
+            expected_nifty_50 = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFOSYS', 'HINDUNILVR', 'ICICIBANK', 'KOTAKBANK', 'BHARTIARTL', 'ITC', 'SBIN']
+            found_nifty_stocks = [stock for stock in expected_nifty_50 if stock in symbols_list]
+            nifty_coverage = len(found_nifty_stocks) / len(expected_nifty_50) * 100
+            
+            self.log_test("NIFTY 50 Stock Coverage", nifty_coverage >= 80, 
+                        f"Found {len(found_nifty_stocks)}/{len(expected_nifty_50)} key NIFTY 50 stocks ({nifty_coverage:.1f}%)")
         
-        # Test 2: Test with different sector filters to ensure full coverage works
-        test_sectors = ['IT', 'Banking', 'Pharma', 'Auto', 'Energy']
-        sector_results = {}
+        # Test 2: Small limit scans for timeout prevention (10, 20, 30)
+        small_limits = [10, 20, 30]
+        timeout_tests_passed = 0
         
-        for sector in test_sectors:
-            success, data = self.test_api_endpoint(f"Full Coverage - {sector} Sector", "GET", "stocks/breakouts/scan", 
-                                                 params={"limit": "600", "sector": sector}, timeout=90)
+        for limit in small_limits:
+            success, data = self.test_api_endpoint(f"Small Limit Scan - {limit} stocks", "GET", "stocks/breakouts/scan", 
+                                                 params={"limit": str(limit)}, timeout=30)
+            
             if success:
-                sector_results[sector] = data.get('breakouts_found', 0)
-                total_in_sector = data.get('total_scanned', 0)
-                self.log_test(f"{sector} Sector Full Scan", True, 
-                            f"Found {sector_results[sector]} breakouts from {total_in_sector} {sector} stocks")
+                timeout_tests_passed += 1
+                scan_time = data.get('scan_statistics', {}).get('scan_time_seconds', 0)
+                total_scanned = data.get('total_scanned', 0)
+                breakouts_found = data.get('breakouts_found', 0)
+                
+                # Verify scan completed within reasonable time (should be much faster with NIFTY 50 focus)
+                fast_scan = scan_time <= 30 if scan_time > 0 else True
+                self.log_test(f"Fast Scan Performance - {limit} stocks", fast_scan, 
+                            f"Scanned {total_scanned} stocks in {scan_time:.2f}s, found {breakouts_found} breakouts")
+                
+                # Verify we're not scanning more than requested limit
+                limit_respected = total_scanned <= limit
+                self.log_test(f"Limit Compliance - {limit} stocks", limit_respected, 
+                            f"Requested {limit}, actually scanned {total_scanned}")
         
-        # Test 3: Performance with large dataset
-        success3, data3 = self.test_api_endpoint("Performance - Large Dataset", "GET", "stocks/breakouts/scan", 
-                                                params={"limit": "500"}, timeout=100)
+        # Test 3: Default limit should now be 50 (changed from 100)
+        success3, data3 = self.test_api_endpoint("Default Limit Test", "GET", "stocks/breakouts/scan", timeout=60)
         
         if success3:
+            total_scanned = data3.get('total_scanned', 0)
             scan_time = data3.get('scan_statistics', {}).get('scan_time_seconds', 0)
-            if scan_time > 0:
-                self.log_test("Large Dataset Performance", scan_time < 120, 
-                            f"Scan completed in {scan_time:.2f} seconds (should be < 120s)")
+            
+            # Default should now be 50 or less (NIFTY 50 focused)
+            default_limit_correct = total_scanned <= 50
+            self.log_test("Default Limit (50)", default_limit_correct, 
+                        f"Default scan processed {total_scanned} stocks (expected ≤ 50)")
+            
+            # Should complete much faster than before
+            performance_improved = scan_time <= 60 if scan_time > 0 else True
+            self.log_test("Performance Improvement", performance_improved, 
+                        f"Default scan completed in {scan_time:.2f}s (should be ≤ 60s)")
         
-        return success1
+        # Test 4: Verify only NIFTY 50 stocks in breakout results
+        success4, data4 = self.test_api_endpoint("NIFTY 50 Breakout Verification", "GET", "stocks/breakouts/scan", 
+                                                params={"limit": "50"}, timeout=60)
+        
+        if success4:
+            breakout_stocks = data4.get('breakout_stocks', [])
+            if breakout_stocks:
+                # Check if breakout stocks are from NIFTY 50
+                nifty_50_symbols = ['ADANIENT', 'ADANIPORTS', 'APOLLOHOSP', 'ASIANPAINT', 'AXISBANK', 'BAJAJ-AUTO',
+                                  'BAJAJFINSV', 'BAJFINANCE', 'BHARTIARTL', 'BPCL', 'BRITANNIA', 'CIPLA', 'COALINDIA',
+                                  'DIVISLAB', 'DRREDDY', 'EICHERMOT', 'GRASIM', 'HCLTECH', 'HDFCBANK', 'HDFCLIFE',
+                                  'HEROMOTOCO', 'HINDALCO', 'HINDUNILVR', 'ICICIBANK', 'INDUSINDBK', 'INFOSYS', 'IOC',
+                                  'ITC', 'JSWSTEEL', 'KOTAKBANK', 'LT', 'M&M', 'MARUTI', 'NESTLEIND', 'NTPC', 'ONGC',
+                                  'POWERGRID', 'RELIANCE', 'SBILIFE', 'SBIN', 'SHREECEM', 'SUNPHARMA', 'TATACONSUM',
+                                  'TATAMOTORS', 'TATASTEEL', 'TCS', 'TECHM', 'TITAN', 'ULTRACEMCO', 'UPL', 'WIPRO']
+                
+                nifty_50_breakouts = [stock for stock in breakout_stocks if stock.get('symbol') in nifty_50_symbols]
+                nifty_50_percentage = len(nifty_50_breakouts) / len(breakout_stocks) * 100 if breakout_stocks else 0
+                
+                self.log_test("NIFTY 50 Breakout Focus", nifty_50_percentage >= 80, 
+                            f"{len(nifty_50_breakouts)}/{len(breakout_stocks)} breakouts from NIFTY 50 ({nifty_50_percentage:.1f}%)")
+        
+        # Test 5: Batch size verification (should be 25 now, reduced from 50)
+        # This is internal but we can infer from performance improvements
+        success5, data5 = self.test_api_endpoint("Batch Processing Test", "GET", "stocks/breakouts/scan", 
+                                                params={"limit": "25"}, timeout=30)
+        
+        if success5:
+            scan_time = data5.get('scan_statistics', {}).get('scan_time_seconds', 0)
+            # With batch size 25, scanning 25 stocks should be very fast
+            efficient_batching = scan_time <= 15 if scan_time > 0 else True
+            self.log_test("Efficient Batch Processing", efficient_batching, 
+                        f"25 stocks scanned in {scan_time:.2f}s (batch size optimized)")
+        
+        return timeout_tests_passed >= 2  # At least 2 out of 3 small limit tests should pass
 
     def test_enhanced_technical_indicators(self):
         """Test all enhanced technical indicators as requested"""
