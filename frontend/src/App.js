@@ -123,10 +123,12 @@ const Dashboard = () => {
         });
         
         const count = response.data.breakout_stocks.length;
+        const scanned = response.data.scan_statistics?.total_scanned || 0;
+        
         if (count > 0) {
-          toast.success(`Found ${count} breakout opportunities!`);
+          toast.success(`Found ${count} breakout opportunities from ${scanned} stocks scanned!`);
         } else {
-          toast.info("No breakout opportunities found at current settings");
+          toast.info(`No breakout opportunities found from ${scanned} stocks scanned with current filters`);
         }
       } else {
         console.error('Invalid response structure:', response.data);
