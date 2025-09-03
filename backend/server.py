@@ -2094,35 +2094,115 @@ async def export_analysis_data(
 
 @api_router.get("/system/health")
 async def system_health_check():
-    """Comprehensive system health check"""
+    """Enhanced comprehensive system health check with diagnostics"""
+    return await health_check_with_diagnostics()
+
+@api_router.get("/system/performance")
+async def get_system_performance():
+    """Get detailed system performance metrics"""
     try:
-        health_status = {
-            "status": "healthy",
+        return get_system_performance_metrics()
+    except Exception as e:
+        logger.error(f"Performance metrics failed: {str(e)}")
+        return {
+            "error": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
+@api_router.get("/system/cache/stats")
+async def get_cache_statistics():
+    """Get detailed cache statistics and management"""
+    try:
+        current_time = time.time()
+        cache_stats = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "services": {
-                "api_server": {"status": "running", "port": 8001},
-                "database": {"status": "connected", "collections": ["watchlist"]},
-                "cache": {"status": "active", "entries": len(STOCK_DATA_CACHE)},
-                "data_sources": {"yahoo_finance": "available"}
+            "total_entries": len(STOCK_DATA_CACHE),
+            "cache_expiry_minutes": CACHE_EXPIRY_MINUTES,
+            "entries_by_age": {
+                "fresh_0_5min": 0,
+                "recent_5_10min": 0,
+                "old_10_15min": 0,
+                "expired_15min_plus": 0
             },
-            "performance": {
-                "memory_usage": "Normal",
-                "response_time": "< 2 seconds",
-                "error_rate": "< 1%"
-            },
-            "data_quality": {
-                "stock_coverage": f"{len(NSE_SYMBOLS)} symbols",
-                "sector_coverage": f"{len(set(NSE_SYMBOLS.values()))} sectors",
-                "indicators_active": 13,
-                "cache_freshness": "< 15 minutes"
-            }
+            "memory_usage_estimate_mb": len(STOCK_DATA_CACHE) * 0.1,  # Rough estimate
+            "hit_ratio_estimate": "N/A"  # Would need to implement hit tracking
         }
         
-        return health_status
+        # Analyze cache entries by age
+        for key, entry in STOCK_DATA_CACHE.items():
+            age_minutes = (current_time - entry.get('timestamp', 0)) / 60
+            if age_minutes <= 5:
+                cache_stats["entries_by_age"]["fresh_0_5min"] += 1
+            elif age_minutes <= 10:
+                cache_stats["entries_by_age"]["recent_5_10min"] += 1
+            elif age_minutes <= 15:
+                cache_stats["entries_by_age"]["old_10_15min"] += 1
+            else:
+                cache_stats["entries_by_age"]["expired_15min_plus"] += 1
+        
+        return cache_stats
+        
     except Exception as e:
-        logger.error(f"Health check failed: {str(e)}")
+        logger.error(f"Cache statistics failed: {str(e)}")
         return {
-            "status": "degraded", 
+            "error": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
+@api_router.post("/system/cache/clear")
+async def clear_cache():
+    """Clear all cache entries (admin function)"""
+    try:
+        old_size = len(STOCK_DATA_CACHE)
+        STOCK_DATA_CACHE.clear()
+        
+        logger.info(f"Cache manually cleared: {old_size} entries removed")
+        
+        return {
+            "status": "success",
+            "message": f"Cache cleared: {old_size} entries removed",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Cache clear failed: {str(e)}")
+        return {
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+
+@api_router.get("/system/rate-limiting/status")
+async def get_rate_limiting_status():
+    """Get current rate limiting status and statistics"""
+    try:
+        global request_count, last_request_time, requests_per_minute
+        
+        current_time = time.time()
+        time_since_reset = current_time - last_request_time
+        
+        return {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "rate_limiting": {
+                "enabled": RATE_LIMIT_BACKOFF,
+                "max_retries": MAX_RETRIES,
+                "initial_wait_seconds": INITIAL_WAIT,
+                "max_wait_seconds": MAX_WAIT,
+                "batch_delay_seconds": BATCH_DELAY
+            },
+            "current_stats": {
+                "total_requests": request_count,
+                "requests_this_minute": requests_per_minute,
+                "time_since_reset_seconds": time_since_reset,
+                "estimated_requests_per_hour": requests_per_minute * 60 if time_since_reset < 60 else 0
+            },
+            "limits": {
+                "requests_per_minute_limit": 30,
+                "status": "within_limits" if requests_per_minute < 30 else "approaching_limit"
+            }
+        }
+    except Exception as e:
+        logger.error(f"Rate limiting status failed: {str(e)}")
+        return {
             "error": str(e),
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
