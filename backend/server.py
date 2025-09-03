@@ -2026,12 +2026,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
+# Enhanced logging configuration
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler('stock_screener.log', mode='a')
+    ]
 )
 logger = logging.getLogger(__name__)
+
+# Set specific log levels for different components
+logging.getLogger('yfinance').setLevel(logging.WARNING)
+logging.getLogger('urllib3').setLevel(logging.WARNING)
+logging.getLogger('requests').setLevel(logging.WARNING)
+
+# Log startup information
+logger.info("=== Stock Screener API Starting ===")
+logger.info(f"Rate limiting enabled: MAX_RETRIES={MAX_RETRIES}, INITIAL_WAIT={INITIAL_WAIT}s, MAX_WAIT={MAX_WAIT}s")
+logger.info(f"Batch processing: BATCH_DELAY={BATCH_DELAY}s, Cache expiry={CACHE_EXPIRY_MINUTES}min")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
