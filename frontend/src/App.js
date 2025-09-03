@@ -86,11 +86,11 @@ const Dashboard = () => {
     
     setLoading(true);
     try {
-      toast.info("Scanning stocks for breakout opportunities...");
+      toast.info("Scanning ALL NSE stocks for breakout opportunities...");
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
-        limit: '10'  // Reduced limit for testing timeout issue
+        limit: '600'  // Scan ALL NSE stocks (full market coverage)
       });
       
       if (selectedSector !== 'All') {
@@ -101,13 +101,18 @@ const Dashboard = () => {
         params.append('risk_level', selectedRiskLevel);
       }
       
-      console.log('Requesting breakout scan with params:', params.toString());
+      console.log('Requesting FULL NSE breakout scan with params:', params.toString());
       
-      const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`, {
-        timeout: 180000 // 3 minute timeout for larger scans
+      // Show progress update
+      toast.info("Processing 594+ NSE stocks... This may take 2-3 minutes for complete analysis", {
+        duration: 5000
       });
       
-      console.log('Breakout scan response:', response.data);
+      const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`, {
+        timeout: 300000 // 5 minute timeout for full NSE scan
+      });
+      
+      console.log('Full NSE scan completed:', response.data);
       console.log('Scan statistics from API:', response.data.scan_statistics);
       console.log('Number of breakouts found:', response.data.breakout_stocks?.length);
       
