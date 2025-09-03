@@ -589,9 +589,8 @@ async def fetch_stock_data_batch(symbols: List[str]) -> List[Optional[Dict]]:
     
     return results
 
-def get_symbols_by_priority() -> List[str]:
-    """Get NSE symbols ordered by priority (large cap first, then mid/small cap)"""
-    # Define priority order: NIFTY 50 first, then Next 50, then rest
+def get_nifty_50_symbols() -> List[str]:
+    """Get only NIFTY 50 symbols for focused value investing analysis"""
     nifty_50 = [
         "ADANIENT", "ADANIPORTS", "APOLLOHOSP", "ASIANPAINT", "AXISBANK", "BAJAJ-AUTO",
         "BAJAJFINSV", "BAJFINANCE", "BHARTIARTL", "BPCL", "BRITANNIA", "CIPLA", "COALINDIA",
@@ -602,31 +601,13 @@ def get_symbols_by_priority() -> List[str]:
         "TATAMOTORS", "TATASTEEL", "TCS", "TECHM", "TITAN", "ULTRACEMCO", "UPL", "WIPRO"
     ]
     
-    nifty_next_50 = [
-        "ABB", "ABCAPITAL", "ABFRL", "ACC", "ADANIGREEN", "ALKEM", "AMBUJACEM", "APOLLOTYRE",
-        "ASHOKLEY", "AUROPHARMA", "BALKRISIND", "BANDHANBNK", "BANKBARODA", "BATAINDIA",
-        "BERGEPAINT", "BIOCON", "BOSCHLTD", "CANFINHOME", "CHOLAFIN", "COLPAL", "CONCOR",
-        "COROMANDEL", "DABUR", "DEEPAKNTR", "DIVI", "DLF", "ESCORTS", "EXIDEIND", "FEDERALBNK",
-        "GAIL", "GLAND", "GODREJCP", "GODREJPROP", "HAVELLS", "HDFCAMC", "HINDPETRO", "HONAUT",
-        "IBULHSGFIN", "IDFCFIRSTB", "IEX", "IGL", "INDHOTEL", "INDUSTOWER", "INTELLECT",
-        "JINDALSTEL", "JKCEMENT", "JUBLFOOD", "LALPATHLAB", "LICHSGFIN", "LTIM", "LTTS", "LUPIN"
-    ]
-    
-    # Get all symbols and prioritize
-    all_symbols = list(NSE_SYMBOLS.keys())
-    priority_symbols = []
-    
-    # Add NIFTY 50 first
-    priority_symbols.extend([s for s in nifty_50 if s in all_symbols])
-    
-    # Add NIFTY Next 50
-    priority_symbols.extend([s for s in nifty_next_50 if s in all_symbols and s not in priority_symbols])
-    
-    # Add remaining symbols
-    remaining_symbols = [s for s in all_symbols if s not in priority_symbols]
-    priority_symbols.extend(remaining_symbols)
-    
-    return priority_symbols
+    # Filter to only include symbols that exist in our database
+    return [symbol for symbol in nifty_50 if symbol in NSE_SYMBOLS]
+
+def get_symbols_by_priority() -> List[str]:
+    """Get NSE symbols ordered by priority - NOW FOCUSED ON NIFTY 50 ONLY for performance and value investing"""
+    # Return only NIFTY 50 symbols for better performance and focused value investing
+    return get_nifty_50_symbols()
 
 def get_large_cap_symbols() -> List[str]:
     """Get only large cap symbols (NIFTY 50 + Next 50) for focused analysis"""
