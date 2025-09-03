@@ -63,9 +63,9 @@ from typing import Union
 STOCK_DATA_CACHE = {}
 CACHE_EXPIRY_MINUTES = 15  # Cache expires after 15 minutes
 
-# Batch processing configuration
-BATCH_SIZE = 50  # Process stocks in batches of 50
-MAX_CONCURRENT_BATCHES = 3  # Maximum concurrent batch operations
+# Batch processing configuration - optimized for NIFTY 50 focused scanning
+BATCH_SIZE = 25  # Reduced batch size for better performance with NIFTY 50 focused approach
+MAX_CONCURRENT_BATCHES = 2  # Reduced concurrent batches to prevent timeouts
 
 # Define Models
 class StatusCheck(BaseModel):
