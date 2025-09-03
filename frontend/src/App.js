@@ -33,7 +33,7 @@ const Dashboard = () => {
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSector, setSelectedSector] = useState('All');
-  const [minConfidence, setMinConfidence] = useState(0.5);
+  const [minConfidence, setMinConfidence] = useState(0.3);
   const [selectedRiskLevel, setSelectedRiskLevel] = useState('All');
 
   // Advanced sorting state
