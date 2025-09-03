@@ -1635,7 +1635,7 @@ async def scan_breakout_stocks(
     limit: int = 50,  # Default to 50 (full NIFTY 50) for better performance
     use_cache: bool = True
 ):
-    """Enhanced breakout scanning with batch processing and caching for full NSE coverage"""
+    """Enhanced breakout scanning with batch processing and caching - OPTIMIZED FOR NIFTY 50 FOCUSED ANALYSIS"""
     try:
         # Clear old cache entries first
         if use_cache:
@@ -1643,34 +1643,49 @@ async def scan_breakout_stocks(
         
         breakout_stocks = []
         
-        # Get prioritized symbols list
-        all_symbols = get_symbols_by_priority()
+        # Get NIFTY 50 focused symbols list (much smaller, faster)
+        all_symbols = get_symbols_by_priority()  # Now returns only NIFTY 50
         
         # Filter symbols by sector if specified
         if sector and sector != "All":
             filtered_symbols = [s for s in all_symbols if NSE_SYMBOLS.get(s) == sector]
-            symbols_to_scan = filtered_symbols[:limit]
+            symbols_to_scan = filtered_symbols[:min(limit, len(filtered_symbols))]
         else:
-            symbols_to_scan = all_symbols[:limit]
+            symbols_to_scan = all_symbols[:min(limit, len(all_symbols))]
         
-        logger.info(f"Scanning {len(symbols_to_scan)} stocks for breakouts (sector: {sector or 'All'})")
+        logger.info(f"Scanning {len(symbols_to_scan)} NIFTY 50 stocks for breakouts (sector: {sector or 'All'})")
         
-        # Process symbols in batches for better performance
+        # Process symbols in smaller batches for better performance
         total_processed = 0
         sector_breakouts = {}
         
         for i in range(0, len(symbols_to_scan), BATCH_SIZE):
             batch_symbols = symbols_to_scan[i:i + BATCH_SIZE]
             
-            logger.info(f"Processing batch {i//BATCH_SIZE + 1}: {len(batch_symbols)} stocks")
+            logger.info(f"Processing NIFTY 50 batch {i//BATCH_SIZE + 1}: {len(batch_symbols)} stocks")
             
-            # Use batch processing with caching
-            if use_cache:
-                batch_results = await fetch_stock_data_batch(batch_symbols)
-            else:
-                # Fetch data without caching for real-time analysis
-                tasks = [fetch_comprehensive_stock_data(symbol) for symbol in batch_symbols]
-                batch_results = await asyncio.gather(*tasks, return_exceptions=True)
+            try:
+                # Use asyncio.wait_for to add timeout protection
+                if use_cache:
+                    batch_results = await asyncio.wait_for(
+                        fetch_stock_data_batch(batch_symbols),
+                        timeout=30.0  # 30 second timeout per batch
+                    )
+                else:
+                    # Fetch data without caching for real-time analysis
+                    tasks = [fetch_comprehensive_stock_data(symbol) for symbol in batch_symbols]
+                    batch_results = await asyncio.wait_for(
+                        asyncio.gather(*tasks, return_exceptions=True),
+                        timeout=30.0  # 30 second timeout per batch
+                    )
+                
+            except asyncio.TimeoutError:
+                logger.warning(f"Batch {i//BATCH_SIZE + 1} timed out after 30 seconds, skipping...")
+                # Create dummy results for timeout case
+                batch_results = [None] * len(batch_symbols)
+            except Exception as e:
+                logger.error(f"Error processing batch {i//BATCH_SIZE + 1}: {str(e)}")
+                batch_results = [None] * len(batch_symbols)
             
             # Process batch results
             for j, result in enumerate(batch_results):
