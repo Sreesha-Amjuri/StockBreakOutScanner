@@ -516,7 +516,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <h1 className="text-xl font-bold text-slate-900">StockBreak Pro</h1>
-                <p className="text-sm text-slate-600">NSE Breakout Screener</p>
+                <p className="text-sm text-slate-600">NIFTY 50 Value Investing Platform</p>
               </div>
             </div>
             
