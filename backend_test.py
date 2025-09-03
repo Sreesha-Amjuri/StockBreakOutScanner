@@ -1216,13 +1216,12 @@ class StockBreakoutAPITester:
         print("-" * 30)
         self.test_error_handling()
         
-        # NEW: Enhanced StockBreak Pro Testing (as per review request)
-        print("\n🚀 ENHANCED STOCKBREAK PRO TESTING")
-        print("-" * 50)
-        self.test_full_nse_coverage_scanning()
+        # NEW: NIFTY 50 Focused Testing (as per review request)
+        print("\n🎯 NIFTY 50 FOCUSED IMPLEMENTATION TESTING")
+        print("-" * 55)
+        self.test_nifty_50_focused_scanning()
+        self.test_timeout_and_performance_improvements()
         self.test_enhanced_technical_indicators()
-        self.test_enhanced_watchlist_backend()
-        self.test_performance_and_scaling()
         self.test_data_quality_comprehensive()
         
         # Original comprehensive data validation tests
