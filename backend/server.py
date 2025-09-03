@@ -554,32 +554,38 @@ async def fetch_with_retry(symbol: str) -> Optional[Dict]:
         return None
 
 async def fetch_stock_data_batch(symbols: List[str]) -> List[Optional[Dict]]:
-    """Fetch stock data for a batch of symbols with caching and rate limiting"""
+    """Enhanced batch fetching with improved rate limiting and error handling"""
     results = []
     
-    for symbol in symbols:
+    logger.info(f"Starting batch fetch for {len(symbols)} symbols")
+    
+    for i, symbol in enumerate(symbols):
         try:
             # Check cache first
             cached_data = get_cached_stock_data(symbol)
             if cached_data:
                 results.append(cached_data)
+                logger.debug(f"Using cached data for {symbol} ({i+1}/{len(symbols)})")
                 continue
             
-            # Fetch fresh data
-            stock_data = await fetch_comprehensive_stock_data(symbol)
+            # Fetch fresh data with enhanced rate limiting
+            logger.debug(f"Fetching fresh data for {symbol} ({i+1}/{len(symbols)})")
+            stock_data = await fetch_with_retry(symbol)
             
             if stock_data:
                 cache_stock_data(symbol, stock_data)
                 results.append(stock_data)
+                logger.debug(f"Successfully fetched data for {symbol}")
             else:
                 results.append(None)
-            
-            # Add small delay to prevent rate limiting
-            await asyncio.sleep(0.1)  # 100ms delay between API calls
+                logger.warning(f"No data available for {symbol}")
             
         except Exception as e:
             logger.error(f"Error fetching data for {symbol} in batch: {str(e)}")
             results.append(None)
+    
+    successful_fetches = sum(1 for r in results if r is not None)
+    logger.info(f"Batch fetch completed: {successful_fetches}/{len(symbols)} successful")
     
     return results
 
