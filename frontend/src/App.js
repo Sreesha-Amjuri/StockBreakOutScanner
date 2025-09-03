@@ -108,19 +108,21 @@ const Dashboard = () => {
       });
       
       console.log('Breakout scan response:', response.data);
-      console.log('Number of breakouts found:', response.data.breakouts_found);
-      console.log('Breakout stocks array length:', response.data.breakout_stocks?.length);
-      console.log('Scan statistics:', response.data.scan_statistics);
+      console.log('Scan statistics from API:', response.data.scan_statistics);
+      console.log('Number of breakouts found:', response.data.breakout_stocks?.length);
       
       if (response.data && Array.isArray(response.data.breakout_stocks)) {
         setBreakoutStocks(response.data.breakout_stocks);
         setLastUpdated(new Date().toLocaleTimeString());
         
-        // Update scan statistics - fix field mapping
-        setScanStats({
-          stocks_scanned: response.data.scan_statistics?.total_scanned || response.data.breakout_stocks.length,
-          breakouts_found: response.data.scan_statistics?.breakouts_found || response.data.breakout_stocks.length
-        });
+        // Update scan statistics - fix field mapping with debugging
+        const statsUpdate = {
+          stocks_scanned: response.data.scan_statistics?.total_scanned || 0,
+          breakouts_found: response.data.scan_statistics?.breakouts_found || 0
+        };
+        
+        console.log('Updating scan statistics with:', statsUpdate);
+        setScanStats(statsUpdate);
         
         const count = response.data.breakout_stocks.length;
         const scanned = response.data.scan_statistics?.total_scanned || 0;
