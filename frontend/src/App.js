@@ -133,9 +133,13 @@ const Dashboard = () => {
         const scanned = response.data.scan_statistics?.total_scanned || 0;
         
         if (count > 0) {
-          toast.success(`Found ${count} breakout opportunities from ${scanned} stocks scanned!`);
+          toast.success(`🎯 Found ${count} breakout opportunities from ${scanned} NSE stocks scanned!`, {
+            duration: 8000
+          });
         } else {
-          toast.info(`No breakout opportunities found from ${scanned} stocks scanned with current filters`);
+          toast.info(`📊 Scanned ${scanned} NSE stocks - No breakouts found with current filters. Try adjusting confidence level or sector filters.`, {
+            duration: 8000
+          });
         }
       } else {
         console.error('Invalid response structure:', response.data);
