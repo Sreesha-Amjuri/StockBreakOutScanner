@@ -628,6 +628,69 @@ def get_symbols_by_priority() -> List[str]:
     
     return priority_symbols
 
+def get_large_cap_symbols() -> List[str]:
+    """Get only large cap symbols (NIFTY 50 + Next 50) for focused analysis"""
+    large_cap_symbols = [
+        # NIFTY 50 Large Cap Stocks
+        "ADANIENT", "ADANIPORTS", "APOLLOHOSP", "ASIANPAINT", "AXISBANK", "BAJAJ-AUTO",
+        "BAJAJFINSV", "BAJFINANCE", "BHARTIARTL", "BPCL", "BRITANNIA", "CIPLA", "COALINDIA",
+        "DIVISLAB", "DRREDDY", "EICHERMOT", "GRASIM", "HCLTECH", "HDFCBANK", "HDFCLIFE",
+        "HEROMOTOCO", "HINDALCO", "HINDUNILVR", "ICICIBANK", "INDUSINDBK", "INFOSYS", "IOC",
+        "ITC", "JSWSTEEL", "KOTAKBANK", "LT", "M&M", "MARUTI", "NESTLEIND", "NTPC", "ONGC",
+        "POWERGRID", "RELIANCE", "SBILIFE", "SBIN", "SHREECEM", "SUNPHARMA", "TATACONSUM",
+        "TATAMOTORS", "TATASTEEL", "TCS", "TECHM", "TITAN", "ULTRACEMCO", "UPL", "WIPRO",
+        
+        # NIFTY Next 50 - Additional Large Cap
+        "ABB", "ABCAPITAL", "ABFRL", "ACC", "ADANIGREEN", "ALKEM", "AMBUJACEM", "APOLLOTYRE",
+        "ASHOKLEY", "AUROPHARMA", "BALKRISIND", "BANDHANBNK", "BANKBARODA", "BATAINDIA",
+        "BERGEPAINT", "BIOCON", "BOSCHLTD", "CANFINHOME", "CHOLAFIN", "COLPAL", "CONCOR",
+        "COROMANDEL", "DABUR", "DEEPAKNTR", "DIVI", "DLF", "ESCORTS", "EXIDEIND", "FEDERALBNK",
+        "GAIL", "GLAND", "GODREJCP", "GODREJPROP", "HAVELLS", "HDFCAMC", "HINDPETRO", "HONAUT",
+        "IBULHSGFIN", "IDFCFIRSTB", "IEX", "IGL", "INDHOTEL", "INDUSTOWER", "INTELLECT",
+        "JINDALSTEL", "JKCEMENT", "JUBLFOOD", "LALPATHLAB", "LICHSGFIN", "LTIM", "LTTS", "LUPIN",
+        "MARICO", "MINDTREE", "MOTHERSUMI", "MPHASIS", "MRF", "MUTHOOTFIN", "NATIONALUM", "NAUKRI",
+        "NAVINFLUOR", "NMDC", "OBEROIRLTY", "OFSS", "PAGEIND", "PEL", "PERSISTENT", "PETRONET",
+        "PFIZER", "PIDILITIND", "PIIND", "PNB", "POLYCAB", "PVR", "RAMCOCEM", "RECLTD",
+        "SAIL", "SBICARD", "SIEMENS", "SRF", "SRTRANSFIN", "STAR", "SUMICHEM", "SUNTV",
+        "TATAPOWER", "TORNTPHARM", "TORNTPOWER", "TRENT", "TVSMOTOR", "UBL", "VEDL", "VOLTAS",
+        "WHIRLPOOL", "ZEEL"
+    ]
+    
+    # Filter to only include symbols that exist in our database
+    return [symbol for symbol in large_cap_symbols if symbol in NSE_SYMBOLS]
+
+@api_router.get("/stocks/large-cap")
+async def get_large_cap_stocks():
+    """Get comprehensive large cap stock information (NIFTY 50 + Next 50)"""
+    try:
+        large_cap_symbols = get_large_cap_symbols()
+        
+        # Group by sectors
+        sector_wise = {}
+        for symbol in large_cap_symbols:
+            sector = NSE_SYMBOLS.get(symbol, "Unknown")
+            if sector not in sector_wise:
+                sector_wise[sector] = []
+            sector_wise[symbol] = symbol
+        
+        return {
+            "large_cap_symbols": large_cap_symbols,
+            "total_large_cap": len(large_cap_symbols),
+            "nifty_50_count": 50,
+            "nifty_next_50_count": len(large_cap_symbols) - 50,
+            "sector_distribution": {sector: len([s for s in large_cap_symbols if NSE_SYMBOLS.get(s) == sector]) for sector in set(NSE_SYMBOLS[s] for s in large_cap_symbols)},
+            "coverage_info": {
+                "focus": "Large Cap Stocks Only",
+                "indices_covered": ["NIFTY 50", "NIFTY Next 50"],
+                "market_cap_range": "₹20,000+ Crores",
+                "liquidity": "High liquidity stocks only"
+            },
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error fetching large cap data: {str(e)}")
+        return {"error": "Failed to fetch large cap data"}
+
 def clear_old_cache_entries():
     """Clear expired cache entries to manage memory"""
     current_time = time.time()
