@@ -600,6 +600,87 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Professional Watchlist Display */}
+        {watchlist.length > 0 && (
+          <Card className="bg-white/60 backdrop-blur-sm border-slate-200 mb-8">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Heart className="w-5 h-5 text-purple-600" />
+                  <span>My Watchlist ({watchlist.length} stocks)</span>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={fetchWatchlist}
+                  className="text-xs"
+                >
+                  🔄 Refresh
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {watchlist.map((stock, index) => (
+                  <Card key={stock.symbol || index} className="border border-slate-200 hover:border-purple-300 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/stock/${stock.symbol}`)}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <h3 className="font-semibold text-slate-900">{stock.symbol}</h3>
+                          <p className="text-sm text-slate-600">Large Cap Stock</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeFromWatchlist(stock.symbol);
+                          }}
+                          className="text-xs"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-600">Added:</span>
+                          <span className="text-sm font-medium">{new Date(stock.added_at).toLocaleDateString()}</span>
+                        </div>
+                        
+                        <div className="pt-2">
+                          <Button
+                            size="sm"
+                            variant="default"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/stock/${stock.symbol}`);
+                            }}
+                            className="w-full text-xs"
+                          >
+                            <BarChart3 className="w-3 h-3 mr-1" />
+                            View Analysis
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              
+              {watchlist.length === 0 && (
+                <div className="text-center py-8">
+                  <Heart className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                  <p className="text-slate-600">No stocks in watchlist</p>
+                  <p className="text-sm text-slate-500">Add stocks from the breakout analysis below</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
