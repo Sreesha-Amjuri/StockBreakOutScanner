@@ -90,7 +90,7 @@ const Dashboard = () => {
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
-        limit: '600'  // Scan full NSE market (594+ stocks)
+        limit: '50'  // Start with 50 stocks for faster response, then increase
       });
       
       if (selectedSector !== 'All') {
@@ -104,21 +104,22 @@ const Dashboard = () => {
       console.log('Requesting breakout scan with params:', params.toString());
       
       const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`, {
-        timeout: 60000 // 60 second timeout
+        timeout: 180000 // 3 minute timeout for larger scans
       });
       
       console.log('Breakout scan response:', response.data);
       console.log('Number of breakouts found:', response.data.breakouts_found);
       console.log('Breakout stocks array length:', response.data.breakout_stocks?.length);
+      console.log('Scan statistics:', response.data.scan_statistics);
       
       if (response.data && Array.isArray(response.data.breakout_stocks)) {
         setBreakoutStocks(response.data.breakout_stocks);
         setLastUpdated(new Date().toLocaleTimeString());
         
-        // Update scan statistics
+        // Update scan statistics - fix field mapping
         setScanStats({
-          stocks_scanned: response.data.scan_statistics?.stocks_scanned || response.data.breakout_stocks.length,
-          breakouts_found: response.data.breakouts_found || response.data.breakout_stocks.length
+          stocks_scanned: response.data.scan_statistics?.total_scanned || response.data.breakout_stocks.length,
+          breakouts_found: response.data.scan_statistics?.breakouts_found || response.data.breakout_stocks.length
         });
         
         const count = response.data.breakout_stocks.length;
