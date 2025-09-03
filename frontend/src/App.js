@@ -260,7 +260,10 @@ const Dashboard = () => {
     initializeApp();
   }, []);
 
-  // Combined filtering and sorting logic
+  // Debug effect to monitor scanStats changes
+  useEffect(() => {
+    console.log('ScanStats state updated:', scanStats);
+  }, [scanStats]);
   const processedBreakoutStocks = React.useMemo(() => {
     // First apply search filter
     const searchFiltered = breakoutStocks.filter(stock =>
