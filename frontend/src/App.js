@@ -89,7 +89,7 @@ const Dashboard = () => {
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
-        limit: '100'  // Increased to scan 100 stocks (NIFTY 100)
+        limit: '600'  // Scan full NSE market (594+ stocks)
       });
       
       if (selectedSector !== 'All') {
