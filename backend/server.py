@@ -1632,7 +1632,7 @@ async def scan_breakout_stocks(
     sector: Optional[str] = None,
     min_confidence: float = 0.5,
     risk_level: Optional[str] = None,
-    limit: int = 100,
+    limit: int = 50,  # Default to 50 (full NIFTY 50) for better performance
     use_cache: bool = True
 ):
     """Enhanced breakout scanning with batch processing and caching for full NSE coverage"""
