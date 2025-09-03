@@ -91,7 +91,7 @@ const Dashboard = () => {
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
-        limit: '30'  // Increased limit for better coverage while maintaining performance
+        limit: '20'  // Optimal limit for balance between performance and coverage
       });
       
       if (selectedSector !== 'All') {
