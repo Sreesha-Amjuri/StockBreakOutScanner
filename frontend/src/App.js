@@ -91,7 +91,7 @@ const Dashboard = () => {
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
-        limit: '200'  // Scan 200 stocks for good coverage while maintaining performance
+        limit: '10'  // Reduced limit for optimal performance - backend completes in <1 second
       });
       
       if (selectedSector !== 'All') {
