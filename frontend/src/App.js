@@ -87,7 +87,7 @@ const Dashboard = () => {
     setLoading(true);
     
     try {
-      toast.info("🚀 Scanning NSE market (10 stocks for optimal performance)...");
+      toast.info("🚀 Scanning NSE market (20 stocks for optimal performance)...");
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
