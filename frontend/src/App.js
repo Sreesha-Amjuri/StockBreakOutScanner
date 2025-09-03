@@ -35,38 +35,6 @@ const Dashboard = () => {
   const [minConfidence, setMinConfidence] = useState(0.5);
   const [selectedRiskLevel, setSelectedRiskLevel] = useState('All');
 
-  // Enhanced watchlist state for professional features
-  const [watchlistView, setWatchlistView] = useState('compact'); // 'compact', 'detailed', 'chart'
-  const [watchlistData, setWatchlistData] = useState([]);
-  const [watchlistLoading, setWatchlistLoading] = useState(false);
-
-  // Professional trading features state
-  const [selectedWatchlistStock, setSelectedWatchlistStock] = useState(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(30); // seconds
-  
-  // Enhanced professional features state
-  const [darkMode, setDarkMode] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [alerts, setAlerts] = useState([]);
-  const [portfolio, setPortfolio] = useState([]);
-  const [newsData, setNewsData] = useState([]);
-  
-  // Advanced settings
-  const [autoScanEnabled, setAutoScanEnabled] = useState(false);
-  const [autoScanInterval, setAutoScanInterval] = useState(300); // 5 minutes
-  const [priceAlerts, setPriceAlerts] = useState([]);
-  const [exportFormat, setExportFormat] = useState('excel');
-
-  // Performance tracking
-  const [scanHistory, setScanHistory] = useState([]);
-  const [systemStats, setSystemStats] = useState({
-    totalScans: 0,
-    successfulBreakouts: 0,
-    totalProfit: 0,
-    winRate: 0
-  });
-
   // Advanced sorting state
   const [sortConfig, setSortConfig] = useState([]);
   const [sortField, setSortField] = useState('confidence_score');
@@ -100,53 +68,6 @@ const Dashboard = () => {
     }
   };
 
-  // Enhanced watchlist with detailed stock data
-  const fetchEnhancedWatchlist = async () => {
-    if (watchlist.length === 0) return;
-    
-    setWatchlistLoading(true);
-    try {
-      const promises = watchlist.map(async (item) => {
-        try {
-          const response = await axios.get(`${API}/stocks/${item.symbol}`);
-          return {
-            ...item,
-            ...response.data,
-            lastUpdated: new Date()
-          };
-        } catch (error) {
-          console.error(`Error fetching data for ${item.symbol}:`, error);
-          return { ...item, error: true };
-        }
-      });
-      
-      const enhancedData = await Promise.all(promises);
-      setWatchlistData(enhancedData);
-    } catch (error) {
-      console.error('Error fetching enhanced watchlist:', error);
-    } finally {
-      setWatchlistLoading(false);
-    }
-  };
-
-  // Auto-refresh watchlist data
-  useEffect(() => {
-    if (autoRefresh && watchlist.length > 0) {
-      fetchEnhancedWatchlist();
-      const interval = setInterval(fetchEnhancedWatchlist, refreshInterval * 1000);
-      return () => clearInterval(interval);
-    }
-  }, [autoRefresh, refreshInterval, watchlist.length]);
-
-  // Fetch enhanced data when watchlist changes
-  useEffect(() => {
-    if (watchlist.length > 0) {
-      fetchEnhancedWatchlist();
-    } else {
-      setWatchlistData([]);
-    }
-  }, [watchlist]);
-
   const fetchSectors = async () => {
     try {
       const response = await axios.get(`${API}/stocks/symbols`);
@@ -164,11 +85,11 @@ const Dashboard = () => {
     
     setLoading(true);
     try {
-      toast.info("Scanning ALL NSE stocks for breakout opportunities...");
+      toast.info("Scanning stocks for breakout opportunities...");
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
-        limit: '600'  // Scan ALL NSE stocks (594+ available)
+        limit: '100'  // Increased to scan 100 stocks (NIFTY 100)
       });
       
       if (selectedSector !== 'All') {
@@ -179,27 +100,25 @@ const Dashboard = () => {
         params.append('risk_level', selectedRiskLevel);
       }
       
-      console.log('Requesting FULL NSE breakout scan with params:', params.toString());
+      console.log('Requesting breakout scan with params:', params.toString());
       
       const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`, {
-        timeout: 180000 // 3 minute timeout for full scan
+        timeout: 60000 // 60 second timeout
       });
       
-      console.log('Full NSE scan response:', response.data);
-      console.log('Total stocks scanned:', response.data.scan_statistics?.total_scanned);
-      console.log('Breakouts found:', response.data.breakouts_found);
+      console.log('Breakout scan response:', response.data);
+      console.log('Number of breakouts found:', response.data.breakouts_found);
+      console.log('Breakout stocks array length:', response.data.breakout_stocks?.length);
       
       if (response.data && Array.isArray(response.data.breakout_stocks)) {
         setBreakoutStocks(response.data.breakout_stocks);
         setLastUpdated(new Date().toLocaleTimeString());
         
         const count = response.data.breakout_stocks.length;
-        const scanned = response.data.scan_statistics?.total_scanned || 'Unknown';
-        
         if (count > 0) {
-          toast.success(`Found ${count} breakout opportunities from ${scanned} stocks scanned!`);
+          toast.success(`Found ${count} breakout opportunities!`);
         } else {
-          toast.info(`No breakout opportunities found from ${scanned} stocks scanned with current filters`);
+          toast.info("No breakout opportunities found at current settings");
         }
       } else {
         console.error('Invalid response structure:', response.data);
@@ -255,161 +174,7 @@ const Dashboard = () => {
     }
   };
 
-  // Advanced professional functions
-  const exportToExcel = () => {
-    const csvContent = [
-      ['Symbol', 'Current Price', 'Change %', 'Entry Price', 'Stop Loss', 'Target', 'Action', 'Risk:Reward', 'RSI', 'MACD', 'Sector'],
-      ...processedBreakoutStocks.map(stock => [
-        stock.symbol,
-        stock.current_price,
-        stock.change_percent,
-        stock.trading_recommendation?.entry_price || '',
-        stock.trading_recommendation?.stop_loss || '',
-        stock.trading_recommendation?.target_price || '',
-        stock.trading_recommendation?.action || '',
-        stock.trading_recommendation?.risk_reward_ratio || '',
-        stock.technical_data?.rsi || '',
-        stock.technical_data?.macd_histogram > 0 ? 'BUY' : 'SELL',
-        stock.sector
-      ])
-    ].map(row => row.join(',')).join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `stockbreak_analysis_${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-    
-    toast.success('Analysis exported to CSV successfully!');
-  };
-
-  const generatePDFReport = () => {
-    const reportContent = `
-      StockBreak Pro - Market Analysis Report
-      Generated: ${new Date().toLocaleString()}
-      
-      SUMMARY:
-      - Total Stocks Scanned: ${systemStats.totalScans || processedBreakoutStocks.length}
-      - Breakout Opportunities: ${processedBreakoutStocks.length}
-      - Market Sentiment: ${marketOverview?.market_sentiment || 'Neutral'}
-      - Watchlist Size: ${watchlist.length}
-      
-      TOP BREAKOUT OPPORTUNITIES:
-      ${processedBreakoutStocks.slice(0, 10).map((stock, idx) => 
-        `${idx + 1}. ${stock.symbol} - ₹${stock.current_price} (${stock.change_percent}%) - ${stock.trading_recommendation?.action || 'HOLD'}`
-      ).join('\n')}
-      
-      DISCLAIMER: This analysis is for educational purposes only.
-    `;
-    
-    const blob = new Blob([reportContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `stockbreak_report_${new Date().toISOString().split('T')[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-    
-    toast.success('PDF report generated successfully!');
-  };
-
-  const addPriceAlert = async (symbol, targetPrice, alertType = 'above') => {
-    try {
-      const newAlert = {
-        id: Date.now(),
-        symbol: symbol.toUpperCase(),
-        targetPrice: parseFloat(targetPrice),
-        alertType, // 'above' or 'below'
-        createdAt: new Date(),
-        triggered: false
-      };
-      
-      setPriceAlerts(prev => [...prev, newAlert]);
-      toast.success(`Price alert set for ${symbol} at ₹${targetPrice}`);
-    } catch (error) {
-      toast.error('Error setting price alert');
-    }
-  };
-
-  const checkPriceAlerts = () => {
-    processedBreakoutStocks.forEach(stock => {
-      const currentPrice = parseFloat(stock.current_price);
-      
-      priceAlerts.forEach(alert => {
-        if (alert.symbol === stock.symbol && !alert.triggered) {
-          const shouldTrigger = (alert.alertType === 'above' && currentPrice >= alert.targetPrice) ||
-                               (alert.alertType === 'below' && currentPrice <= alert.targetPrice);
-          
-          if (shouldTrigger) {
-            toast.success(`🚨 PRICE ALERT: ${stock.symbol} reached ₹${currentPrice}!`, {
-              duration: 10000,
-              action: {
-                label: 'View Stock',
-                onClick: () => navigate(`/stock/${stock.symbol}`)
-              }
-            });
-            
-            // Mark alert as triggered
-            setPriceAlerts(prev => 
-              prev.map(a => a.id === alert.id ? { ...a, triggered: true } : a)
-            );
-          }
-        }
-      });
-    });
-  };
-
-  // Auto-scanning functionality
-  useEffect(() => {
-    if (autoScanEnabled) {
-      const interval = setInterval(() => {
-        console.log('Auto-scanning triggered');
-        scanBreakouts();
-      }, autoScanInterval * 1000);
-      
-      return () => clearInterval(interval);
-    }
-  }, [autoScanEnabled, autoScanInterval]);
-
-  // Price alerts checking
-  useEffect(() => {
-    if (processedBreakoutStocks.length > 0 && priceAlerts.length > 0) {
-      checkPriceAlerts();
-    }
-  }, [processedBreakoutStocks, priceAlerts]);
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyPress = (e) => {
-      if (e.ctrlKey) {
-        switch (e.key) {
-          case 'r':
-            e.preventDefault();
-            scanBreakouts();
-            break;
-          case 'e':
-            e.preventDefault();
-            exportToExcel();
-            break;
-          case 'd':
-            e.preventDefault();
-            setDarkMode(!darkMode);
-            break;
-          default:
-            break;
-        }
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyPress);
-    return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [darkMode]);
+  // Helper functions for sorting - defined before useMemo
   const getSortValue = (stock, field) => {
     switch (field) {
       case 'symbol':
@@ -438,22 +203,6 @@ const Dashboard = () => {
         return stock.risk_assessment?.risk_level || '';
       case 'rsi':
         return parseFloat(stock.technical_data?.rsi) || 0;
-      case 'macd':
-        return parseFloat(stock.technical_data?.macd_histogram) || 0;
-      case 'bollinger_position':
-        const price = parseFloat(stock.current_price) || 0;
-        const upper = parseFloat(stock.technical_data?.bollinger_upper) || 0;
-        const lower = parseFloat(stock.technical_data?.bollinger_lower) || 0;
-        if (!upper || !lower) return 0;
-        return price > upper ? 1 : price < lower ? -1 : 0;
-      case 'stochastic':
-        return parseFloat(stock.technical_data?.stochastic_k) || 0;
-      case 'vwap_position':
-        const currentPrice = parseFloat(stock.current_price) || 0;
-        const vwap = parseFloat(stock.technical_data?.vwap) || 0;
-        return vwap ? (currentPrice - vwap) : 0;
-      case 'atr':
-        return parseFloat(stock.technical_data?.atr) || 0;
       case 'sector':
         return stock.sector || '';
       default:
@@ -704,6 +453,71 @@ const Dashboard = () => {
     setSortDirection(newSortDirection);
   };
 
+  const getSortValue = (stock, field) => {
+    switch (field) {
+      case 'symbol':
+        return stock.symbol;
+      case 'current_price':
+        return parseFloat(stock.current_price) || 0;
+      case 'change_percent':
+        return parseFloat(stock.change_percent) || 0;
+      case 'entry_price':
+        return parseFloat(stock.trading_recommendation?.entry_price) || 0;
+      case 'stop_loss':
+        return parseFloat(stock.trading_recommendation?.stop_loss) || 0;
+      case 'target_price':
+        return parseFloat(stock.trading_recommendation?.target_price) || 0;
+      case 'action':
+        return stock.trading_recommendation?.action || '';
+      case 'risk_reward_ratio':
+        return parseFloat(stock.trading_recommendation?.risk_reward_ratio) || 0;
+      case 'position_size':
+        return parseFloat(stock.trading_recommendation?.position_size_percent) || 0;
+      case 'breakout_type':
+        return stock.breakout_type || '';
+      case 'confidence_score':
+        return parseFloat(stock.confidence_score) || 0;
+      case 'risk_level':
+        return stock.risk_assessment?.risk_level || '';
+      case 'rsi':
+        return parseFloat(stock.technical_data?.rsi) || 0;
+      case 'sector':
+        return stock.sector || '';
+      default:
+        return '';
+    }
+  };
+
+  const applySorting = (stocks) => {
+    if (sortConfig.length === 0) {
+      return stocks;
+    }
+
+    return [...stocks].sort((a, b) => {
+      for (const { field, direction } of sortConfig) {
+        const aValue = getSortValue(a, field);
+        const bValue = getSortValue(b, field);
+        
+        let comparison = 0;
+        
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          comparison = aValue.localeCompare(bValue);
+        } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+          comparison = aValue - bValue;
+        }
+        
+        if (comparison !== 0) {
+          return direction === 'asc' ? comparison : -comparison;
+        }
+      }
+      return 0;
+    });
+  };
+
+
+
+
+
   // Get sort icon
   const getSortIcon = (field) => {
     const fieldConfig = sortConfig.find(config => config.field === field);
@@ -824,134 +638,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
-        
-        {/* Advanced Professional Control Panel */}
-        <Card className="bg-white/60 backdrop-blur-sm border-slate-200 mb-8">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <Zap className="w-5 h-5 text-blue-600" />
-                <span>Professional Trading Controls</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  size="sm"
-                  variant={darkMode ? "default" : "outline"}
-                  onClick={() => setDarkMode(!darkMode)}
-                  className="text-xs"
-                >
-                  {darkMode ? '☀️ Light' : '🌙 Dark'}
-                </Button>
-                <Button
-                  size="sm"
-                  variant={autoScanEnabled ? "default" : "outline"}
-                  onClick={() => setAutoScanEnabled(!autoScanEnabled)}
-                  className="text-xs"
-                >
-                  Auto-Scan {autoScanEnabled ? 'ON' : 'OFF'}
-                </Button>
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Quick Actions */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Quick Actions</label>
-                <div className="space-y-2">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={exportToExcel}
-                    className="w-full text-xs"
-                  >
-                    📊 Export Excel
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={generatePDFReport}
-                    className="w-full text-xs"
-                  >
-                    📄 PDF Report
-                  </Button>
-                </div>
-              </div>
-
-              {/* Auto-Scan Settings */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Auto-Scan Interval</label>
-                <Select 
-                  value={autoScanInterval.toString()} 
-                  onValueChange={(v) => setAutoScanInterval(parseInt(v))}
-                  disabled={!autoScanEnabled}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="60">1 Minute</SelectItem>
-                    <SelectItem value="300">5 Minutes</SelectItem>
-                    <SelectItem value="600">10 Minutes</SelectItem>
-                    <SelectItem value="1800">30 Minutes</SelectItem>
-                    <SelectItem value="3600">1 Hour</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* System Statistics */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">System Stats</label>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="bg-slate-50 p-2 rounded">
-                    <div className="font-medium text-emerald-600">{processedBreakoutStocks.length}</div>
-                    <div className="text-slate-600">Active Signals</div>
-                  </div>
-                  <div className="bg-slate-50 p-2 rounded">
-                    <div className="font-medium text-blue-600">{priceAlerts.filter(a => !a.triggered).length}</div>
-                    <div className="text-slate-600">Price Alerts</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Keyboard Shortcuts */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Shortcuts</label>
-                <div className="text-xs space-y-1">
-                  <div>Ctrl+R: Refresh Scan</div>
-                  <div>Ctrl+E: Export Data</div>
-                  <div>Ctrl+D: Toggle Theme</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Price Alerts Panel */}
-            {priceAlerts.length > 0 && (
-              <div className="mt-4 p-4 bg-slate-50 rounded-lg">
-                <h4 className="font-medium text-slate-700 mb-2">Active Price Alerts ({priceAlerts.filter(a => !a.triggered).length})</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  {priceAlerts.filter(a => !a.triggered).slice(0, 6).map(alert => (
-                    <div key={alert.id} className="flex items-center justify-between bg-white p-2 rounded text-xs">
-                      <span className="font-medium">{alert.symbol}</span>
-                      <span className="text-slate-600">
-                        {alert.alertType === 'above' ? '↗️' : '↘️'} ₹{alert.targetPrice}
-                      </span>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setPriceAlerts(prev => prev.filter(a => a.id !== alert.id))}
-                        className="text-xs p-1 h-6 w-6"
-                      >
-                        ×
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
@@ -1031,199 +717,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
-
-        {/* Professional Watchlist - Zerodha/Upstox Style */}
-        {watchlist.length > 0 && (
-          <Card className="bg-white/60 backdrop-blur-sm border-slate-200 mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Heart className="w-5 h-5 text-purple-600" />
-                  <span>Professional Watchlist ({watchlist.length} stocks)</span>
-                  {watchlistLoading && <RefreshCw className="w-4 h-4 animate-spin" />}
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    size="sm"
-                    variant={autoRefresh ? "default" : "outline"}
-                    onClick={() => setAutoRefresh(!autoRefresh)}
-                    className="text-xs"
-                  >
-                    Auto Refresh {autoRefresh ? 'ON' : 'OFF'}
-                  </Button>
-                  <Select value={watchlistView} onValueChange={setWatchlistView}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="compact">Compact</SelectItem>
-                      <SelectItem value="detailed">Detailed</SelectItem>
-                      <SelectItem value="chart">Chart View</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {watchlistView === 'compact' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {watchlistData.map((stock, index) => (
-                    <div key={stock.symbol || index} className="border rounded-lg p-4 hover:bg-slate-50 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="font-semibold text-slate-900">{stock.symbol}</h3>
-                          <p className="text-sm text-slate-600">{stock.sector || 'N/A'}</p>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => removeFromWatchlist(stock.symbol)}
-                          className="text-xs"
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                      
-                      {stock.current_price && (
-                        <div className="mt-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-lg font-bold">₹{parseFloat(stock.current_price).toFixed(2)}</span>
-                            <span className={`text-sm px-2 py-1 rounded ${
-                              parseFloat(stock.change_percent || 0) >= 0 
-                                ? 'bg-emerald-100 text-emerald-700' 
-                                : 'bg-red-100 text-red-700'
-                            }`}>
-                              {parseFloat(stock.change_percent || 0) >= 0 ? '+' : ''}{parseFloat(stock.change_percent || 0).toFixed(2)}%
-                            </span>
-                          </div>
-                          
-                          {stock.technical_data && (
-                            <div className="grid grid-cols-2 gap-2 mt-2 text-xs">
-                              <div>RSI: <span className={`font-medium ${
-                                stock.technical_data.rsi > 70 ? 'text-red-600' : 
-                                stock.technical_data.rsi < 30 ? 'text-emerald-600' : 'text-slate-600'
-                              }`}>
-                                {stock.technical_data.rsi ? stock.technical_data.rsi.toFixed(1) : 'N/A'}
-                              </span></div>
-                              <div>Vol: <span className={`font-medium ${
-                                stock.technical_data.volume_ratio > 1.5 ? 'text-orange-600' : 'text-slate-600'
-                              }`}>
-                                {stock.technical_data.volume_ratio ? (stock.technical_data.volume_ratio * 100).toFixed(0) + '%' : 'N/A'}
-                              </span></div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {watchlistView === 'detailed' && (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Symbol</TableHead>
-                      <TableHead>Price</TableHead>
-                      <TableHead>Change</TableHead>
-                      <TableHead>RSI</TableHead>
-                      <TableHead>MACD</TableHead>
-                      <TableHead>Volume</TableHead>
-                      <TableHead>Support</TableHead>
-                      <TableHead>Resistance</TableHead>
-                      <TableHead>Action</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {watchlistData.map((stock, index) => (
-                      <TableRow key={stock.symbol || index}>
-                        <TableCell className="font-medium">{stock.symbol}</TableCell>
-                        <TableCell>
-                          {stock.current_price ? `₹${parseFloat(stock.current_price).toFixed(2)}` : 'Loading...'}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={parseFloat(stock.change_percent || 0) >= 0 ? 'default' : 'destructive'}>
-                            {parseFloat(stock.change_percent || 0) >= 0 ? '+' : ''}{parseFloat(stock.change_percent || 0).toFixed(2)}%
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`font-medium ${
-                            stock.technical_data?.rsi > 70 ? 'text-red-600' : 
-                            stock.technical_data?.rsi < 30 ? 'text-emerald-600' : 'text-slate-600'
-                          }`}>
-                            {stock.technical_data?.rsi ? stock.technical_data.rsi.toFixed(1) : 'N/A'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`font-medium text-xs ${
-                            stock.technical_data?.macd_histogram > 0 ? 'text-emerald-600' : 'text-red-600'
-                          }`}>
-                            {stock.technical_data?.macd_histogram ? 
-                              (stock.technical_data.macd_histogram > 0 ? 'BUY' : 'SELL') : 'N/A'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`font-medium ${
-                            stock.technical_data?.volume_ratio > 1.5 ? 'text-orange-600' : 'text-slate-600'
-                          }`}>
-                            {stock.technical_data?.volume_ratio ? 
-                              (stock.technical_data.volume_ratio * 100).toFixed(0) + '%' : 'N/A'}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          {stock.technical_data?.support_level ? 
-                            `₹${stock.technical_data.support_level.toFixed(2)}` : 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          {stock.technical_data?.resistance_level ? 
-                            `₹${stock.technical_data.resistance_level.toFixed(2)}` : 'N/A'}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={
-                            stock.trading_recommendation?.action === 'BUY' ? 'default' : 
-                            stock.trading_recommendation?.action === 'SELL' ? 'destructive' : 'secondary'
-                          }>
-                            {stock.trading_recommendation?.action || 'HOLD'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-1">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => navigate(`/stock/${stock.symbol}`)}
-                              className="text-xs"
-                            >
-                              <Eye className="w-3 h-3 mr-1" />
-                              View
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => removeFromWatchlist(stock.symbol)}
-                              className="text-xs"
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-
-              {watchlistView === 'chart' && (
-                <div className="text-center py-8">
-                  <BarChart3 className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                  <p className="text-slate-600">Chart view coming soon!</p>
-                  <p className="text-sm text-slate-500">Interactive charts with technical analysis</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
 
         {/* Filters */}
         <Card className="bg-white/60 backdrop-blur-sm border-slate-200 mb-8">
@@ -1436,51 +929,6 @@ const Dashboard = () => {
                       </TableHead>
                       <TableHead 
                         className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
-                        onClick={(e) => handleSort('macd', e)}
-                      >
-                        <div className="flex items-center">
-                          MACD
-                          {getSortIcon('macd')}
-                        </div>
-                      </TableHead>
-                      <TableHead 
-                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
-                        onClick={(e) => handleSort('bollinger_position', e)}
-                      >
-                        <div className="flex items-center">
-                          Bollinger
-                          {getSortIcon('bollinger_position')}
-                        </div>
-                      </TableHead>
-                      <TableHead 
-                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
-                        onClick={(e) => handleSort('stochastic', e)}
-                      >
-                        <div className="flex items-center">
-                          Stoch %K
-                          {getSortIcon('stochastic')}
-                        </div>
-                      </TableHead>
-                      <TableHead 
-                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
-                        onClick={(e) => handleSort('vwap_position', e)}
-                      >
-                        <div className="flex items-center">
-                          VWAP
-                          {getSortIcon('vwap_position')}
-                        </div>
-                      </TableHead>
-                      <TableHead 
-                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
-                        onClick={(e) => handleSort('atr', e)}
-                      >
-                        <div className="flex items-center">
-                          ATR
-                          {getSortIcon('atr')}
-                        </div>
-                      </TableHead>
-                      <TableHead 
-                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
                         onClick={(e) => handleSort('sector', e)}
                       >
                         <div className="flex items-center">
@@ -1565,61 +1013,6 @@ const Dashboard = () => {
                               stock.technical_data.rsi > 50 ? 'text-emerald-600' : 'text-slate-600'
                             }`}>
                               {stock.technical_data.rsi ? stock.technical_data.rsi.toFixed(1) : '-'}
-                            </span>
-                          </TableCell>
-                          
-                          {/* MACD Signal */}
-                          <TableCell>
-                            <span className={`text-xs font-medium px-2 py-1 rounded ${
-                              stock.technical_data.macd_histogram > 0 ? 'bg-emerald-100 text-emerald-700' : 
-                              stock.technical_data.macd_histogram < 0 ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'
-                            }`}>
-                              {stock.technical_data.macd_histogram ? 
-                                (stock.technical_data.macd_histogram > 0 ? 'BUY' : 'SELL') : 'NEUTRAL'}
-                            </span>
-                          </TableCell>
-                          
-                          {/* Bollinger Bands Position */}
-                          <TableCell>
-                            <span className={`text-xs font-medium ${
-                              stock.current_price > stock.technical_data.bollinger_upper ? 'text-red-600' :
-                              stock.current_price < stock.technical_data.bollinger_lower ? 'text-emerald-600' : 'text-slate-600'
-                            }`}>
-                              {stock.technical_data.bollinger_upper && stock.technical_data.bollinger_lower ? (
-                                stock.current_price > stock.technical_data.bollinger_upper ? 'UPPER' :
-                                stock.current_price < stock.technical_data.bollinger_lower ? 'LOWER' : 'MIDDLE'
-                              ) : '-'}
-                            </span>
-                          </TableCell>
-                          
-                          {/* Stochastic %K */}
-                          <TableCell>
-                            <span className={`font-medium ${
-                              stock.technical_data.stochastic_k > 80 ? 'text-red-600' : 
-                              stock.technical_data.stochastic_k < 20 ? 'text-emerald-600' : 'text-slate-600'
-                            }`}>
-                              {stock.technical_data.stochastic_k ? stock.technical_data.stochastic_k.toFixed(1) : '-'}
-                            </span>
-                          </TableCell>
-                          
-                          {/* VWAP Position */}
-                          <TableCell>
-                            <span className={`text-xs font-medium px-2 py-1 rounded ${
-                              stock.current_price > stock.technical_data.vwap ? 'bg-emerald-100 text-emerald-700' : 
-                              stock.current_price < stock.technical_data.vwap ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'
-                            }`}>
-                              {stock.technical_data.vwap ? 
-                                (stock.current_price > stock.technical_data.vwap ? 'ABOVE' : 'BELOW') : '-'}
-                            </span>
-                          </TableCell>
-                          
-                          {/* ATR (Volatility) */}
-                          <TableCell>
-                            <span className={`font-medium text-xs ${
-                              stock.technical_data.atr > stock.current_price * 0.03 ? 'text-orange-600' : 'text-slate-600'
-                            }`}>
-                              {stock.technical_data.atr ? 
-                                `₹${stock.technical_data.atr.toFixed(2)}` : '-'}
                             </span>
                           </TableCell>
                           <TableCell>
