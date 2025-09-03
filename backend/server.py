@@ -2239,7 +2239,41 @@ logger.info("=== Stock Screener API Starting ===")
 logger.info(f"Rate limiting enabled: MAX_RETRIES={MAX_RETRIES}, INITIAL_WAIT={INITIAL_WAIT}s, MAX_WAIT={MAX_WAIT}s")
 logger.info(f"Batch processing: BATCH_DELAY={BATCH_DELAY}s, Cache expiry={CACHE_EXPIRY_MINUTES}min")
 
+# Background task for cache management and performance monitoring
+async def background_maintenance_task():
+    """Background task for cache cleanup and performance monitoring"""
+    while True:
+        try:
+            # Clean up expired cache entries every 10 minutes
+            clear_old_cache_entries()
+            
+            # Log performance metrics every 30 minutes
+            if int(time.time()) % 1800 == 0:  # Every 30 minutes
+                metrics = get_system_performance_metrics()
+                logger.info(f"Performance metrics: Cache size={metrics.get('cache', {}).get('size', 0)}, "
+                           f"Requests/min={metrics.get('requests', {}).get('per_minute', 0)}")
+            
+            # Sleep for 10 minutes
+            await asyncio.sleep(600)
+            
+        except Exception as e:
+            logger.error(f"Background maintenance task error: {str(e)}")
+            await asyncio.sleep(60)  # Wait 1 minute before retrying
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize background tasks and startup procedures"""
+    logger.info("=== Stock Screener API Started Successfully ===")
+    logger.info(f"Available symbols: {len(NSE_SYMBOLS)}")
+    logger.info(f"Sectors covered: {len(set(NSE_SYMBOLS.values()))}")
+    
+    # Start background maintenance task
+    asyncio.create_task(background_maintenance_task())
+    logger.info("Background maintenance task started")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    logger.info("=== Stock Screener API Shutting Down ===")
     client.close()
     executor.shutdown(wait=True)
+    logger.info("Cleanup completed")
