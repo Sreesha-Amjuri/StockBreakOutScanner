@@ -78,7 +78,96 @@ const Dashboard = () => {
     }
   };
 
-  const scanBreakouts = async () => {
+  // Progressive scanning for full NSE coverage
+  const [scanProgress, setScanProgress] = useState(0);
+  
+  const scanBreakoutsProgressive = async () => {
+    if (loading) {
+      return;
+    }
+    
+    setLoading(true);
+    setScanProgress(0);
+    
+    try {
+      toast.info("🚀 Starting FULL NSE scan (594+ stocks)...");
+      
+      // Start with smaller batch and increase progressively
+      const batchSizes = [50, 100, 200, 300];
+      let totalScanned = 0;
+      let totalBreakouts = 0;
+      let allBreakoutStocks = [];
+      
+      for (let i = 0; i < batchSizes.length; i++) {
+        const currentLimit = batchSizes[i];
+        setScanProgress(Math.round(((i + 1) / batchSizes.length) * 100));
+        
+        toast.info(`📊 Scanning batch ${i + 1}/4 (${currentLimit} stocks)...`);
+        
+        const params = new URLSearchParams({
+          min_confidence: minConfidence.toString(),
+          limit: currentLimit.toString()
+        });
+        
+        if (selectedSector !== 'All') {
+          params.append('sector', selectedSector);
+        }
+        
+        if (selectedRiskLevel !== 'All') {
+          params.append('risk_level', selectedRiskLevel);
+        }
+        
+        try {
+          const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`, {
+            timeout: 120000 // 2 minute timeout per batch
+          });
+          
+          if (response.data && Array.isArray(response.data.breakout_stocks)) {
+            // Merge results
+            const newBreakouts = response.data.breakout_stocks.filter(
+              newStock => !allBreakoutStocks.some(existing => existing.symbol === newStock.symbol)
+            );
+            allBreakoutStocks = [...allBreakoutStocks, ...newBreakouts];
+            
+            totalScanned = response.data.scan_statistics?.total_scanned || currentLimit;
+            totalBreakouts = allBreakoutStocks.length;
+            
+            // Update UI progressively
+            setBreakoutStocks(allBreakoutStocks);
+            setScanStats({
+              stocks_scanned: totalScanned,
+              breakouts_found: totalBreakouts
+            });
+            
+            toast.success(`✅ Batch ${i + 1} complete: ${totalScanned} scanned, ${totalBreakouts} breakouts found`);
+          }
+        } catch (error) {
+          console.error(`Error in batch ${i + 1}:`, error);
+          toast.error(`⚠️ Batch ${i + 1} failed, continuing with next batch...`);
+        }
+        
+        // Small delay between batches
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
+      setLastUpdated(new Date().toLocaleTimeString());
+      setScanProgress(100);
+      
+      toast.success(`🎯 FULL NSE SCAN COMPLETE! 
+        📊 Total Scanned: ${totalScanned} stocks
+        🚀 Breakouts Found: ${totalBreakouts}
+        ⚡ Success Rate: ${((totalBreakouts/totalScanned) * 100).toFixed(1)}%`, {
+        duration: 10000
+      });
+      
+    } catch (error) {
+      console.error('Error in progressive scanning:', error);
+      toast.error('Full NSE scan encountered issues. Please try again or use smaller batch sizes.');
+    } finally {
+      setLoading(false);
+      setScanProgress(0);
+    }
+  };
     if (loading) {
       console.log('Scan already in progress, skipping...');
       return;
