@@ -643,6 +643,118 @@ def clear_old_cache_entries():
     if expired_keys:
         logger.info(f"Cleared {len(expired_keys)} expired cache entries")
 
+def get_system_performance_metrics() -> Dict[str, Any]:
+    """Get system performance metrics for monitoring"""
+    try:
+        import psutil
+        
+        # CPU and Memory usage
+        cpu_percent = psutil.cpu_percent(interval=1)
+        memory = psutil.virtual_memory()
+        
+        # Cache statistics
+        cache_size = len(STOCK_DATA_CACHE)
+        cache_hit_ratio = getattr(get_cached_stock_data, 'hit_ratio', 0)
+        
+        # Request statistics
+        global request_count, requests_per_minute
+        
+        return {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "system": {
+                "cpu_percent": cpu_percent,
+                "memory_percent": memory.percent,
+                "memory_available_gb": memory.available / (1024**3)
+            },
+            "cache": {
+                "size": cache_size,
+                "hit_ratio": cache_hit_ratio,
+                "expiry_minutes": CACHE_EXPIRY_MINUTES
+            },
+            "requests": {
+                "total_count": request_count,
+                "per_minute": requests_per_minute,
+                "rate_limit_enabled": RATE_LIMIT_BACKOFF
+            },
+            "rate_limiting": {
+                "max_retries": MAX_RETRIES,
+                "initial_wait": INITIAL_WAIT,
+                "max_wait": MAX_WAIT,
+                "batch_delay": BATCH_DELAY
+            }
+        }
+    except ImportError:
+        logger.warning("psutil not available, returning basic metrics")
+        return {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "cache_size": len(STOCK_DATA_CACHE),
+            "requests_per_minute": requests_per_minute,
+            "note": "Install psutil for detailed system metrics"
+        }
+    except Exception as e:
+        logger.error(f"Error getting performance metrics: {str(e)}")
+        return {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "error": str(e)
+        }
+
+async def health_check_with_diagnostics() -> Dict[str, Any]:
+    """Comprehensive health check with diagnostics"""
+    try:
+        health_status = {
+            "status": "healthy",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "checks": {}
+        }
+        
+        # Database connectivity check
+        try:
+            await db.status_checks.count_documents({})
+            health_status["checks"]["database"] = {"status": "ok", "message": "MongoDB connection successful"}
+        except Exception as e:
+            health_status["checks"]["database"] = {"status": "error", "message": f"Database error: {str(e)}"}
+            health_status["status"] = "degraded"
+        
+        # Yahoo Finance API check
+        try:
+            test_ticker = yf.Ticker("RELIANCE.NS")
+            test_data = test_ticker.history(period="1d")
+            if not test_data.empty:
+                health_status["checks"]["yahoo_finance"] = {"status": "ok", "message": "Yahoo Finance API accessible"}
+            else:
+                health_status["checks"]["yahoo_finance"] = {"status": "warning", "message": "Yahoo Finance API returned empty data"}
+                health_status["status"] = "degraded"
+        except Exception as e:
+            health_status["checks"]["yahoo_finance"] = {"status": "error", "message": f"Yahoo Finance API error: {str(e)}"}
+            health_status["status"] = "degraded"
+        
+        # Cache health check
+        cache_size = len(STOCK_DATA_CACHE)
+        if cache_size > 1000:  # Arbitrary threshold
+            health_status["checks"]["cache"] = {"status": "warning", "message": f"Large cache size: {cache_size} entries"}
+        else:
+            health_status["checks"]["cache"] = {"status": "ok", "message": f"Cache size normal: {cache_size} entries"}
+        
+        # Market status check
+        market_status = get_market_status()
+        health_status["checks"]["market_status"] = {
+            "status": "ok", 
+            "message": f"Market is {market_status['status']}: {market_status['message']}"
+        }
+        
+        # Performance metrics
+        health_status["performance"] = get_system_performance_metrics()
+        
+        return health_status
+        
+    except Exception as e:
+        logger.error(f"Health check failed: {str(e)}")
+        return {
+            "status": "error",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "error": str(e)
+        }
+
 def calculate_advanced_technical_indicators(df: pd.DataFrame) -> Dict[str, Any]:
     """Calculate comprehensive technical indicators"""
     try:
