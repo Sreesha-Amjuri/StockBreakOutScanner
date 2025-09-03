@@ -87,11 +87,11 @@ const Dashboard = () => {
     setLoading(true);
     
     try {
-      toast.info("🚀 Scanning NSE market (20 stocks for optimal performance)...");
+      toast.info("🚀 Scanning Large Cap NSE stocks (NIFTY 50 + Next 50)...");
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
-        limit: '20'  // Optimal limit for balance between performance and coverage
+        limit: '100'  // Scan NIFTY 50 + Next 50 for large cap focus
       });
       
       if (selectedSector !== 'All') {
