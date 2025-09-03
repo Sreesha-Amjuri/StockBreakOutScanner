@@ -115,6 +115,12 @@ const Dashboard = () => {
         setBreakoutStocks(response.data.breakout_stocks);
         setLastUpdated(new Date().toLocaleTimeString());
         
+        // Update scan statistics
+        setScanStats({
+          stocks_scanned: response.data.scan_statistics?.stocks_scanned || response.data.breakout_stocks.length,
+          breakouts_found: response.data.breakouts_found || response.data.breakout_stocks.length
+        });
+        
         const count = response.data.breakout_stocks.length;
         if (count > 0) {
           toast.success(`Found ${count} breakout opportunities!`);
