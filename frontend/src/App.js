@@ -72,7 +72,7 @@ const Dashboard = () => {
   const fetchSectors = async () => {
     try {
       const response = await axios.get(`${API}/stocks/symbols`);
-      setSectors(['All', ...response.data.sectors]);
+      setSectors(['All', ...Object.keys(response.data.sector_distribution)]);
     } catch (error) {
       console.error('Error fetching sectors:', error);
     }
