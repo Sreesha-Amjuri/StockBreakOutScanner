@@ -28,6 +28,7 @@ const Dashboard = () => {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [sectors, setSectors] = useState([]);
   const [marketOverview, setMarketOverview] = useState(null);
+  const [scanStats, setScanStats] = useState({ stocks_scanned: 0, breakouts_found: 0 });
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
