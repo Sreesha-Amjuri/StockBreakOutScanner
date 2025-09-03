@@ -105,7 +105,7 @@ const Dashboard = () => {
       console.log('Requesting NSE breakout scan with params:', params.toString());
       
       // Show progress update
-      toast.info("📊 Analyzing 20 NSE stocks for optimal results...", {
+      toast.info("📊 Analyzing NIFTY 50 + Next 50 large cap stocks...", {
         duration: 3000
       });
       
