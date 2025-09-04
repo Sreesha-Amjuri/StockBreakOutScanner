@@ -1797,6 +1797,22 @@ async def fetch_comprehensive_stock_data(symbol: str) -> Optional[Dict]:
         # Calculate risk assessment
         risk_assessment = calculate_risk_assessment(symbol, hist, technical_indicators, info)
         
+        # Calculate valuation score (NEW)
+        try:
+            valuation_analysis = calculate_valuation_score(fundamental_data)
+            logger.debug(f"Valuation calculated for {symbol}: {valuation_analysis['valuation_category']}")
+        except Exception as e:
+            logger.error(f"Error calculating valuation for {symbol}: {str(e)}")
+            # Fallback valuation data
+            valuation_analysis = {
+                "valuation_score": 3.0,
+                "valuation_category": "Reasonable",
+                "color_class": "text-gray-600 bg-gray-50",
+                "total_weights": 0.0,
+                "breakdown": {"details": ["Valuation calculation error"]},
+                "confidence": "Low"
+            }
+        
         # Detect breakouts
         breakout_data = detect_advanced_breakout(symbol, hist, technical_indicators)
         
