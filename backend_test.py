@@ -1418,6 +1418,368 @@ class StockBreakoutAPITester:
         
         return self.tests_passed == self.tests_run
 
+    def test_ai_chat_functionality(self):
+        """Test AI Chat functionality for stock analysis"""
+        print("\n🤖 AI CHAT FUNCTIONALITY TESTING")
+        print("-" * 40)
+        
+        # Test 1: Basic chat endpoint without stock context
+        chat_request = {
+            "message": "What are the key technical indicators I should look at for Indian stock analysis?",
+            "session_id": None,
+            "stock_context": None
+        }
+        
+        success1, data1 = self.test_api_endpoint("AI Chat - Basic Query", "POST", "chat", 
+                                               data=chat_request, timeout=30)
+        
+        if success1:
+            # Validate response structure
+            required_fields = ['response', 'session_id', 'timestamp']
+            missing_fields = [field for field in required_fields if field not in data1]
+            
+            if missing_fields:
+                self.log_test("Chat Response Structure", False, f"Missing fields: {missing_fields}")
+            else:
+                response_text = data1.get('response', '')
+                session_id = data1.get('session_id', '')
+                
+                # Check if response is relevant to Indian stock markets
+                indian_market_keywords = ['indian', 'nifty', 'nse', 'rupee', '₹', 'rsi', 'macd', 'technical']
+                has_relevant_content = any(keyword.lower() in response_text.lower() for keyword in indian_market_keywords)
+                
+                self.log_test("Chat Response Relevance", has_relevant_content, 
+                            f"Response contains Indian market context: {len(response_text)} chars")
+                
+                self.log_test("Chat Session ID Generated", len(session_id) > 0, 
+                            f"Session ID: {session_id[:8]}...")
+                
+                # Store session ID for history test
+                self.test_session_id = session_id
+        
+        # Test 2: Chat with stock context
+        stock_context = {
+            "symbol": "RELIANCE",
+            "current_price": 1384.90,
+            "change_percent": -1.96,
+            "rsi": 45.2,
+            "sector": "Energy",
+            "technical_indicators": {
+                "macd": 12.5,
+                "support_level": 1350.0,
+                "resistance_level": 1420.0
+            }
+        }
+        
+        chat_request_with_context = {
+            "message": "Should I buy this stock? What's your analysis?",
+            "session_id": getattr(self, 'test_session_id', None),
+            "stock_context": stock_context
+        }
+        
+        success2, data2 = self.test_api_endpoint("AI Chat - With Stock Context", "POST", "chat", 
+                                               data=chat_request_with_context, timeout=30)
+        
+        if success2:
+            response_text = data2.get('response', '')
+            
+            # Check if response mentions the specific stock and its data
+            reliance_mentioned = 'reliance' in response_text.lower()
+            price_mentioned = '1384' in response_text or '₹' in response_text
+            rsi_mentioned = 'rsi' in response_text.lower() or '45' in response_text
+            
+            context_usage = reliance_mentioned or price_mentioned or rsi_mentioned
+            self.log_test("Chat Context Usage", context_usage, 
+                        f"Response uses stock context (RELIANCE data): {len(response_text)} chars")
+        
+        # Test 3: Multiple stock analysis questions
+        analysis_questions = [
+            "What does RSI of 45.2 indicate for RELIANCE?",
+            "Is the current support level of ₹1350 strong?",
+            "What should be my stop loss for this position?"
+        ]
+        
+        analysis_responses = 0
+        for i, question in enumerate(analysis_questions):
+            chat_request = {
+                "message": question,
+                "session_id": getattr(self, 'test_session_id', None),
+                "stock_context": stock_context
+            }
+            
+            success, data = self.test_api_endpoint(f"AI Analysis Question {i+1}", "POST", "chat", 
+                                                 data=chat_request, timeout=30)
+            
+            if success:
+                analysis_responses += 1
+                response_text = data.get('response', '')
+                
+                # Check for specific analysis content
+                if 'rsi' in question.lower() and ('oversold' in response_text.lower() or 'neutral' in response_text.lower() or 'overbought' in response_text.lower()):
+                    self.log_test(f"RSI Analysis Quality", True, "Response contains RSI interpretation")
+                elif 'support' in question.lower() and ('support' in response_text.lower() or '1350' in response_text):
+                    self.log_test(f"Support Level Analysis", True, "Response addresses support level")
+                elif 'stop loss' in question.lower() and ('stop' in response_text.lower() or 'loss' in response_text.lower()):
+                    self.log_test(f"Stop Loss Guidance", True, "Response provides stop loss guidance")
+        
+        self.log_test("Multiple Analysis Questions", analysis_responses >= 2, 
+                    f"{analysis_responses}/{len(analysis_questions)} analysis questions answered")
+        
+        return success1 and success2
+
+    def test_chat_history_functionality(self):
+        """Test chat history retrieval and persistence"""
+        print("\n📚 CHAT HISTORY TESTING")
+        print("-" * 25)
+        
+        # Use session ID from previous test or create new one
+        session_id = getattr(self, 'test_session_id', 'test-session-' + str(int(datetime.now().timestamp())))
+        
+        # Send a few messages to create history
+        test_messages = [
+            "What is the current market sentiment?",
+            "Analyze NIFTY 50 trends",
+            "What are the best sectors to invest in?"
+        ]
+        
+        for i, message in enumerate(test_messages):
+            chat_request = {
+                "message": message,
+                "session_id": session_id,
+                "stock_context": None
+            }
+            
+            success, data = self.test_api_endpoint(f"History Setup Message {i+1}", "POST", "chat", 
+                                                 data=chat_request, timeout=30)
+            
+            if not success:
+                self.log_test("Chat History Setup", False, f"Failed to send message {i+1}")
+                return False
+        
+        # Test chat history retrieval
+        success, history_data = self.test_api_endpoint("Chat History Retrieval", "GET", f"chat/history/{session_id}")
+        
+        if success:
+            messages = history_data.get('messages', [])
+            returned_session_id = history_data.get('session_id', '')
+            message_count = history_data.get('count', 0)
+            
+            # Validate history structure
+            self.log_test("History Session ID Match", returned_session_id == session_id, 
+                        f"Session ID matches: {session_id}")
+            
+            # Should have at least the messages we sent (user + assistant pairs)
+            expected_min_messages = len(test_messages) * 2  # Each user message gets an assistant response
+            self.log_test("History Message Count", len(messages) >= expected_min_messages, 
+                        f"Found {len(messages)} messages (expected ≥ {expected_min_messages})")
+            
+            # Validate message structure
+            if messages:
+                first_message = messages[0]
+                required_fields = ['id', 'session_id', 'message', 'role', 'timestamp']
+                missing_fields = [field for field in required_fields if field not in first_message]
+                
+                self.log_test("History Message Structure", len(missing_fields) == 0, 
+                            f"Message structure complete: {list(first_message.keys())}")
+                
+                # Check role alternation (user, assistant, user, assistant...)
+                roles = [msg.get('role') for msg in messages]
+                valid_roles = all(role in ['user', 'assistant'] for role in roles)
+                self.log_test("History Role Validation", valid_roles, 
+                            f"All roles valid: {set(roles)}")
+                
+                # Check chronological order
+                timestamps = [msg.get('timestamp') for msg in messages if msg.get('timestamp')]
+                if len(timestamps) >= 2:
+                    chronological = all(timestamps[i] <= timestamps[i+1] for i in range(len(timestamps)-1))
+                    self.log_test("History Chronological Order", chronological, 
+                                "Messages in chronological order")
+        
+        # Test history with limit parameter
+        success_limited, limited_data = self.test_api_endpoint("Chat History - Limited", "GET", f"chat/history/{session_id}", 
+                                                             params={"limit": "2"})
+        
+        if success_limited:
+            limited_messages = limited_data.get('messages', [])
+            limit_respected = len(limited_messages) <= 2
+            self.log_test("History Limit Parameter", limit_respected, 
+                        f"Limit respected: {len(limited_messages)} ≤ 2 messages")
+        
+        return success
+
+    def test_chat_error_handling(self):
+        """Test chat error handling scenarios"""
+        print("\n⚠️  CHAT ERROR HANDLING TESTING")
+        print("-" * 35)
+        
+        # Test 1: Empty message
+        empty_request = {
+            "message": "",
+            "session_id": None,
+            "stock_context": None
+        }
+        
+        success1, data1 = self.test_api_endpoint("Chat - Empty Message", "POST", "chat", 
+                                               data=empty_request, expected_status=422, timeout=15)
+        
+        # Test 2: Invalid stock context
+        invalid_context_request = {
+            "message": "Analyze this stock",
+            "session_id": None,
+            "stock_context": {
+                "symbol": "",  # Invalid empty symbol
+                "current_price": "invalid_price",  # Invalid price type
+                "change_percent": None
+            }
+        }
+        
+        success2, data2 = self.test_api_endpoint("Chat - Invalid Context", "POST", "chat", 
+                                               data=invalid_context_request, timeout=15)
+        
+        # Should either succeed with error handling or return appropriate error
+        context_handled = success2 or data2.get('detail', '').lower().find('error') != -1
+        self.log_test("Invalid Context Handling", context_handled, 
+                    "System handles invalid stock context gracefully")
+        
+        # Test 3: Non-existent session history
+        fake_session_id = "non-existent-session-12345"
+        success3, data3 = self.test_api_endpoint("Chat History - Non-existent Session", "GET", f"chat/history/{fake_session_id}")
+        
+        if success3:
+            messages = data3.get('messages', [])
+            empty_history = len(messages) == 0
+            self.log_test("Non-existent Session Handling", empty_history, 
+                        f"Returns empty history for non-existent session: {len(messages)} messages")
+        
+        # Test 4: Very long message (test input validation)
+        long_message = "A" * 5000  # 5000 character message
+        long_request = {
+            "message": long_message,
+            "session_id": None,
+            "stock_context": None
+        }
+        
+        success4, data4 = self.test_api_endpoint("Chat - Long Message", "POST", "chat", 
+                                               data=long_request, timeout=45)
+        
+        # Should either handle gracefully or return appropriate error
+        long_message_handled = success4 or (not success4 and 'timeout' not in str(data4).lower())
+        self.log_test("Long Message Handling", long_message_handled, 
+                    "System handles very long messages appropriately")
+        
+        return True
+
+    def test_chat_mongodb_persistence(self):
+        """Test MongoDB storage of chat messages"""
+        print("\n💾 CHAT MONGODB PERSISTENCE TESTING")
+        print("-" * 38)
+        
+        # Create a unique session for this test
+        test_session_id = f"mongodb-test-{int(datetime.now().timestamp())}"
+        
+        # Send a message and verify it gets stored
+        test_message = "Test message for MongoDB persistence verification"
+        chat_request = {
+            "message": test_message,
+            "session_id": test_session_id,
+            "stock_context": {
+                "symbol": "TCS",
+                "current_price": 3157.20,
+                "sector": "IT"
+            }
+        }
+        
+        success1, data1 = self.test_api_endpoint("MongoDB Storage Test", "POST", "chat", 
+                                               data=chat_request, timeout=30)
+        
+        if success1:
+            # Immediately retrieve history to verify storage
+            success2, history_data = self.test_api_endpoint("MongoDB Retrieval Test", "GET", f"chat/history/{test_session_id}")
+            
+            if success2:
+                messages = history_data.get('messages', [])
+                
+                # Should have at least 2 messages (user + assistant)
+                has_messages = len(messages) >= 2
+                self.log_test("MongoDB Message Storage", has_messages, 
+                            f"Found {len(messages)} stored messages")
+                
+                if messages:
+                    # Find user message
+                    user_messages = [msg for msg in messages if msg.get('role') == 'user']
+                    assistant_messages = [msg for msg in messages if msg.get('role') == 'assistant']
+                    
+                    # Verify user message content
+                    user_message_stored = any(msg.get('message') == test_message for msg in user_messages)
+                    self.log_test("User Message Persistence", user_message_stored, 
+                                "User message correctly stored in MongoDB")
+                    
+                    # Verify assistant response stored
+                    has_assistant_response = len(assistant_messages) > 0
+                    self.log_test("Assistant Response Persistence", has_assistant_response, 
+                                f"Assistant response stored: {len(assistant_messages)} responses")
+                    
+                    # Verify stock context is stored with user message
+                    if user_messages:
+                        user_msg = user_messages[0]
+                        stock_context_stored = user_msg.get('stock_context') is not None
+                        self.log_test("Stock Context Persistence", stock_context_stored, 
+                                    "Stock context stored with user message")
+                        
+                        if stock_context_stored:
+                            stored_context = user_msg.get('stock_context', {})
+                            symbol_stored = stored_context.get('symbol') == 'TCS'
+                            price_stored = stored_context.get('current_price') == 3157.20
+                            
+                            self.log_test("Context Data Integrity", symbol_stored and price_stored, 
+                                        f"Context data intact: {stored_context}")
+                    
+                    # Verify message IDs are unique
+                    message_ids = [msg.get('id') for msg in messages if msg.get('id')]
+                    unique_ids = len(message_ids) == len(set(message_ids))
+                    self.log_test("Message ID Uniqueness", unique_ids, 
+                                f"All message IDs unique: {len(message_ids)} messages")
+                    
+                    # Verify timestamps are present and valid
+                    timestamps = [msg.get('timestamp') for msg in messages if msg.get('timestamp')]
+                    valid_timestamps = len(timestamps) == len(messages)
+                    self.log_test("Timestamp Persistence", valid_timestamps, 
+                                f"All messages have timestamps: {len(timestamps)}/{len(messages)}")
+        
+        return success1 and success2
+
+    def test_ai_chat_comprehensive(self):
+        """Run comprehensive AI Chat testing"""
+        print("\n🤖 COMPREHENSIVE AI CHAT TESTING")
+        print("=" * 45)
+        
+        # Test all chat functionality
+        chat_tests_passed = 0
+        total_chat_tests = 4
+        
+        # Test 1: Basic AI Chat Functionality
+        if self.test_ai_chat_functionality():
+            chat_tests_passed += 1
+        
+        # Test 2: Chat History Functionality  
+        if self.test_chat_history_functionality():
+            chat_tests_passed += 1
+        
+        # Test 3: Error Handling
+        if self.test_chat_error_handling():
+            chat_tests_passed += 1
+        
+        # Test 4: MongoDB Persistence
+        if self.test_chat_mongodb_persistence():
+            chat_tests_passed += 1
+        
+        # Overall chat functionality assessment
+        chat_success_rate = (chat_tests_passed / total_chat_tests) * 100
+        self.log_test("Overall AI Chat Functionality", chat_success_rate >= 75, 
+                    f"Chat tests passed: {chat_tests_passed}/{total_chat_tests} ({chat_success_rate:.1f}%)")
+        
+        return chat_tests_passed >= 3  # At least 3 out of 4 chat tests should pass
+
 def main():
     """Main test execution"""
     tester = StockBreakoutAPITester()
