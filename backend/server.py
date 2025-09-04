@@ -586,40 +586,86 @@ async def fetch_with_retry(symbol: str) -> Optional[Dict]:
         return None
 
 async def fetch_stock_data_batch(symbols: List[str]) -> List[Optional[Dict]]:
-    """Enhanced batch fetching with improved rate limiting and error handling"""
-    results = []
+    """OPTIMIZED: Concurrent batch fetching with aggressive caching and rate limiting"""
+    if not symbols:
+        return []
     
-    logger.info(f"Starting batch fetch for {len(symbols)} symbols")
+    logger.info(f"🚀 Starting OPTIMIZED batch fetch for {len(symbols)} symbols")
+    start_time = time.time()
     
-    for i, symbol in enumerate(symbols):
-        try:
-            # Check cache first
-            cached_data = get_cached_stock_data(symbol)
-            if cached_data:
-                results.append(cached_data)
-                logger.debug(f"Using cached data for {symbol} ({i+1}/{len(symbols)})")
-                continue
+    # Check cache first for all symbols
+    cached_results = {}
+    uncached_symbols = []
+    
+    for symbol in symbols:
+        cached_data = get_cached_stock_data(symbol)
+        if cached_data:
+            cached_results[symbol] = cached_data
+        else:
+            uncached_symbols.append(symbol)
+    
+    logger.info(f"📊 Cache stats: {len(cached_results)} cached, {len(uncached_symbols)} need fetching")
+    
+    # Fetch uncached symbols concurrently in smaller batches
+    fetched_results = {}
+    
+    if uncached_symbols:
+        # Process in smaller concurrent batches to avoid rate limiting
+        for i in range(0, len(uncached_symbols), MAX_CONCURRENT_REQUESTS):
+            batch_symbols = uncached_symbols[i:i + MAX_CONCURRENT_REQUESTS]
+            logger.info(f"⚡ Concurrent batch {i//MAX_CONCURRENT_REQUESTS + 1}: fetching {len(batch_symbols)} symbols")
             
-            # Fetch fresh data with enhanced rate limiting
-            logger.debug(f"Fetching fresh data for {symbol} ({i+1}/{len(symbols)})")
-            stock_data = await fetch_with_retry(symbol)
+            # Create concurrent tasks with timeout
+            tasks = [
+                asyncio.wait_for(fetch_with_retry(symbol), timeout=10.0)  # 10 second timeout per stock
+                for symbol in batch_symbols
+            ]
             
-            if stock_data:
-                cache_stock_data(symbol, stock_data)
-                results.append(stock_data)
-                logger.debug(f"Successfully fetched data for {symbol}")
-            else:
-                results.append(None)
-                logger.warning(f"No data available for {symbol}")
-            
-        except Exception as e:
-            logger.error(f"Error fetching data for {symbol} in batch: {str(e)}")
-            results.append(None)
+            try:
+                # Execute concurrent requests
+                batch_results = await asyncio.gather(*tasks, return_exceptions=True)
+                
+                # Process results
+                for symbol, result in zip(batch_symbols, batch_results):
+                    if isinstance(result, Exception):
+                        logger.warning(f"❌ Failed to fetch {symbol}: {result}")
+                        fetched_results[symbol] = None
+                    elif result:
+                        cache_stock_data(symbol, result)  # Cache successful results
+                        fetched_results[symbol] = result
+                        logger.debug(f"✅ Successfully fetched {symbol}")
+                    else:
+                        fetched_results[symbol] = None
+                
+                # Small delay between concurrent batches to be respectful to APIs
+                if i + MAX_CONCURRENT_REQUESTS < len(uncached_symbols):
+                    await asyncio.sleep(0.5)
+                    
+            except Exception as e:
+                logger.error(f"❌ Concurrent batch failed: {e}")
+                # Mark all symbols in this batch as failed
+                for symbol in batch_symbols:
+                    fetched_results[symbol] = None
     
-    successful_fetches = sum(1 for r in results if r is not None)
-    logger.info(f"Batch fetch completed: {successful_fetches}/{len(symbols)} successful")
+    # Combine cached and fetched results in original order
+    final_results = []
+    for symbol in symbols:
+        if symbol in cached_results:
+            final_results.append(cached_results[symbol])
+        elif symbol in fetched_results:
+            final_results.append(fetched_results[symbol])
+        else:
+            final_results.append(None)
     
-    return results
+    # Performance metrics
+    elapsed_time = time.time() - start_time
+    successful_count = sum(1 for r in final_results if r is not None)
+    cache_hit_rate = len(cached_results) / len(symbols) * 100 if symbols else 0
+    
+    logger.info(f"🎯 Batch completed in {elapsed_time:.2f}s: {successful_count}/{len(symbols)} successful, "
+               f"{cache_hit_rate:.1f}% cache hit rate")
+    
+    return final_results
 
 def get_nifty_50_symbols() -> List[str]:
     """Get only NIFTY 50 symbols for focused value investing analysis"""
