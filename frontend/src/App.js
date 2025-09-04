@@ -46,6 +46,10 @@ const Dashboard = () => {
   const [sortField, setSortField] = useState('confidence_score');
   const [sortDirection, setSortDirection] = useState('desc');
 
+  // AI Chat state
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [selectedStockForChat, setSelectedStockForChat] = useState(null);
+
   const fetchMarketOverview = async () => {
     try {
       console.log('Fetching market overview...');
