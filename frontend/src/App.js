@@ -1101,6 +1101,28 @@ const Dashboard = () => {
                                 }
                                 className="text-xs"
                               >
+                                <Heart className={`w-3 h-3 mr-1 ${
+                                  isInWatchlist(stock.symbol) ? 'fill-current' : ''
+                                }`} />
+                                {isInWatchlist(stock.symbol) ? 'Saved' : 'Save'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedStockForChat(stock);
+                                  setIsChatOpen(true);
+                                }}
+                                className="text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                title="Analyze with AI"
+                              >
+                                <Zap className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                                }
+                                className="text-xs"
+                              >
                                 <Heart className={`w-3 h-3 ${isInWatchlist(stock.symbol) ? 'fill-current' : ''}`} />
                               </Button>
                             </div>
