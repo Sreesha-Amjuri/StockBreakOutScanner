@@ -2013,10 +2013,21 @@ async def scan_breakout_stocks(
                 if risk_level and result.get('risk_assessment', {}).get('risk_level') != risk_level:
                     continue
                 
+                # Apply valuation filter (NEW)
+                if valuation_filter and valuation_filter != "All":
+                    try:
+                        valuation_category = result.get('valuation_analysis', {}).get('valuation_category', 'Reasonable')
+                        if valuation_category != valuation_filter:
+                            continue
+                    except Exception as e:
+                        logger.warning(f"Error applying valuation filter for {symbol}: {str(e)}")
+                        # Continue processing if valuation filter fails
+                
                 stock_sector = result.get('sector', 'Unknown')
                 technical_indicators = result['technical_indicators']
                 fundamental_data = result['fundamental_data']
                 risk_assessment = result['risk_assessment']
+                valuation_analysis = result.get('valuation_analysis', {})
                 
                 # Count breakouts by sector
                 sector_breakouts[stock_sector] = sector_breakouts.get(stock_sector, 0) + 1
