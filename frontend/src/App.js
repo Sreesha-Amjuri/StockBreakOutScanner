@@ -15,6 +15,8 @@ import {
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
 import StockDetails from "./components/StockDetails";
+import ThemeToggle from "./components/ThemeToggle";
+import { useTheme } from "./contexts/ThemeContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
