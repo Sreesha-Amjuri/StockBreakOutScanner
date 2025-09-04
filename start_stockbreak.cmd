@@ -1,53 +1,31 @@
 @echo off
-REM StockBreak Pro Simple Launcher
-REM Right-click this file and select "Run as Administrator" if needed
-
-title StockBreak Pro Launcher
-color 02
-
-echo.
-echo =============================================
-echo          StockBreak Pro Launcher
-echo =============================================
+title StockBreak Pro - Starting Services
+echo ======================================
+echo  StockBreak Pro - Performance Optimized
+echo ======================================
 echo.
 
-REM Check current directory
-echo Checking installation directory...
-if not exist "backend\server.py" (
-    echo ERROR: Run this from StockBreakOutScanner folder!
-    echo Current location: %CD%
-    pause
-    exit
-)
-
-echo ✓ Found StockBreak Pro installation
-echo.
-
-REM Start MongoDB
-echo [1/3] Starting MongoDB...
-net start MongoDB 2>nul || echo MongoDB already running or needs manual start
-
-REM Start Backend
-echo [2/3] Starting Backend...
+echo Starting backend server...
 cd backend
-start /min "Backend" cmd /k "venv\Scripts\activate && uvicorn server:app --host 0.0.0.0 --port 8001"
-cd ..
+start "StockBreak Pro Backend" cmd /k "python -m uvicorn server:app --reload --host 0.0.0.0 --port 8001"
 
-REM Start Frontend
-echo [3/3] Starting Frontend...
-cd frontend
-start /min "Frontend" cmd /k "npm start"
-cd ..
+echo Waiting for backend to initialize...
+timeout /t 5 /nobreak >nul
 
-echo.
-echo ✓ Services starting...
-echo ✓ Backend: http://localhost:8001
-echo ✓ Frontend: http://localhost:3000
-echo.
-echo Opening browser in 10 seconds...
-timeout 10
-start http://localhost:3000
+echo Starting frontend server...
+cd ..\frontend  
+start "StockBreak Pro Frontend" cmd /k "npm start"
 
 echo.
-echo StockBreak Pro is now running!
+echo ======================================
+echo  StockBreak Pro Services Started!
+echo ======================================
+echo.
+echo Backend API: http://localhost:8001
+echo Frontend:    http://localhost:3000
+echo API Docs:    http://localhost:8001/docs
+echo.
+echo Services are starting in separate windows...
+echo Close this window when you're done.
+echo.
 pause
