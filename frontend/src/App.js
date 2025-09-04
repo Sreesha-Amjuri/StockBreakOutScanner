@@ -117,7 +117,7 @@ const Dashboard = () => {
         timeout: 120000 // 2 minute timeout for 100 stocks (increased from 1 minute)
       });
       
-      console.log('NIFTY 50 scan completed:', response.data);
+      console.log('NIFTY 50 + Next 50 scan completed:', response.data);
       console.log('Scan statistics from API:', response.data.scan_statistics);
       
       if (response.data && Array.isArray(response.data.breakout_stocks)) {
@@ -137,11 +137,11 @@ const Dashboard = () => {
         const scanned = response.data.scan_statistics?.total_scanned || 0;
         
         if (count > 0) {
-          toast.success(`🎯 Found ${count} breakout opportunities from ${scanned} NIFTY 50 stocks scanned!`, {
+          toast.success(`🎯 Found ${count} breakout opportunities from ${scanned} large cap stocks scanned!`, {
             duration: 8000
           });
         } else {
-          toast.info(`📊 Scanned ${scanned} NIFTY 50 stocks - No breakouts found with current filters. Try lowering confidence level.`, {
+          toast.info(`📊 Scanned ${scanned} large cap stocks - No breakouts found with current filters. Try lowering confidence level.`, {
             duration: 8000
           });
         }
