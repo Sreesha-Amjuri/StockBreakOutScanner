@@ -2440,10 +2440,13 @@ async def get_chat_history(session_id: str, limit: int = 50):
 # Include the router in the main app
 app.include_router(api_router)
 
+# Set up CORS with environment-specific origins
+cors_origins = os.environ.get('CORS_ORIGINS', '*').split(',') if os.environ.get('CORS_ORIGINS') else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=cors_origins,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
     allow_methods=["*"],
     allow_headers=["*"],
 )
