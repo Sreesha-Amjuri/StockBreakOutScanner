@@ -301,7 +301,8 @@ const Dashboard = () => {
     const fullyFiltered = searchFiltered.filter(stock => {
       const sectorMatch = selectedSector === 'All' || stock.sector === selectedSector;
       const riskMatch = selectedRiskLevel === 'All' || stock.risk_assessment?.risk_level === selectedRiskLevel;
-      return sectorMatch && riskMatch;
+      const valuationMatch = selectedValuation === 'All' || stock.valuation_analysis?.valuation_category === selectedValuation; // NEW: Valuation filter
+      return sectorMatch && riskMatch && valuationMatch;
     });
     
     // Finally apply sorting if configured
