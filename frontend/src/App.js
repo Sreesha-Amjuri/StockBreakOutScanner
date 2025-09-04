@@ -16,6 +16,7 @@ import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
 import StockDetails from "./components/StockDetails";
 import ThemeToggle from "./components/ThemeToggle";
+import AIChat from "./components/AIChat";
 import { useTheme } from "./contexts/ThemeContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
