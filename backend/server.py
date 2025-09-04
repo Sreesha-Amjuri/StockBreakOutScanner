@@ -717,6 +717,200 @@ def get_symbols_by_priority() -> List[str]:
     
     return priority_symbols[:100]  # Return top 100 (NIFTY 50 + Next 50)
 
+def calculate_valuation_score(fundamental_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Calculate comprehensive valuation score based on multiple financial metrics
+    Returns valuation category and detailed breakdown
+    """
+    try:
+        # Initialize scoring system
+        valuation_score = 0
+        total_weights = 0
+        valuation_details = {
+            "pe_score": None,
+            "pb_score": None,
+            "peg_score": None,
+            "div_yield_score": None,
+            "price_to_sales_score": None,
+            "details": []
+        }
+        
+        # P/E Ratio Analysis (Weight: 30%)
+        pe_ratio = fundamental_data.get('pe_ratio')
+        if pe_ratio and pe_ratio > 0:
+            try:
+                if pe_ratio < 10:
+                    pe_score = 5  # Highly undervalued
+                    valuation_details["details"].append("P/E < 10 (Highly undervalued)")
+                elif pe_ratio < 15:
+                    pe_score = 4  # Slightly undervalued
+                    valuation_details["details"].append("P/E 10-15 (Slightly undervalued)")
+                elif pe_ratio < 25:
+                    pe_score = 3  # Reasonable
+                    valuation_details["details"].append("P/E 15-25 (Reasonable)")
+                elif pe_ratio < 35:
+                    pe_score = 2  # Slightly overvalued
+                    valuation_details["details"].append("P/E 25-35 (Slightly overvalued)")
+                else:
+                    pe_score = 1  # Highly overvalued
+                    valuation_details["details"].append("P/E > 35 (Highly overvalued)")
+                
+                valuation_score += pe_score * 0.3
+                valuation_details["pe_score"] = pe_score
+                total_weights += 0.3
+            except (TypeError, ValueError):
+                logger.warning(f"Invalid P/E ratio: {pe_ratio}")
+        
+        # P/B Ratio Analysis (Weight: 25%)
+        pb_ratio = fundamental_data.get('pb_ratio')
+        if pb_ratio and pb_ratio > 0:
+            try:
+                if pb_ratio < 1.0:
+                    pb_score = 5  # Highly undervalued
+                    valuation_details["details"].append("P/B < 1.0 (Highly undervalued)")
+                elif pb_ratio < 1.5:
+                    pb_score = 4  # Slightly undervalued
+                    valuation_details["details"].append("P/B 1.0-1.5 (Slightly undervalued)")
+                elif pb_ratio < 3.0:
+                    pb_score = 3  # Reasonable
+                    valuation_details["details"].append("P/B 1.5-3.0 (Reasonable)")
+                elif pb_ratio < 5.0:
+                    pb_score = 2  # Slightly overvalued
+                    valuation_details["details"].append("P/B 3.0-5.0 (Slightly overvalued)")
+                else:
+                    pb_score = 1  # Highly overvalued
+                    valuation_details["details"].append("P/B > 5.0 (Highly overvalued)")
+                
+                valuation_score += pb_score * 0.25
+                valuation_details["pb_score"] = pb_score
+                total_weights += 0.25
+            except (TypeError, ValueError):
+                logger.warning(f"Invalid P/B ratio: {pb_ratio}")
+        
+        # PEG Ratio Analysis (Weight: 20%)
+        peg_ratio = fundamental_data.get('peg_ratio')
+        if peg_ratio and peg_ratio > 0:
+            try:
+                if peg_ratio < 0.5:
+                    peg_score = 5  # Highly undervalued
+                    valuation_details["details"].append("PEG < 0.5 (Highly undervalued)")
+                elif peg_ratio < 1.0:
+                    peg_score = 4  # Slightly undervalued
+                    valuation_details["details"].append("PEG 0.5-1.0 (Slightly undervalued)")
+                elif peg_ratio < 1.5:
+                    peg_score = 3  # Reasonable
+                    valuation_details["details"].append("PEG 1.0-1.5 (Reasonable)")
+                elif peg_ratio < 2.0:
+                    peg_score = 2  # Slightly overvalued
+                    valuation_details["details"].append("PEG 1.5-2.0 (Slightly overvalued)")
+                else:
+                    peg_score = 1  # Highly overvalued
+                    valuation_details["details"].append("PEG > 2.0 (Highly overvalued)")
+                
+                valuation_score += peg_score * 0.2
+                valuation_details["peg_score"] = peg_score
+                total_weights += 0.2
+            except (TypeError, ValueError):
+                logger.warning(f"Invalid PEG ratio: {peg_ratio}")
+        
+        # Dividend Yield Analysis (Weight: 15%)
+        dividend_yield = fundamental_data.get('dividend_yield', 0)
+        try:
+            if dividend_yield >= 4.0:
+                div_score = 5  # Excellent dividend yield
+                valuation_details["details"].append(f"Dividend Yield {dividend_yield:.1f}% (Excellent)")
+            elif dividend_yield >= 2.5:
+                div_score = 4  # Good dividend yield
+                valuation_details["details"].append(f"Dividend Yield {dividend_yield:.1f}% (Good)")
+            elif dividend_yield >= 1.0:
+                div_score = 3  # Average dividend yield
+                valuation_details["details"].append(f"Dividend Yield {dividend_yield:.1f}% (Average)")
+            elif dividend_yield > 0:
+                div_score = 2  # Low dividend yield
+                valuation_details["details"].append(f"Dividend Yield {dividend_yield:.1f}% (Low)")
+            else:
+                div_score = 1  # No dividend
+                valuation_details["details"].append("No dividend")
+            
+            valuation_score += div_score * 0.15
+            valuation_details["div_yield_score"] = div_score
+            total_weights += 0.15
+        except (TypeError, ValueError):
+            logger.warning(f"Invalid dividend yield: {dividend_yield}")
+        
+        # Price-to-Sales Ratio Analysis (Weight: 10%)
+        price_to_sales = fundamental_data.get('price_to_sales')
+        if price_to_sales and price_to_sales > 0:
+            try:
+                if price_to_sales < 1.0:
+                    ps_score = 5  # Highly undervalued
+                    valuation_details["details"].append("P/S < 1.0 (Highly undervalued)")
+                elif price_to_sales < 2.0:
+                    ps_score = 4  # Slightly undervalued
+                    valuation_details["details"].append("P/S 1.0-2.0 (Slightly undervalued)")
+                elif price_to_sales < 4.0:
+                    ps_score = 3  # Reasonable
+                    valuation_details["details"].append("P/S 2.0-4.0 (Reasonable)")
+                elif price_to_sales < 8.0:
+                    ps_score = 2  # Slightly overvalued
+                    valuation_details["details"].append("P/S 4.0-8.0 (Slightly overvalued)")
+                else:
+                    ps_score = 1  # Highly overvalued
+                    valuation_details["details"].append("P/S > 8.0 (Highly overvalued)")
+                
+                valuation_score += ps_score * 0.1
+                valuation_details["price_to_sales_score"] = ps_score
+                total_weights += 0.1
+            except (TypeError, ValueError):
+                logger.warning(f"Invalid P/S ratio: {price_to_sales}")
+        
+        # Calculate final valuation score and category
+        if total_weights > 0:
+            final_score = valuation_score / total_weights
+        else:
+            final_score = 3.0  # Default to reasonable if no data available
+            valuation_details["details"].append("Insufficient data for valuation analysis")
+        
+        # Determine valuation category
+        if final_score >= 4.5:
+            valuation_category = "Highly Undervalued"
+            color_class = "text-green-700 bg-green-100"
+        elif final_score >= 3.5:
+            valuation_category = "Slightly Undervalued"
+            color_class = "text-green-600 bg-green-50"
+        elif final_score >= 2.5:
+            valuation_category = "Reasonable"
+            color_class = "text-blue-600 bg-blue-50"
+        elif final_score >= 1.5:
+            valuation_category = "Slightly Overvalued"
+            color_class = "text-orange-600 bg-orange-50"
+        else:
+            valuation_category = "Highly Overvalued"
+            color_class = "text-red-600 bg-red-50"
+        
+        return {
+            "valuation_score": round(final_score, 2),
+            "valuation_category": valuation_category,
+            "color_class": color_class,
+            "total_weights": round(total_weights, 2),
+            "breakdown": valuation_details,
+            "confidence": "High" if total_weights >= 0.7 else "Medium" if total_weights >= 0.4 else "Low"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error calculating valuation score: {str(e)}")
+        # Return default valuation data in case of error
+        return {
+            "valuation_score": 3.0,
+            "valuation_category": "Reasonable",
+            "color_class": "text-gray-600 bg-gray-50",
+            "total_weights": 0.0,
+            "breakdown": {
+                "details": ["Error calculating valuation - using default"]
+            },
+            "confidence": "Low"
+        }
+
 def get_large_cap_symbols() -> List[str]:
     """Get only large cap symbols (NIFTY 50 + Next 50) for focused analysis"""
     large_cap_symbols = [
