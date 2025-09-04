@@ -48,6 +48,11 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# Initialize LLM Chat
+EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY')
+if not EMERGENT_LLM_KEY:
+    logging.warning("EMERGENT_LLM_KEY not found in environment variables")
+
 # Create the main app without a prefix
 app = FastAPI()
 
