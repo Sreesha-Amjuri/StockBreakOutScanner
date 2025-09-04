@@ -148,14 +148,23 @@ SCAN_TIMEOUT = 120000             // 2-minute frontend timeout
 - Clear browser cache
 
 **Backend Errors**:
+- **"No module named uvicorn"**: Run `install_dependencies.bat` or manually install uvicorn:
+  ```cmd
+  cd backend
+  pip install uvicorn==0.25.0
+  pip install uvicorn[standard]==0.25.0
+  ```
 - Ensure Python 3.8+ is installed
 - Install missing dependencies: `pip install -r requirements.txt`
 - Check port 8001 is not in use
 
 **Frontend Issues**:
+- **NPM ERESOLVE errors**: Use `npm install --legacy-peer-deps` 
 - Ensure Node.js 16+ is installed  
 - Clear npm cache: `npm cache clean --force`
-- Reinstall dependencies: `rm -rf node_modules && npm install`
+- Reinstall dependencies: `rm -rf node_modules && npm install --legacy-peer-deps`
+
+**Detailed Troubleshooting**: See `TROUBLESHOOTING_WINDOWS.md` for comprehensive solutions
 
 **AI Chat Not Working**:
 - Backend must be running on port 8001
