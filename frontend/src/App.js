@@ -239,6 +239,8 @@ const Dashboard = () => {
         return parseFloat(stock.confidence_score) || 0;
       case 'risk_level':
         return stock.risk_assessment?.risk_level || '';
+      case 'valuation_category':  // NEW: Valuation sorting
+        return stock.valuation_analysis?.valuation_category || 'Reasonable';
       case 'rsi':
         return parseFloat(stock.technical_data?.rsi) || 0;
       case 'sector':
