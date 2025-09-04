@@ -1853,6 +1853,7 @@ async def fetch_comprehensive_stock_data(symbol: str) -> Optional[Dict]:
             "technical_indicators": technical_indicators,
             "fundamental_data": fundamental_data,
             "risk_assessment": risk_assessment,
+            "valuation_analysis": valuation_analysis,  # NEW: Include valuation analysis
             "breakout_data": breakout_data,
             "trading_recommendation": trading_recommendation,
             "chart_data": chart_data,
