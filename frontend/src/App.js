@@ -96,11 +96,11 @@ const Dashboard = () => {
     setLoading(true);
     
     try {
-      toast.info("🚀 Scanning NIFTY 50 + Next 50 stocks for comprehensive analysis...");
+      toast.info("🚀 Scanning large cap stocks with optimized performance...");
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
-        limit: '100'  // Scan NIFTY 50 + Next 50 for comprehensive large cap coverage
+        limit: '50'  // Optimized limit for faster performance
       });
       
       if (selectedSector !== 'All') {
@@ -111,15 +111,15 @@ const Dashboard = () => {
         params.append('risk_level', selectedRiskLevel);
       }
       
-      console.log('Requesting NIFTY 50 + Next 50 breakout scan with params:', params.toString());
+      console.log('Requesting optimized breakout scan with params:', params.toString());
       
       // Show progress update
-      toast.info("📊 Analyzing top 100 large cap stocks (NIFTY 50 + Next 50)...", {
-        duration: 4000
+      toast.info("📊 Optimized scanning with concurrent processing...", {
+        duration: 3000
       });
       
       const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`, {
-        timeout: 120000 // 2 minute timeout for 100 stocks (increased from 1 minute)
+        timeout: 120000 // 2 minute timeout for optimized scanning
       });
       
       console.log('NIFTY 50 + Next 50 scan completed:', response.data);
