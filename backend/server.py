@@ -39,7 +39,7 @@ else:
 # Enhanced rate limiting and retry configuration
 MAX_RETRIES = 5
 INITIAL_WAIT = 0.5  # Start with 500ms
-MAX_WAIT = 30       # Cap at 30 seconds
+MAX_WAIT = 130       # Cap at 30 seconds
 BATCH_DELAY = 0.2   # 200ms between requests in batch
 RATE_LIMIT_BACKOFF = True
 
