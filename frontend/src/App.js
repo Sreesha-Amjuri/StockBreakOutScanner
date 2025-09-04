@@ -1120,13 +1120,6 @@ const Dashboard = () => {
                               </Button>
                             </div>
                           </TableCell>
-                                }
-                                className="text-xs"
-                              >
-                                <Heart className={`w-3 h-3 ${isInWatchlist(stock.symbol) ? 'fill-current' : ''}`} />
-                              </Button>
-                            </div>
-                          </TableCell>
                         </TableRow>
                       );
                     })}
