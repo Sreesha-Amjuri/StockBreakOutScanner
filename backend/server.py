@@ -84,6 +84,24 @@ class StatusCheck(BaseModel):
 class StatusCheckCreate(BaseModel):
     client_name: str
 
+class ChatMessage(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    session_id: str
+    message: str
+    role: str  # 'user' or 'assistant'
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    stock_context: Optional[Dict[str, Any]] = None
+
+class ChatRequest(BaseModel):
+    message: str
+    session_id: Optional[str] = None
+    stock_context: Optional[Dict[str, Any]] = None
+
+class ChatResponse(BaseModel):
+    response: str
+    session_id: str
+    timestamp: datetime
+
 class StockData(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     symbol: str
