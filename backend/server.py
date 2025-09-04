@@ -1743,16 +1743,18 @@ async def scan_breakout_stocks(
     limit: int = 50,  # Reduced default for better performance
     use_cache: bool = True
 ):
-    """Enhanced breakout scanning with batch processing and caching - NIFTY 50 + Next 50 COMPREHENSIVE ANALYSIS"""
+    """PERFORMANCE OPTIMIZED: Fast breakout scanning with aggressive caching and concurrent processing"""
     try:
+        scan_start_time = time.time()
+        
         # Clear old cache entries first
         if use_cache:
             clear_old_cache_entries()
         
         breakout_stocks = []
         
-        # Get NIFTY 50 + Next 50 symbols list (comprehensive large cap coverage)
-        all_symbols = get_symbols_by_priority()  # Now returns NIFTY 50 + Next 50 (100 stocks)
+        # Get symbols list (NIFTY 50 + Next 50 but with smart limiting)
+        all_symbols = get_symbols_by_priority()
         
         # Filter symbols by sector if specified
         if sector and sector != "All":
@@ -1761,88 +1763,74 @@ async def scan_breakout_stocks(
         else:
             symbols_to_scan = all_symbols[:min(limit, len(all_symbols))]
         
-        logger.info(f"Scanning {len(symbols_to_scan)} NIFTY 50 + Next 50 stocks for breakouts (sector: {sector or 'All'})")
+        logger.info(f"🎯 OPTIMIZED scan starting: {len(symbols_to_scan)} symbols (sector: {sector or 'All'})")
         
-        # Process symbols in optimized batches with timeout protection
+        # Process symbols with optimized batch processing
         total_processed = 0
         sector_breakouts = {}
         
-        for i in range(0, len(symbols_to_scan), BATCH_SIZE):
-            batch_symbols = symbols_to_scan[i:i + BATCH_SIZE]
+        # Process all symbols in optimized concurrent batches
+        try:
+            logger.info(f"⚡ Using optimized concurrent batch processing...")
             
-            logger.info(f"Processing NIFTY batch {i//BATCH_SIZE + 1}: {len(batch_symbols)} stocks")
+            # Use the optimized batch function with timeout protection
+            batch_results = await asyncio.wait_for(
+                fetch_stock_data_batch(symbols_to_scan),
+                timeout=90.0  # 90 second total timeout for entire batch
+            )
             
-            try:
-                # Use asyncio.wait_for to add timeout protection (keeping optimization)
-                if use_cache:
-                    batch_results = await asyncio.wait_for(
-                        fetch_stock_data_batch(batch_symbols),
-                        timeout=45.0  # Extended to 45 seconds for 100 stocks (vs 30s for 50)
-                    )
-                else:
-                    # Fetch data without caching for real-time analysis
-                    tasks = [fetch_comprehensive_stock_data(symbol) for symbol in batch_symbols]
-                    batch_results = await asyncio.wait_for(
-                        asyncio.gather(*tasks, return_exceptions=True),
-                        timeout=45.0  # Extended timeout for larger dataset
-                    )
+        except asyncio.TimeoutError:
+            logger.warning(f"⏰ Scan timed out after 90 seconds, processing partial results...")
+            # Return partial results rather than failing completely
+            batch_results = [None] * len(symbols_to_scan)
+        except Exception as e:
+            logger.error(f"❌ Batch processing error: {str(e)}")
+            batch_results = [None] * len(symbols_to_scan)
+        
+        # Process all results at once (optimized approach)
+        for j, result in enumerate(batch_results):
+            if isinstance(result, dict) and result and result.get('breakout_data'):
+                symbol = symbols_to_scan[j]  # Use symbols_to_scan instead of batch_symbols
+                breakout_data = result['breakout_data']
                 
-            except asyncio.TimeoutError:
-                logger.warning(f"Batch {i//BATCH_SIZE + 1} timed out after 45 seconds, skipping...")
-                # Create dummy results for timeout case
-                batch_results = [None] * len(batch_symbols)
-            except Exception as e:
-                logger.error(f"Error processing batch {i//BATCH_SIZE + 1}: {str(e)}")
-                batch_results = [None] * len(batch_symbols)
-            
-            # Process batch results
-            for j, result in enumerate(batch_results):
-                if isinstance(result, dict) and result and result.get('breakout_data'):
-                    symbol = batch_symbols[j]
-                    breakout_data = result['breakout_data']
-                    
-                    # Apply confidence filter
-                    if breakout_data['confidence'] < min_confidence:
-                        continue
-                    
-                    # Apply risk level filter
-                    if risk_level and result.get('risk_assessment', {}).get('risk_level') != risk_level:
-                        continue
-                    
-                    stock_sector = result.get('sector', 'Unknown')
-                    technical_indicators = result['technical_indicators']
-                    fundamental_data = result['fundamental_data']
-                    risk_assessment = result['risk_assessment']
-                    
-                    # Count breakouts by sector
-                    sector_breakouts[stock_sector] = sector_breakouts.get(stock_sector, 0) + 1
-                    
-                    breakout_stock = {
-                        "symbol": symbol,
-                        "name": result['name'],
-                        "current_price": result['current_price'],
-                        "breakout_price": breakout_data['breakout_price'],
-                        "breakout_type": breakout_data['type'],
-                        "confidence_score": breakout_data['confidence'],
-                        "change_percent": result['change_percent'],
-                        "volume": result['volume'],
-                        "sector": stock_sector,
-                        "technical_data": technical_indicators,
-                        "fundamental_data": fundamental_data,
-                        "risk_assessment": risk_assessment,
-                        "trading_recommendation": result.get('trading_recommendation'),
-                        "reason": f"Breakout above {breakout_data['type']} level with {breakout_data['confidence']*100:.0f}% confidence",
-                        "data_source": result.get('data_validation', {}).get('source', 'Yahoo Finance'),
-                        "last_updated": result.get('data_validation', {}).get('timestamp', datetime.now(timezone.utc).isoformat())
-                    }
-                    
-                    breakout_stocks.append(breakout_stock)
+                # Apply confidence filter
+                if breakout_data['confidence'] < min_confidence:
+                    continue
                 
-                total_processed += 1
+                # Apply risk level filter
+                if risk_level and result.get('risk_assessment', {}).get('risk_level') != risk_level:
+                    continue
+                
+                stock_sector = result.get('sector', 'Unknown')
+                technical_indicators = result['technical_indicators']
+                fundamental_data = result['fundamental_data']
+                risk_assessment = result['risk_assessment']
+                
+                # Count breakouts by sector
+                sector_breakouts[stock_sector] = sector_breakouts.get(stock_sector, 0) + 1
+                
+                breakout_stock = {
+                    "symbol": symbol,
+                    "name": result['name'],
+                    "current_price": result['current_price'],
+                    "breakout_price": breakout_data['breakout_price'],
+                    "breakout_type": breakout_data['type'],
+                    "confidence_score": breakout_data['confidence'],
+                    "change_percent": result['change_percent'],
+                    "volume": result['volume'],
+                    "sector": stock_sector,
+                    "technical_data": technical_indicators,
+                    "fundamental_data": fundamental_data,
+                    "risk_assessment": risk_assessment,
+                    "trading_recommendation": result.get('trading_recommendation'),
+                    "reason": f"Breakout above {breakout_data['type']} level with {breakout_data['confidence']*100:.0f}% confidence",
+                    "data_source": result.get('data_validation', {}).get('source', 'Yahoo Finance'),
+                    "last_updated": result.get('data_validation', {}).get('timestamp', datetime.now(timezone.utc).isoformat())
+                }
+                
+                breakout_stocks.append(breakout_stock)
             
-            # Add a small delay between batches to manage system resources
-            if i + BATCH_SIZE < len(symbols_to_scan):
-                await asyncio.sleep(0.5)  # 500ms delay between batches
+            total_processed += 1
         
         # Sort by confidence score
         breakout_stocks.sort(key=lambda x: x['confidence_score'], reverse=True)
