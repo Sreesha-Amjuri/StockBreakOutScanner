@@ -519,8 +519,8 @@ const Dashboard = () => {
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900">StockBreak Pro</h1>
-                <p className="text-sm text-slate-600">NIFTY 50 Value Investing Platform</p>
+                <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">StockBreak Pro</h1>
+                <p className="text-sm text-slate-600 dark:text-slate-400">NIFTY 50 + Next 50 Analysis Platform</p>
               </div>
             </div>
             
