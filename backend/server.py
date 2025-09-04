@@ -24,6 +24,9 @@ from urllib3.util.retry import Retry
 import time
 import random
 
+# Import LLM integration
+from emergentintegrations.llm.chat import LlmChat, UserMessage
+
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
