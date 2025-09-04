@@ -1397,6 +1397,11 @@ class StockBreakoutAPITester:
         print("-" * 50)
         self.test_comprehensive_data_validation()
         
+        # NEW: AI CHAT FUNCTIONALITY TESTING (as per review request)
+        print("\n🤖 AI CHAT FUNCTIONALITY TESTING")
+        print("-" * 45)
+        self.test_ai_chat_comprehensive()
+        
         # Print final results
         print("\n" + "=" * 60)
         print("📊 FINAL TEST RESULTS")
