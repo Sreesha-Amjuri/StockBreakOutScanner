@@ -1019,12 +1019,22 @@ const Dashboard = () => {
                         </div>
                       </TableHead>
                       <TableHead 
-                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
+                        className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 select-none transition-colors"
                         onClick={(e) => handleSort('risk_level', e)}
                       >
                         <div className="flex items-center">
                           Risk Level
                           {getSortIcon('risk_level')}
+                        </div>
+                      </TableHead>
+                      {/* NEW: Valuation Column */}
+                      <TableHead 
+                        className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 select-none transition-colors"
+                        onClick={(e) => handleSort('valuation_category', e)}
+                      >
+                        <div className="flex items-center">
+                          Valuation
+                          {getSortIcon('valuation_category')}
                         </div>
                       </TableHead>
                       <TableHead 
