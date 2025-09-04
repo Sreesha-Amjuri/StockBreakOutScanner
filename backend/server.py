@@ -2045,6 +2045,7 @@ async def scan_breakout_stocks(
                     "technical_data": technical_indicators,
                     "fundamental_data": fundamental_data,
                     "risk_assessment": risk_assessment,
+                    "valuation_analysis": valuation_analysis,  # NEW: Include valuation data
                     "trading_recommendation": result.get('trading_recommendation'),
                     "reason": f"Breakout above {breakout_data['type']} level with {breakout_data['confidence']*100:.0f}% confidence",
                     "data_source": result.get('data_validation', {}).get('source', 'Yahoo Finance'),
