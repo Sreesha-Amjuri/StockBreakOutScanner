@@ -393,7 +393,7 @@ const Dashboard = () => {
         return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
       });
     }
-  }, [breakoutStocks, searchTerm, selectedSector, selectedRiskLevel, sortConfig, sortField, sortDirection, applySorting]);
+  }, [breakoutStocks, searchTerm, selectedSector, selectedRiskLevel, selectedValuation, sortConfig, sortField, sortDirection, applySorting]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', {
