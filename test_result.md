@@ -509,9 +509,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: 
-    - "Implement Dark/Light Theme System"
-    - "Update Frontend for 100 Stock Scanning"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
