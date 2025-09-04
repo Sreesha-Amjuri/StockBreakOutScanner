@@ -364,6 +364,10 @@ const Dashboard = () => {
             aValue = a.risk_assessment?.risk_level || 'Medium';
             bValue = b.risk_assessment?.risk_level || 'Medium';
             break;
+          case 'valuation_category':  // NEW: Valuation sorting case
+            aValue = a.valuation_analysis?.valuation_category || 'Reasonable';
+            bValue = b.valuation_analysis?.valuation_category || 'Reasonable';
+            break;
           case 'rsi':
             aValue = a.technical_data?.rsi || 0;
             bValue = b.technical_data?.rsi || 0;
