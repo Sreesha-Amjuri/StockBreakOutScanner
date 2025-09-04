@@ -2322,6 +2322,116 @@ async def get_rate_limiting_status():
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
+# AI Chat endpoint for stock analysis
+@api_router.post("/chat", response_model=ChatResponse)
+async def chat_with_ai(request: ChatRequest):
+    """Chat with AI assistant for stock analysis and investment insights"""
+    try:
+        if not EMERGENT_LLM_KEY:
+            raise HTTPException(status_code=500, detail="LLM service not configured")
+        
+        # Generate session ID if not provided
+        session_id = request.session_id or str(uuid.uuid4())
+        
+        # Prepare system message with stock analysis context
+        system_message = """You are StockBreak Pro AI, an expert stock market analyst specializing in Indian equity markets, particularly NIFTY 50 and Next 50 stocks. 
+
+You provide:
+- Technical analysis insights (RSI, MACD, Bollinger Bands, support/resistance levels)
+- Fundamental analysis guidance (P/E ratios, ROE, debt levels, earnings growth)
+- Market sentiment analysis and sector trends
+- Risk assessment and portfolio diversification advice
+- Entry/exit point recommendations with stop-loss and target levels
+
+Always provide:
+1. Clear, actionable insights
+2. Risk warnings where appropriate
+3. Specific numeric recommendations when possible
+4. Context about current market conditions
+
+Keep responses concise but comprehensive. Use Indian rupee (₹) for prices."""
+
+        # Add stock context if provided
+        context_info = ""
+        if request.stock_context:
+            stock = request.stock_context
+            context_info = f"\n\nCurrent Stock Context:\n"
+            context_info += f"- Symbol: {stock.get('symbol', 'N/A')}\n"
+            context_info += f"- Current Price: ₹{stock.get('current_price', 'N/A')}\n"
+            context_info += f"- Change: {stock.get('change_percent', 'N/A')}%\n"
+            context_info += f"- RSI: {stock.get('rsi', 'N/A')}\n"
+            context_info += f"- Sector: {stock.get('sector', 'N/A')}\n"
+            
+            if stock.get('technical_indicators'):
+                tech = stock.get('technical_indicators')
+                context_info += f"- MACD: {tech.get('macd', 'N/A')}\n"
+                context_info += f"- Support: ₹{tech.get('support_level', 'N/A')}\n"
+                context_info += f"- Resistance: ₹{tech.get('resistance_level', 'N/A')}\n"
+        
+        # Initialize LLM chat
+        chat = LlmChat(
+            api_key=EMERGENT_LLM_KEY,
+            session_id=session_id,
+            system_message=system_message + context_info
+        ).with_model("openai", "gpt-4o-mini")  # Using the best free model available
+        
+        # Create user message
+        user_message = UserMessage(text=request.message)
+        
+        # Get AI response
+        ai_response = await chat.send_message(user_message)
+        
+        # Save chat messages to database
+        user_chat_message = ChatMessage(
+            session_id=session_id,
+            message=request.message,
+            role="user",
+            stock_context=request.stock_context
+        )
+        
+        assistant_chat_message = ChatMessage(
+            session_id=session_id,
+            message=ai_response,
+            role="assistant"
+        )
+        
+        # Store in database
+        await db.chat_messages.insert_one(user_chat_message.dict())
+        await db.chat_messages.insert_one(assistant_chat_message.dict())
+        
+        return ChatResponse(
+            response=ai_response,
+            session_id=session_id,
+            timestamp=datetime.now(timezone.utc)
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Chat error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Chat service error: {str(e)}")
+
+@api_router.get("/chat/history/{session_id}")
+async def get_chat_history(session_id: str, limit: int = 50):
+    """Get chat history for a session"""
+    try:
+        messages = await db.chat_messages.find(
+            {"session_id": session_id}
+        ).sort("timestamp", 1).limit(limit).to_list(limit)
+        
+        # Clean up ObjectId for JSON serialization
+        for msg in messages:
+            if '_id' in msg:
+                del msg['_id']
+            if 'timestamp' in msg and hasattr(msg['timestamp'], 'isoformat'):
+                msg['timestamp'] = msg['timestamp'].isoformat()
+        
+        return {"messages": messages, "session_id": session_id, "count": len(messages)}
+        
+    except Exception as e:
+        logger.error(f"Error fetching chat history: {str(e)}")
+        return {"messages": [], "session_id": session_id, "count": 0}
+
 # Include the router in the main app
 app.include_router(api_router)
 
