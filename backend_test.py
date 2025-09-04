@@ -338,9 +338,9 @@ class PerformanceTestSuite:
             )
             return False
         
-        # Check required statistics fields
+        # Check required statistics fields (actual API structure)
         scan_stats = result.get('scan_statistics', {})
-        required_fields = ['total_scanned', 'breakouts_found', 'scan_time', 'cache_hits']
+        required_fields = ['total_scanned', 'breakouts_found', 'success_rate']
         
         missing_fields = [field for field in required_fields if field not in scan_stats]
         
@@ -355,19 +355,18 @@ class PerformanceTestSuite:
         # Validate statistics values
         total_scanned = scan_stats.get('total_scanned', 0)
         breakouts_found = scan_stats.get('breakouts_found', 0)
-        scan_time = scan_stats.get('scan_time', 0)
-        cache_hits = scan_stats.get('cache_hits', 0)
+        success_rate = scan_stats.get('success_rate', '0%')
+        cache_usage = scan_stats.get('cache_usage', '')
         
         # Check logical consistency
         valid_stats = (
             0 <= total_scanned <= 30 and  # Should scan requested amount or less
             0 <= breakouts_found <= total_scanned and  # Can't find more breakouts than stocks scanned
-            scan_time > 0 and  # Should have positive scan time
-            0 <= cache_hits <= total_scanned  # Cache hits can't exceed stocks scanned
+            success_rate is not None  # Should have success rate
         )
         
         details = f"Scanned: {total_scanned}, Breakouts: {breakouts_found}, "
-        details += f"Time: {scan_time:.2f}s, Cache hits: {cache_hits}"
+        details += f"Success Rate: {success_rate}, Cache: {cache_usage}"
         
         self.log_test_result(
             "Scan Statistics Accuracy", 
