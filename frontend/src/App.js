@@ -1157,6 +1157,13 @@ const Dashboard = () => {
           </Card>
         )}
 
+        {/* AI Chat Component */}
+        <AIChat 
+          selectedStock={selectedStockForChat}
+          isOpen={isChatOpen}
+          onToggle={() => setIsChatOpen(!isChatOpen)}
+        />
+
         {/* Disclaimer */}
         <Card className="mt-8 bg-amber-50/50 border-amber-200">
           <CardContent className="p-4">
