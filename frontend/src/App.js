@@ -823,7 +823,7 @@ const Dashboard = () => {
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Risk Level</label>
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Risk Level</label>
                 <Select value={selectedRiskLevel} onValueChange={setSelectedRiskLevel}>
                   <SelectTrigger>
                     <SelectValue />
@@ -833,6 +833,49 @@ const Dashboard = () => {
                     <SelectItem value="Low">Low Risk</SelectItem>
                     <SelectItem value="Medium">Medium Risk</SelectItem>
                     <SelectItem value="High">High Risk</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* NEW: Valuation Filter */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Valuation</label>
+                <Select value={selectedValuation} onValueChange={setSelectedValuation}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">All Valuations</SelectItem>
+                    <SelectItem value="Highly Undervalued">
+                      <span className="flex items-center">
+                        <span className="w-2 h-2 bg-green-600 rounded-full mr-2"></span>
+                        Highly Undervalued
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="Slightly Undervalued">
+                      <span className="flex items-center">
+                        <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
+                        Slightly Undervalued
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="Reasonable">
+                      <span className="flex items-center">
+                        <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+                        Reasonable
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="Slightly Overvalued">
+                      <span className="flex items-center">
+                        <span className="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
+                        Slightly Overvalued
+                      </span>
+                    </SelectItem>
+                    <SelectItem value="Highly Overvalued">
+                      <span className="flex items-center">
+                        <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                        Highly Overvalued
+                      </span>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
