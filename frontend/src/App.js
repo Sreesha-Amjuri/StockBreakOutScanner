@@ -23,6 +23,8 @@ const API = `${BACKEND_URL}/api`;
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { isDarkMode } = useTheme();
+  
   // Existing state
   const [breakoutStocks, setBreakoutStocks] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
