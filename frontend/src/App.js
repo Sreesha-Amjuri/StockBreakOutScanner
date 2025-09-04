@@ -158,15 +158,15 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error scanning breakouts:', error);
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        toast.error('🚨 Request timeout! Scanning 100 large cap stocks may take up to 2 minutes. Please try again.', {
-          duration: 8000
+        toast.error('🚨 Request timeout! Try scanning with a smaller limit or check your connection.', {
+          duration: 6000
         });
       } else if (error.response?.status === 404) {
         toast.error('API endpoint not found. Please check the backend is running.');
       } else if (error.response?.status >= 500) {
-        toast.error('Server error. Backend may be processing large dataset. Try again in a moment.');
+        toast.error('Server error. Please try again in a moment.');
       } else {
-        toast.error('Error scanning large cap stocks. Please try again.');
+        toast.error('Error scanning stocks. Please try again.');
       }
     } finally {
       setLoading(false);
