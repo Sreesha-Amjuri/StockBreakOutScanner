@@ -1132,6 +1132,19 @@ const Dashboard = () => {
                               {stock.risk_assessment?.risk_level || 'Medium'}
                             </Badge>
                           </TableCell>
+                          {/* NEW: Valuation Cell */}
+                          <TableCell>
+                            <Badge className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              stock.valuation_analysis?.color_class || 'text-gray-600 bg-gray-50'
+                            }`}>
+                              {stock.valuation_analysis?.valuation_category || 'Reasonable'}
+                            </Badge>
+                            {stock.valuation_analysis?.valuation_score && (
+                              <div className="text-xs text-slate-500 mt-1">
+                                Score: {stock.valuation_analysis.valuation_score.toFixed(1)}
+                              </div>
+                            )}
+                          </TableCell>
                           <TableCell>
                             <span className={`font-medium ${
                               stock.technical_data.rsi > 70 ? 'text-red-600' : 
