@@ -112,6 +112,10 @@ const Dashboard = () => {
         params.append('risk_level', selectedRiskLevel);
       }
       
+      if (selectedValuation !== 'All') {
+        params.append('valuation_filter', selectedValuation);
+      }
+      
       console.log('Requesting optimized breakout scan with params:', params.toString());
       
       // Show progress update
