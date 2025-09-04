@@ -552,10 +552,10 @@ class StockBreakoutAPITester:
         
         return success1 and success2 and success3
 
-    def test_nifty_50_focused_scanning(self):
-        """Test NIFTY 50 Focused Implementation - Updated backend to focus only on NIFTY 50 stocks"""
-        print("\n🎯 NIFTY 50 FOCUSED SCANNING TESTING")
-        print("-" * 45)
+    def test_expanded_nifty_50_plus_next_50_scanning(self):
+        """Test Expanded NIFTY 50 + Next 50 Implementation - Updated backend with comprehensive large cap coverage"""
+        print("\n🎯 EXPANDED NIFTY 50 + NEXT 50 SCANNING TESTING")
+        print("-" * 50)
         
         # Test 1: Verify NIFTY 50 symbols endpoint returns only 50 stocks
         success1, symbols_data = self.test_api_endpoint("NIFTY 50 Symbols Check", "GET", "stocks/symbols")
