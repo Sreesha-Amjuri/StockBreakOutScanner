@@ -1384,11 +1384,11 @@ class StockBreakoutAPITester:
         print("-" * 30)
         self.test_error_handling()
         
-        # NEW: NIFTY 50 Focused Testing (as per review request)
-        print("\n🎯 NIFTY 50 FOCUSED IMPLEMENTATION TESTING")
-        print("-" * 55)
-        self.test_nifty_50_focused_scanning()
-        self.test_timeout_and_performance_improvements()
+        # NEW: EXPANDED NIFTY 50 + NEXT 50 TESTING (as per review request)
+        print("\n🎯 EXPANDED NIFTY 50 + NEXT 50 IMPLEMENTATION TESTING")
+        print("-" * 60)
+        self.test_expanded_nifty_50_plus_next_50_scanning()
+        self.test_expanded_coverage_performance()
         self.test_enhanced_technical_indicators()
         self.test_data_quality_comprehensive()
         
