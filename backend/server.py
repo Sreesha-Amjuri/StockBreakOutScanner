@@ -29,7 +29,12 @@ from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 
 ROOT_DIR = Path(__file__).parent
-load_dotenv(ROOT_DIR / '.env')
+# Load environment variables based on environment
+environment = os.environ.get('ENVIRONMENT', 'development')
+if environment == 'production':
+    load_dotenv(ROOT_DIR / '.env.production')
+else:
+    load_dotenv(ROOT_DIR / '.env')
 
 # Enhanced rate limiting and retry configuration
 MAX_RETRIES = 5
