@@ -524,7 +524,7 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {/* Search Bar */}
+            {/* Search Bar and Theme Toggle */}
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -536,12 +536,18 @@ const Dashboard = () => {
                 />
               </div>
               
+              {/* Theme Toggle */}
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-slate-600 dark:text-slate-400">Theme</span>
+                <ThemeToggle />
+              </div>
+              
               {marketOverview && (
                 <div className="flex items-center space-x-6">
                   <div className="text-right">
-                    <p className="text-sm text-slate-600">NIFTY 50</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">NIFTY 50</p>
                     <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-slate-900">
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">
                         {marketOverview.nifty_50.current.toFixed(2)}
                       </span>
                       <span className={`text-sm font-medium ${
