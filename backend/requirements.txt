@@ -27,4 +27,4 @@ yfinance>=0.2.18
 beautifulsoup4>=4.12.0
 pytz>=2024.1
 requests-cache>=1.1.0
-emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
+#emergentintegrations --extra-index-url https://d33sy5i8bnduwe.cloudfront.net/simple/
