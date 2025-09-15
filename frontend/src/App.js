@@ -203,7 +203,8 @@ const Dashboard = () => {
 
   const removeFromWatchlist = async (symbol) => {
     try {
-      await axios.delete(`${API}/watchlist/${symbol}`);
+      await axios.delete(`${API}/watchlist?symbol=${symbol}`);
+      //await axios.delete(`${API}/watchlist/${symbol}`);
       await fetchWatchlist();
       toast.success(`Removed ${symbol} from watchlist`);
     } catch (error) {

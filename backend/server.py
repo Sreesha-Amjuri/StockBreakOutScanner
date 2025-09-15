@@ -2,6 +2,9 @@ from fastapi import FastAPI, APIRouter, HTTPException, BackgroundTasks, Depends
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
+from typing import Optional
+from pydantic import BaseModel
+from fastapi import Body, Query, HTTPException
 import os
 import logging
 from pathlib import Path
@@ -225,7 +228,7 @@ NSE_SYMBOLS = {
     "CIPLA": "Pharma", "COALINDIA": "Mining", "DIVISLAB": "Pharma", "DRREDDY": "Pharma",
     "EICHERMOT": "Auto", "GRASIM": "Cement", "HCLTECH": "IT", "HDFCBANK": "Banking",
     "HDFCLIFE": "Insurance", "HEROMOTOCO": "Auto", "HINDALCO": "Metals", "HINDUNILVR": "FMCG",
-    "ICICIBANK": "Banking", "INDUSINDBK": "Banking", "INFOSYS": "IT", "IOC": "Energy",
+    "ICICIBANK": "Banking", "INDUSINDBK": "Banking", "INFY": "IT", "IOC": "Energy",
     "ITC": "FMCG", "JSWSTEEL": "Metals", "KOTAKBANK": "Banking", "LT": "Infrastructure",
     "M&M": "Auto", "MARUTI": "Auto", "NESTLEIND": "FMCG", "NTPC": "Power", "ONGC": "Energy",
     "POWERGRID": "Power", "RELIANCE": "Energy", "SBILIFE": "Insurance", "SBIN": "Banking",
@@ -327,7 +330,7 @@ NSE_SYMBOLS = {
     "EASEMYTRIP": "IT", "EDUCOMP": "IT", "ELGIEQUIP": "IT", "FIRSTSOURCE": "IT", "FSL": "IT",
     "GATEWAY": "IT", "HAPPSTMNDS": "IT", "HCLTECH": "IT", "HEXAWARE": "IT", "HINDCOPPER": "IT",
     "HLEGLAS": "IT", "IBTECH": "IT", "IFBIND": "IT", "INDIAMART": "IT", "INFIBEAM": "IT",
-    "INFOSYS": "IT", "INNOV8": "IT", "INTELLECT": "IT", "IPCALAB": "IT", "KPITTECH": "IT",
+    "INFY": "IT", "INNOV8": "IT", "INTELLECT": "IT", "IPCALAB": "IT", "KPITTECH": "IT",
     "LAXMIMACH": "IT", "LEMONTREE": "IT", "LTIM": "IT", "LTTS": "IT", "MAHINDCIE": "IT",
     "MINDTREE": "IT", "MPHASIS": "IT", "NATIONALUM": "IT", "NAUKRI": "IT", "NELCO": "IT",
     "NEWGEN": "IT", "NIITLTD": "IT", "OFSS": "IT", "ONMOBILE": "IT", "PERSISTENT": "IT",
@@ -673,7 +676,7 @@ def get_nifty_50_symbols() -> List[str]:
         "ADANIENT", "ADANIPORTS", "APOLLOHOSP", "ASIANPAINT", "AXISBANK", "BAJAJ-AUTO",
         "BAJAJFINSV", "BAJFINANCE", "BHARTIARTL", "BPCL", "BRITANNIA", "CIPLA", "COALINDIA",
         "DIVISLAB", "DRREDDY", "EICHERMOT", "GRASIM", "HCLTECH", "HDFCBANK", "HDFCLIFE",
-        "HEROMOTOCO", "HINDALCO", "HINDUNILVR", "ICICIBANK", "INDUSINDBK", "INFOSYS", "IOC",
+        "HEROMOTOCO", "HINDALCO", "HINDUNILVR", "ICICIBANK", "INDUSINDBK", "INFY", "IOC",
         "ITC", "JSWSTEEL", "KOTAKBANK", "LT", "M&M", "MARUTI", "NESTLEIND", "NTPC", "ONGC",
         "POWERGRID", "RELIANCE", "SBILIFE", "SBIN", "SHREECEM", "SUNPHARMA", "TATACONSUM",
         "TATAMOTORS", "TATASTEEL", "TCS", "TECHM", "TITAN", "ULTRACEMCO", "UPL", "WIPRO"
@@ -689,7 +692,7 @@ def get_symbols_by_priority() -> List[str]:
         "ADANIENT", "ADANIPORTS", "APOLLOHOSP", "ASIANPAINT", "AXISBANK", "BAJAJ-AUTO",
         "BAJAJFINSV", "BAJFINANCE", "BHARTIARTL", "BPCL", "BRITANNIA", "CIPLA", "COALINDIA",
         "DIVISLAB", "DRREDDY", "EICHERMOT", "GRASIM", "HCLTECH", "HDFCBANK", "HDFCLIFE",
-        "HEROMOTOCO", "HINDALCO", "HINDUNILVR", "ICICIBANK", "INDUSINDBK", "INFOSYS", "IOC",
+        "HEROMOTOCO", "HINDALCO", "HINDUNILVR", "ICICIBANK", "INDUSINDBK", "INFY", "IOC",
         "ITC", "JSWSTEEL", "KOTAKBANK", "LT", "M&M", "MARUTI", "NESTLEIND", "NTPC", "ONGC",
         "POWERGRID", "RELIANCE", "SBILIFE", "SBIN", "SHREECEM", "SUNPHARMA", "TATACONSUM",
         "TATAMOTORS", "TATASTEEL", "TCS", "TECHM", "TITAN", "ULTRACEMCO", "UPL", "WIPRO"
@@ -918,7 +921,7 @@ def get_large_cap_symbols() -> List[str]:
         "ADANIENT", "ADANIPORTS", "APOLLOHOSP", "ASIANPAINT", "AXISBANK", "BAJAJ-AUTO",
         "BAJAJFINSV", "BAJFINANCE", "BHARTIARTL", "BPCL", "BRITANNIA", "CIPLA", "COALINDIA",
         "DIVISLAB", "DRREDDY", "EICHERMOT", "GRASIM", "HCLTECH", "HDFCBANK", "HDFCLIFE",
-        "HEROMOTOCO", "HINDALCO", "HINDUNILVR", "ICICIBANK", "INDUSINDBK", "INFOSYS", "IOC",
+        "HEROMOTOCO", "HINDALCO", "HINDUNILVR", "ICICIBANK", "INDUSINDBK", "INFY", "IOC",
         "ITC", "JSWSTEEL", "KOTAKBANK", "LT", "M&M", "MARUTI", "NESTLEIND", "NTPC", "ONGC",
         "POWERGRID", "RELIANCE", "SBILIFE", "SBIN", "SHREECEM", "SUNPHARMA", "TATACONSUM",
         "TATAMOTORS", "TATASTEEL", "TCS", "TECHM", "TITAN", "ULTRACEMCO", "UPL", "WIPRO",
@@ -2261,6 +2264,12 @@ async def get_stock_chart(symbol: str, timeframe: str = "1mo"):
 async def get_watchlist():
     """Get user's watchlist"""
     try:
+        count = await db.watchlist.count_documents({})
+        logger.info(f"Total watchlist items in DB: {count}")
+        
+        watchlist_items = await db.watchlist.find().to_list(1000)
+        logger.info(f"Retrieved {len(watchlist_items)} items")
+
         watchlist_items = await db.watchlist.find().to_list(1000)
         # Convert ObjectId to string for JSON serialization
         watchlist = []
@@ -2277,40 +2286,87 @@ async def get_watchlist():
         return {"watchlist": [], "count": 0}
 
 @api_router.post("/watchlist")
-async def add_to_watchlist(symbol: str, target_price: Optional[float] = None, stop_loss: Optional[float] = None, notes: Optional[str] = None):
-    """Add stock to watchlist"""
+async def add_to_watchlist(
+    # allow query params
+    symbol: Optional[str] = Query(None),
+    target_price: Optional[float] = Query(None),
+    stop_loss: Optional[float] = Query(None),
+    notes: Optional[str] = Query(None),
+    # allow JSON body with WatchlistItem (partial)
+    body: Optional[WatchlistItem] = Body(None)
+):
+    """Add stock to watchlist (supports query params OR JSON body)"""
     try:
+        if body:
+            symbol = body.symbol
+            target_price = body.target_price
+            stop_loss = body.stop_loss
+            notes = body.notes
+
+        if not symbol:
+            raise HTTPException(status_code=400, detail="Symbol is required")
+
         symbol = symbol.upper()
-        
+
         # Get current stock data
         stock_data = await fetch_comprehensive_stock_data(symbol)
         if not stock_data:
             raise HTTPException(status_code=404, detail=f"Stock not found: {symbol}")
-        
+
         # Check if already in watchlist
         existing = await db.watchlist.find_one({"symbol": symbol})
         if existing:
             raise HTTPException(status_code=400, detail=f"{symbol} is already in watchlist")
-        
-        watchlist_item = {
-            "id": str(uuid.uuid4()),
-            "symbol": symbol,
-            "name": stock_data['name'],
-            "added_price": stock_data['current_price'],
-            "target_price": target_price,
-            "stop_loss": stop_loss,
-            "notes": notes,
-            "added_date": datetime.now(timezone.utc).isoformat()  # Store as ISO string
-        }
-        
-        await db.watchlist.insert_one(watchlist_item)
-        return {"message": f"Added {symbol} to watchlist", "item": watchlist_item}
-        
+
+        watchlist_item = WatchlistItem(
+            symbol=symbol,
+            name=stock_data["name"],
+            added_price=stock_data["current_price"],
+            target_price=target_price,
+            stop_loss=stop_loss,
+            notes=notes,
+        )
+
+        await db.watchlist.insert_one(watchlist_item.dict())
+        return {"message": f"Added {symbol} to watchlist", "item": watchlist_item.dict()}
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error adding to watchlist: {str(e)}")
         raise HTTPException(status_code=500, detail="Error adding to watchlist")
+    
+@api_router.delete("/watchlist")
+async def remove_from_watchlist(
+    # allow query params
+    symbol: Optional[str] = Query(None),
+    # allow JSON body with WatchlistItem (partial)
+    body: Optional[WatchlistItem] = Body(None)
+):
+    """Remove stock from watchlist (supports query params OR JSON body)"""
+    try:
+        if body:
+            symbol = body.symbol
+
+        if not symbol:
+            raise HTTPException(status_code=400, detail="Symbol is required")
+
+        symbol = symbol.upper()
+
+        # Check if the stock exists in watchlist
+        existing = await db.watchlist.find_one({"symbol": symbol})
+        if not existing:
+            raise HTTPException(status_code=404, detail=f"{symbol} not found in watchlist")
+
+        # Remove the item
+        await db.watchlist.delete_one({"symbol": symbol})
+        return {"message": f"Removed {symbol} from watchlist"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error removing from watchlist: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error removing from watchlist")
 
 # Enhanced professional endpoints
 @api_router.get("/market/news")
