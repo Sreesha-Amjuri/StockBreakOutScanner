@@ -10,7 +10,8 @@ import StockChart from './StockChart';
 import { toast } from 'sonner';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+const API_BASE = BACKEND_URL || 'http://localhost:8001';
+const API = `${API_BASE}/api`;
 
 const StockDetails = () => {
   const { symbol } = useParams();

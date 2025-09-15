@@ -162,7 +162,91 @@ SCAN_TIMEOUT = 120000             // 2-minute frontend timeout
 - Check browser console for errors
 - Verify API connection in Network tab
 
+<<<<<<< HEAD
 ### Performance Tuning
+=======
+**Issue**: npm install fails with "Could not read package.json"
+```bash
+# The npm install command must be run from the frontend directory
+cd frontend
+npm install
+
+# Or use the root-level script to install all dependencies
+npm run install-all
+```
+
+**Issue**: Charts not loading
+```bash
+# Check if chart data endpoint works
+curl http://localhost:8001/api/stocks/RELIANCE/chart
+
+# Verify recharts dependency
+npm list recharts
+```
+
+#### Backend Issues
+
+**Issue**: MongoDB connection failed
+```bash
+# Check MongoDB status
+sudo systemctl status mongod  # Linux
+net start MongoDB             # Windows
+
+# Test connection
+python -c "from pymongo import MongoClient; print(MongoClient('mongodb://localhost:27017').admin.command('ping'))"
+```
+
+**Issue**: Yahoo Finance data not loading
+```bash
+# Test yfinance directly
+python -c "import yfinance as yf; print(yf.Ticker('RELIANCE.NS').history(period='1d'))"
+
+# Check internet connection and firewall
+curl -I https://finance.yahoo.com
+```
+
+**Issue**: High memory usage
+```bash
+# Monitor process
+top -p $(pgrep -f uvicorn)
+
+# Reduce concurrent requests in .env
+DEFAULT_SCAN_LIMIT=20
+MAX_CONCURRENT_REQUESTS=5
+```
+
+### Performance Optimization
+
+#### Backend Optimization
+```python
+# Add to server.py for production
+import asyncio
+
+# Increase worker processes
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("server:app", host="0.0.0.0", port=8001, workers=4)
+```
+
+#### Frontend Optimization
+```bash
+# Build optimized version
+npm run build
+
+# Analyze bundle size
+npm install -g webpack-bundle-analyzer
+npx webpack-bundle-analyzer build/static/js/*.js
+```
+
+### Debug Mode
+
+#### Enable Debug Logging
+```python
+# backend/server.py
+import logging
+logging.basicConfig(level=logging.DEBUG)
+```
+>>>>>>> 56e1bd6ed17e94c62452365f1d274eecf9db15ab
 
 **For Slower Systems**:
 ```javascript

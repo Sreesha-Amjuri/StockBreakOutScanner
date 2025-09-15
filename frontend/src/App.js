@@ -20,7 +20,10 @@ import AIChat from "./components/AIChat";
 import { useTheme } from "./contexts/ThemeContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+
+// Fallback to localhost if environment variable is not set
+const API_BASE = BACKEND_URL || 'http://localhost:8001';
+const API = `${API_BASE}/api`;
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -101,7 +104,11 @@ const Dashboard = () => {
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
+<<<<<<< HEAD
         limit: '50'  // Optimized limit for faster performance
+=======
+        limit: '200'  // Increased to scan 200 stocks (expanded NSE coverage)
+>>>>>>> 56e1bd6ed17e94c62452365f1d274eecf9db15ab
       });
       
       if (selectedSector !== 'All') {
@@ -116,11 +123,16 @@ const Dashboard = () => {
         params.append('valuation_filter', selectedValuation);
       }
       
+<<<<<<< HEAD
       console.log('Requesting optimized breakout scan with params:', params.toString());
       
       // Show progress update
       toast.info("📊 Optimized scanning with concurrent processing...", {
         duration: 3000
+=======
+      const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`, {
+        timeout: 120000 // 120 second timeout for expanded scanning
+>>>>>>> 56e1bd6ed17e94c62452365f1d274eecf9db15ab
       });
       
       const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`, {
@@ -144,6 +156,7 @@ const Dashboard = () => {
         setScanStats(statsUpdate);
         
         const count = response.data.breakout_stocks.length;
+<<<<<<< HEAD
         const scanned = response.data.scan_statistics?.total_scanned || 0;
         
         if (count > 0) {
@@ -154,6 +167,13 @@ const Dashboard = () => {
           toast.info(`📊 Scanned ${scanned} stocks - No breakouts found with current filters. Try lowering confidence level.`, {
             duration: 6000
           });
+=======
+        const scanned = response.data.total_scanned || 0;
+        if (count > 0) {
+          toast.success(`Found ${count} breakout opportunities from ${scanned} stocks!`);
+        } else {
+          toast.info(`No breakout opportunities found from ${scanned} stocks scanned`);
+>>>>>>> 56e1bd6ed17e94c62452365f1d274eecf9db15ab
         }
       } else {
         console.error('Invalid response structure:', response.data);
@@ -162,6 +182,7 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error('Error scanning breakouts:', error);
+<<<<<<< HEAD
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         toast.error('🚨 Request timeout! Try scanning with a smaller limit or check your connection.', {
           duration: 6000
@@ -170,6 +191,12 @@ const Dashboard = () => {
         toast.error('API endpoint not found. Please check the backend is running.');
       } else if (error.response?.status >= 500) {
         toast.error('Server error. Please try again in a moment.');
+=======
+      console.error('Error response:', error.response?.data);
+      
+      if (error.code === 'ECONNABORTED') {
+        toast.error("Request timeout - scanning large stock universe takes time");
+>>>>>>> 56e1bd6ed17e94c62452365f1d274eecf9db15ab
       } else {
         toast.error('Error scanning stocks. Please try again.');
       }
@@ -732,7 +759,11 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-600 mb-1">Stocks Scanned</p>
+<<<<<<< HEAD
                   <p className="text-2xl font-bold text-slate-900">{scanStats.stocks_scanned}</p>
+=======
+                  <p className="text-2xl font-bold text-slate-900">200+</p>
+>>>>>>> 56e1bd6ed17e94c62452365f1d274eecf9db15ab
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                   <BarChart3 className="w-6 h-6 text-blue-600" />
