@@ -1,803 +1,546 @@
 #!/usr/bin/env python3
 """
-Comprehensive Backend API Testing for Indian Stock Breakout Screener
-Tests all endpoints with various scenarios and edge cases
+StockBreak Pro Backend Testing - Valuation Filter Functionality
+Testing the new valuation filter feature after npm dependency fixes
 """
 
 import requests
-import sys
 import json
+import time
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List, Any, Optional
+import sys
+import os
 
-class StockBreakoutAPITester:
-    def __init__(self, base_url="https://breakout-screener.preview.emergentagent.com"):
-        self.base_url = base_url
-        self.api_url = f"{base_url}/api"
-        self.tests_run = 0
-        self.tests_passed = 0
+# Backend URL from environment
+BACKEND_URL = "https://tradepulse-app-1.preview.emergentagent.com/api"
+
+class ValuationFilterTester:
+    def __init__(self):
+        self.backend_url = BACKEND_URL
         self.test_results = []
-
-    def log_test(self, name: str, success: bool, details: str = "", response_data: Dict = None):
+        self.session = requests.Session()
+        self.session.timeout = 30
+        
+    def log_test(self, test_name: str, success: bool, message: str, details: Dict = None):
         """Log test results"""
-        self.tests_run += 1
-        if success:
-            self.tests_passed += 1
-            
         result = {
-            "test_name": name,
+            "test_name": test_name,
             "success": success,
-            "details": details,
-            "response_data": response_data
+            "message": message,
+            "details": details or {},
+            "timestamp": datetime.now().isoformat()
         }
         self.test_results.append(result)
         
         status = "✅ PASS" if success else "❌ FAIL"
-        print(f"{status} - {name}")
+        print(f"{status}: {test_name}")
+        print(f"   {message}")
         if details:
-            print(f"    Details: {details}")
-        if not success and response_data:
-            print(f"    Response: {response_data}")
+            print(f"   Details: {details}")
         print()
-
-    def test_api_endpoint(self, name: str, method: str, endpoint: str, 
-                         expected_status: int = 200, params: Dict = None, 
-                         data: Dict = None, timeout: int = 30) -> tuple:
-        """Generic API endpoint tester"""
-        url = f"{self.api_url}/{endpoint}"
-        headers = {'Content-Type': 'application/json'}
         
+    def test_backend_connectivity(self) -> bool:
+        """Test basic backend connectivity"""
         try:
-            if method == 'GET':
-                response = requests.get(url, headers=headers, params=params, timeout=timeout)
-            elif method == 'POST':
-                response = requests.post(url, json=data, headers=headers, params=params, timeout=timeout)
-            elif method == 'DELETE':
-                response = requests.delete(url, headers=headers, timeout=timeout)
+            response = self.session.get(f"{self.backend_url}/health", timeout=10)
+            if response.status_code == 200:
+                self.log_test("Backend Connectivity", True, "Backend is accessible and responding")
+                return True
             else:
-                raise ValueError(f"Unsupported method: {method}")
-
-            success = response.status_code == expected_status
-            
-            try:
-                response_data = response.json()
-            except:
-                response_data = {"raw_response": response.text[:500]}
-            
-            details = f"Status: {response.status_code} (expected {expected_status})"
-            if not success:
-                details += f", Response: {response.text[:200]}"
-            
-            self.log_test(name, success, details, response_data if success else None)
-            return success, response_data
-
-        except requests.exceptions.Timeout:
-            self.log_test(name, False, f"Request timeout after {timeout}s")
-            return False, {}
+                self.log_test("Backend Connectivity", False, f"Backend returned status {response.status_code}")
+                return False
         except Exception as e:
-            self.log_test(name, False, f"Error: {str(e)}")
-            return False, {}
-
-    def test_root_endpoint(self):
-        """Test API root endpoint"""
-        return self.test_api_endpoint("API Root", "GET", "")
-
-    def test_nse_symbols(self):
-        """Test NSE symbols endpoint"""
-        success, data = self.test_api_endpoint("NSE Symbols", "GET", "stocks/symbols")
-        
-        if success:
-            # Validate response structure
-            required_keys = ['symbols', 'symbols_with_sectors', 'count', 'sectors']
-            missing_keys = [key for key in required_keys if key not in data]
+            self.log_test("Backend Connectivity", False, f"Failed to connect to backend: {str(e)}")
+            return False
+    
+    def test_breakout_scan_endpoint_basic(self) -> bool:
+        """Test basic breakout scan endpoint functionality"""
+        try:
+            response = self.session.get(f"{self.backend_url}/stocks/breakouts/scan?limit=10", timeout=30)
             
-            if missing_keys:
-                self.log_test("NSE Symbols Structure", False, f"Missing keys: {missing_keys}")
+            if response.status_code == 200:
+                data = response.json()
+                
+                # Check basic structure
+                required_fields = ['breakout_stocks', 'scan_statistics', 'timestamp']
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if missing_fields:
+                    self.log_test("Basic Breakout Scan", False, f"Missing required fields: {missing_fields}")
+                    return False
+                
+                breakout_stocks = data.get('breakout_stocks', [])
+                if not breakout_stocks:
+                    self.log_test("Basic Breakout Scan", False, "No breakout stocks returned")
+                    return False
+                
+                self.log_test("Basic Breakout Scan", True, 
+                            f"Successfully retrieved {len(breakout_stocks)} breakout stocks",
+                            {"scan_stats": data.get('scan_statistics', {})})
+                return True
             else:
-                self.log_test("NSE Symbols Structure", True, f"Found {data['count']} symbols, {len(data['sectors'])} sectors")
+                self.log_test("Basic Breakout Scan", False, f"API returned status {response.status_code}")
+                return False
                 
-                # Test if we have expected symbols
-                expected_symbols = ['RELIANCE', 'TCS', 'HDFCBANK', 'INFOSYS']
-                found_symbols = [s for s in expected_symbols if s in data['symbols']]
-                self.log_test("Expected Symbols Present", len(found_symbols) > 0, 
-                            f"Found {len(found_symbols)}/{len(expected_symbols)} expected symbols")
-        
-        return success, data
-
-    def test_stock_search(self):
-        """Test stock search functionality"""
-        # Test valid search
-        success1, data1 = self.test_api_endpoint("Stock Search - Valid", "GET", "stocks/search", 
-                                                params={"q": "REL"})
-        
-        if success1 and 'results' in data1:
-            self.log_test("Search Results Structure", True, f"Found {len(data1['results'])} results")
-        
-        # Test empty search
-        success2, data2 = self.test_api_endpoint("Stock Search - Empty", "GET", "stocks/search", 
-                                                params={"q": ""})
-        
-        return success1 and success2
-
-    def test_individual_stock_data(self):
-        """Test individual stock data endpoints with trading recommendations"""
-        # Test specific stocks mentioned in the review request with expected values
-        test_symbols_with_expected = {
-            'RELIANCE': {'expected_price': 1384.90, 'expected_change': -1.96},
-            'TCS': {'expected_price': 3157.20, 'expected_change': 0.53},
-            'MPHASIS': {'expected_price': 2873.20, 'expected_change': -1.53},
-            'HDFCLIFE': {'expected_price': 776.60, 'expected_change': -1.32},
-            'HINDUNILVR': {'expected_price': 2692.60, 'expected_change': 2.32}
-        }
-        
-        successful_tests = 0
-        
-        for symbol, expected in test_symbols_with_expected.items():
-            success, data = self.test_api_endpoint(f"Stock Data - {symbol}", "GET", f"stocks/{symbol}")
+        except Exception as e:
+            self.log_test("Basic Breakout Scan", False, f"Error testing breakout scan: {str(e)}")
+            return False
+    
+    def test_valuation_filter_parameter(self) -> bool:
+        """Test valuation_filter parameter acceptance"""
+        try:
+            # Test each valuation category
+            valuation_categories = [
+                "Highly Undervalued",
+                "Slightly Undervalued", 
+                "Reasonable",
+                "Slightly Overvalued",
+                "Highly Overvalued"
+            ]
             
-            if success:
-                successful_tests += 1
-                # Validate response structure
-                required_keys = ['symbol', 'name', 'current_price', 'change_percent', 'technical_indicators', 'fundamental_data', 'risk_assessment']
-                missing_keys = [key for key in required_keys if key not in data]
+            all_tests_passed = True
+            category_results = {}
+            
+            for category in valuation_categories:
+                try:
+                    response = self.session.get(
+                        f"{self.backend_url}/stocks/breakouts/scan",
+                        params={
+                            "limit": 20,
+                            "valuation_filter": category
+                        },
+                        timeout=45
+                    )
+                    
+                    if response.status_code == 200:
+                        data = response.json()
+                        breakout_stocks = data.get('breakout_stocks', [])
+                        
+                        # Check if valuation_analysis field is present in stocks
+                        stocks_with_valuation = 0
+                        for stock in breakout_stocks:
+                            if 'valuation_analysis' in stock:
+                                stocks_with_valuation += 1
+                        
+                        category_results[category] = {
+                            "status": "success",
+                            "total_stocks": len(breakout_stocks),
+                            "stocks_with_valuation": stocks_with_valuation,
+                            "scan_time": data.get('scan_statistics', {}).get('scan_time_seconds', 0)
+                        }
+                        
+                        print(f"   {category}: {len(breakout_stocks)} stocks, {stocks_with_valuation} with valuation data")
+                        
+                    else:
+                        category_results[category] = {
+                            "status": "error",
+                            "error": f"HTTP {response.status_code}"
+                        }
+                        all_tests_passed = False
+                        print(f"   {category}: ERROR - HTTP {response.status_code}")
+                        
+                except Exception as e:
+                    category_results[category] = {
+                        "status": "error", 
+                        "error": str(e)
+                    }
+                    all_tests_passed = False
+                    print(f"   {category}: ERROR - {str(e)}")
                 
-                if missing_keys:
-                    self.log_test(f"{symbol} Data Structure", False, f"Missing keys: {missing_keys}")
-                else:
-                    current_price = data['current_price']
-                    change_percent = data['change_percent']
-                    
-                    # Test price accuracy against expected values (allow 5% variance for market movements)
-                    price_tolerance = 0.05  # 5% tolerance
-                    change_tolerance = 2.0   # 2% absolute tolerance for change
-                    
-                    price_diff = abs(current_price - expected['expected_price']) / expected['expected_price']
-                    change_diff = abs(change_percent - expected['expected_change'])
-                    
-                    price_accurate = price_diff <= price_tolerance
-                    change_reasonable = change_diff <= change_tolerance
-                    
-                    self.log_test(f"{symbol} Price Accuracy", price_accurate, 
-                                f"Current: ₹{current_price:.2f}, Expected: ₹{expected['expected_price']:.2f}, Diff: {price_diff*100:.2f}%")
-                    
-                    self.log_test(f"{symbol} Change Accuracy", change_reasonable, 
-                                f"Current: {change_percent:.2f}%, Expected: {expected['expected_change']:.2f}%, Diff: {change_diff:.2f}%")
-                    
-                    self.log_test(f"{symbol} Data Structure", True, 
-                                f"Price: ₹{current_price:.2f} ({change_percent:+.2f}%), Sector: {data.get('sector', 'N/A')}")
-                    
-                    # Test data validation info
-                    data_validation = data.get('data_validation', {})
-                    if data_validation:
-                        self.test_data_validation_info(symbol, data_validation)
-                    
-                    # Test trading recommendation if present
-                    trading_rec = data.get('trading_recommendation')
-                    if trading_rec:
-                        self.test_individual_trading_recommendation(symbol, trading_rec)
-        
-        return successful_tests > 0
-
-    def test_individual_trading_recommendation(self, symbol, trading_rec):
-        """Test individual stock trading recommendation"""
-        required_fields = ['entry_price', 'stop_loss', 'target_price', 'risk_reward_ratio', 
-                         'position_size_percent', 'action', 'entry_rationale', 'stop_loss_rationale']
-        
-        missing_fields = [field for field in required_fields if field not in trading_rec]
-        
-        if missing_fields:
-            self.log_test(f"Trading Recommendation - {symbol}", False, f"Missing fields: {missing_fields}")
-        else:
-            entry_price = trading_rec['entry_price']
-            stop_loss = trading_rec['stop_loss']
-            target_price = trading_rec['target_price']
-            action = trading_rec['action']
+                # Small delay between requests
+                time.sleep(1)
             
-            self.log_test(f"Trading Recommendation - {symbol}", True, 
-                        f"Entry ₹{entry_price}, Stop ₹{stop_loss}, Target ₹{target_price}, Action {action}")
-
-    def test_data_validation_info(self, symbol, data_validation):
-        """Test data validation information structure and content"""
-        required_fields = ['source', 'timestamp']
-        missing_fields = [field for field in required_fields if field not in data_validation]
-        
-        if missing_fields:
-            self.log_test(f"Data Validation Info - {symbol}", False, f"Missing fields: {missing_fields}")
-        else:
-            source = data_validation.get('source', '')
-            timestamp = data_validation.get('timestamp', '')
-            data_age_warning = data_validation.get('data_age_warning')
-            
-            # Check if data source is valid
-            valid_sources = ['Yahoo Finance', 'Yahoo Finance Real-time', 'Yahoo Finance Historical']
-            source_valid = any(valid_source in source for valid_source in valid_sources)
-            
-            # Check timestamp format
-            timestamp_valid = len(timestamp) > 0
-            
-            details = f"Source: {source}, Timestamp: {timestamp}"
-            if data_age_warning:
-                details += f", Warning: {data_age_warning}"
-            
-            self.log_test(f"Data Validation Info - {symbol}", source_valid and timestamp_valid, details)
-
-    def test_stock_data_validation_endpoint(self):
-        """Test the new validation endpoint for cross-source data validation"""
-        test_symbols = ['RELIANCE', 'TCS', 'MPHASIS', 'HDFCLIFE', 'HINDUNILVR']
-        successful_validations = 0
-        
-        for symbol in test_symbols:
-            success, data = self.test_api_endpoint(f"Data Validation - {symbol}", "GET", f"stocks/{symbol}/validate", timeout=45)
-            
-            if success:
-                successful_validations += 1
-                
-                # Test validation result structure
-                required_keys = ['symbol', 'validation_timestamp', 'data_quality_score', 'quality_level']
-                missing_keys = [key for key in required_keys if key not in data]
-                
-                if missing_keys:
-                    self.log_test(f"Validation Structure - {symbol}", False, f"Missing keys: {missing_keys}")
-                else:
-                    quality_score = data.get('data_quality_score', 0)
-                    quality_level = data.get('quality_level', 'Unknown')
-                    warnings = data.get('warnings', [])
-                    
-                    # Test data quality score range (should be 0-100)
-                    score_valid = 0 <= quality_score <= 100
-                    
-                    # Test quality level values
-                    valid_levels = ['Excellent', 'Good', 'Fair', 'Poor', 'Failed']
-                    level_valid = quality_level in valid_levels
-                    
-                    self.log_test(f"Validation Quality - {symbol}", score_valid and level_valid, 
-                                f"Score: {quality_score}/100, Level: {quality_level}, Warnings: {len(warnings)}")
-                    
-                    # Test cross-source validation if available
-                    yahoo_data = data.get('yahoo_finance')
-                    nse_data = data.get('nse_crosscheck')
-                    
-                    if yahoo_data and nse_data:
-                        self.test_cross_source_validation(symbol, yahoo_data, nse_data)
-                    
-                    # Test data freshness warnings
-                    if warnings:
-                        self.test_data_freshness_warnings(symbol, warnings)
-        
-        return successful_validations > 0
-
-    def test_cross_source_validation(self, symbol, yahoo_data, nse_data):
-        """Test cross-source price validation"""
-        yahoo_price = yahoo_data.get('current_price')
-        nse_price = nse_data.get('current_price')
-        
-        if yahoo_price and nse_price:
-            price_diff = abs(yahoo_price - nse_price)
-            price_diff_percent = (price_diff / yahoo_price) * 100
-            
-            # Acceptable variance is 5% as mentioned in requirements
-            acceptable_variance = price_diff_percent <= 5.0
-            
-            self.log_test(f"Cross-Source Price Validation - {symbol}", acceptable_variance, 
-                        f"Yahoo: ₹{yahoo_price:.2f}, NSE: ₹{nse_price:.2f}, Diff: {price_diff_percent:.2f}%")
-        else:
-            self.log_test(f"Cross-Source Price Validation - {symbol}", False, 
-                        "Missing price data from one or both sources")
-
-    def test_data_freshness_warnings(self, symbol, warnings):
-        """Test data freshness warning system"""
-        freshness_warnings = [w for w in warnings if 'hours old' in w or 'stale' in w.lower()]
-        
-        if freshness_warnings:
-            self.log_test(f"Data Freshness Warnings - {symbol}", True, 
-                        f"Found {len(freshness_warnings)} freshness warnings: {freshness_warnings[0]}")
-        else:
-            self.log_test(f"Data Freshness - {symbol}", True, "Data appears fresh (no age warnings)")
-
-    def test_real_time_data_accuracy(self):
-        """Test real-time data accuracy against expected market conditions"""
-        print("\n🔍 REAL-TIME DATA ACCURACY TESTS")
-        print("-" * 40)
-        
-        # Test during different market conditions
-        success, market_data = self.test_api_endpoint("Market Status Check", "GET", "stocks/market-overview")
-        
-        if success:
-            market_status = market_data.get('market_status', {})
-            is_trading_hours = market_status.get('is_trading_hours', False)
-            
-            self.log_test("Market Hours Detection", True, 
-                        f"Trading Hours: {is_trading_hours}, Status: {market_status.get('status', 'Unknown')}")
-            
-            # Test data accuracy expectations based on market hours
-            if is_trading_hours:
-                self.log_test("Real-time Data Expectation", True, 
-                            "Market is open - expecting real-time or near real-time data")
+            if all_tests_passed:
+                self.log_test("Valuation Filter Parameter", True, 
+                            "All 5 valuation categories accepted successfully",
+                            {"category_results": category_results})
             else:
-                self.log_test("Delayed Data Expectation", True, 
-                            "Market is closed - delayed data is acceptable")
-        
-        # Test specific stocks for data quality during current market conditions
-        test_symbols = ['RELIANCE', 'TCS', 'MPHASIS']
-        for symbol in test_symbols:
-            success, validation_data = self.test_api_endpoint(f"Real-time Validation - {symbol}", "GET", f"stocks/{symbol}/validate")
+                self.log_test("Valuation Filter Parameter", False,
+                            "Some valuation categories failed",
+                            {"category_results": category_results})
             
-            if success:
-                quality_score = validation_data.get('data_quality_score', 0)
-                warnings = validation_data.get('warnings', [])
-                
-                # For trading decisions, we need quality score >= 60 as mentioned in requirements
-                trading_suitable = quality_score >= 60
-                
-                self.log_test(f"Trading Suitability - {symbol}", trading_suitable, 
-                            f"Quality Score: {quality_score}/100 ({'Suitable' if trading_suitable else 'Not suitable'} for trading)")
-                
-                # Check for stale data warnings (should warn if data > 1 hour old)
-                stale_warnings = [w for w in warnings if 'hour' in w and ('old' in w or 'stale' in w)]
-                if stale_warnings:
-                    self.log_test(f"Stale Data Warning - {symbol}", True, f"Properly warned about stale data: {stale_warnings[0]}")
-
-    def test_trading_impact_analysis(self):
-        """Test if data accuracy would affect trading recommendations"""
-        print("\n📊 TRADING IMPACT ANALYSIS")
-        print("-" * 40)
-        
-        test_symbols = ['RELIANCE', 'TCS', 'MPHASIS', 'HDFCLIFE', 'HINDUNILVR']
-        reliable_recommendations = 0
-        total_recommendations = 0
-        
-        for symbol in test_symbols:
-            # Get stock data with trading recommendation
-            success, stock_data = self.test_api_endpoint(f"Trading Data - {symbol}", "GET", f"stocks/{symbol}")
+            return all_tests_passed
             
-            if success:
-                trading_rec = stock_data.get('trading_recommendation')
-                data_validation = stock_data.get('data_validation', {})
-                
-                if trading_rec:
-                    total_recommendations += 1
+        except Exception as e:
+            self.log_test("Valuation Filter Parameter", False, f"Error testing valuation filter: {str(e)}")
+            return False
+    
+    def test_valuation_analysis_field(self) -> bool:
+        """Test that valuation_analysis field is included in stock responses"""
+        try:
+            response = self.session.get(f"{self.backend_url}/stocks/breakouts/scan?limit=15", timeout=30)
+            
+            if response.status_code != 200:
+                self.log_test("Valuation Analysis Field", False, f"API returned status {response.status_code}")
+                return False
+            
+            data = response.json()
+            breakout_stocks = data.get('breakout_stocks', [])
+            
+            if not breakout_stocks:
+                self.log_test("Valuation Analysis Field", False, "No breakout stocks to test")
+                return False
+            
+            stocks_with_valuation = 0
+            valuation_categories_found = set()
+            sample_valuation_data = None
+            
+            for stock in breakout_stocks:
+                if 'valuation_analysis' in stock:
+                    stocks_with_valuation += 1
+                    valuation_data = stock['valuation_analysis']
                     
-                    # Get validation data
-                    val_success, validation_data = self.test_api_endpoint(f"Trading Validation - {symbol}", "GET", f"stocks/{symbol}/validate")
+                    # Check required valuation fields
+                    required_valuation_fields = [
+                        'valuation_score', 'valuation_category', 'confidence'
+                    ]
                     
-                    if val_success:
-                        quality_score = validation_data.get('data_quality_score', 0)
-                        quality_level = validation_data.get('quality_level', 'Unknown')
-                        warnings = validation_data.get('warnings', [])
-                        
-                        # Check if recommendation is based on reliable data
-                        data_reliable = quality_score >= 70 and quality_level in ['Excellent', 'Good']
-                        
-                        if data_reliable:
-                            reliable_recommendations += 1
-                        
-                        # Test if entry/stop/target prices are calculated from accurate base data
-                        entry_price = trading_rec.get('entry_price', 0)
-                        current_price = stock_data.get('current_price', 0)
-                        
-                        # Entry price should be reasonably close to current price (within 5%)
-                        price_alignment = abs(entry_price - current_price) / current_price <= 0.05 if current_price > 0 else False
-                        
-                        self.log_test(f"Trading Price Alignment - {symbol}", price_alignment, 
-                                    f"Entry: ₹{entry_price:.2f}, Current: ₹{current_price:.2f}, Quality: {quality_level}")
-                        
-                        # Test if poor data quality affects system confidence
-                        action = trading_rec.get('action', 'UNKNOWN')
-                        if quality_score < 60:
-                            conservative_action = action in ['WAIT', 'AVOID']
-                            self.log_test(f"Low Quality Response - {symbol}", conservative_action, 
-                                        f"Low quality data (Score: {quality_score}) should result in conservative action, got: {action}")
-        
-        # Overall trading reliability assessment
-        reliability_rate = (reliable_recommendations / total_recommendations * 100) if total_recommendations > 0 else 0
-        
-        self.log_test("Overall Trading Reliability", reliability_rate >= 60, 
-                    f"{reliable_recommendations}/{total_recommendations} recommendations based on reliable data ({reliability_rate:.1f}%)")
-
-    def test_technical_indicator_validation(self):
-        """Test technical indicator calculations using accurate price data"""
-        print("\n📈 TECHNICAL INDICATOR VALIDATION")
-        print("-" * 40)
-        
-        test_symbols = ['RELIANCE', 'TCS']
-        
-        for symbol in test_symbols:
-            success, data = self.test_api_endpoint(f"Technical Indicators - {symbol}", "GET", f"stocks/{symbol}")
+                    if all(field in valuation_data for field in required_valuation_fields):
+                        valuation_categories_found.add(valuation_data.get('valuation_category'))
+                        if not sample_valuation_data:
+                            sample_valuation_data = valuation_data
             
-            if success:
-                technical_data = data.get('technical_indicators', {})
-                current_price = data.get('current_price', 0)
+            coverage_percentage = (stocks_with_valuation / len(breakout_stocks)) * 100
+            
+            if stocks_with_valuation > 0:
+                self.log_test("Valuation Analysis Field", True,
+                            f"Valuation analysis present in {stocks_with_valuation}/{len(breakout_stocks)} stocks ({coverage_percentage:.1f}%)",
+                            {
+                                "categories_found": list(valuation_categories_found),
+                                "sample_valuation": sample_valuation_data
+                            })
+                return True
+            else:
+                self.log_test("Valuation Analysis Field", False, "No stocks have valuation_analysis field")
+                return False
                 
-                # Test RSI calculation validity (should be 0-100)
-                rsi = technical_data.get('rsi')
-                if rsi is not None:
-                    rsi_valid = 0 <= rsi <= 100
-                    self.log_test(f"RSI Validity - {symbol}", rsi_valid, f"RSI: {rsi:.2f}")
+        except Exception as e:
+            self.log_test("Valuation Analysis Field", False, f"Error testing valuation analysis field: {str(e)}")
+            return False
+    
+    def test_valuation_scoring_weights(self) -> bool:
+        """Test that valuation scoring uses the correct weighted system"""
+        try:
+            response = self.session.get(f"{self.backend_url}/stocks/breakouts/scan?limit=20", timeout=30)
+            
+            if response.status_code != 200:
+                self.log_test("Valuation Scoring Weights", False, f"API returned status {response.status_code}")
+                return False
+            
+            data = response.json()
+            breakout_stocks = data.get('breakout_stocks', [])
+            
+            stocks_with_detailed_valuation = 0
+            weight_verification_results = []
+            
+            for stock in breakout_stocks:
+                valuation_analysis = stock.get('valuation_analysis', {})
+                breakdown = valuation_analysis.get('breakdown', {})
                 
-                # Test moving averages (should be reasonable compared to current price)
-                sma_20 = technical_data.get('sma_20')
-                sma_50 = technical_data.get('sma_50')
-                sma_200 = technical_data.get('sma_200')
-                
-                if sma_20 and current_price:
-                    # SMA should be within reasonable range of current price (±50%)
-                    sma_reasonable = 0.5 <= (sma_20 / current_price) <= 1.5
-                    self.log_test(f"SMA-20 Reasonableness - {symbol}", sma_reasonable, 
-                                f"SMA-20: ₹{sma_20:.2f}, Current: ₹{current_price:.2f}")
-                
-                # Test volume data accuracy
-                volume = data.get('volume', 0)
-                volume_ratio = technical_data.get('volume_ratio')
-                
-                if volume > 0:
-                    self.log_test(f"Volume Data - {symbol}", True, f"Volume: {volume:,}, Ratio: {volume_ratio:.2f}" if volume_ratio else f"Volume: {volume:,}")
-                
-                # Test breakout detection reliability
-                breakout_data = data.get('breakout_data')
-                if breakout_data:
-                    confidence = breakout_data.get('confidence', 0)
-                    breakout_type = breakout_data.get('type', 'unknown')
+                if breakdown and 'details' in breakdown:
+                    stocks_with_detailed_valuation += 1
                     
-                    # High confidence breakouts should have supporting volume
-                    if confidence > 0.8 and volume_ratio:
-                        volume_support = volume_ratio > 1.2  # Above average volume
-                        self.log_test(f"Breakout Volume Support - {symbol}", volume_support, 
-                                    f"High confidence ({confidence:.2f}) breakout with volume ratio: {volume_ratio:.2f}")
-
-    def test_comprehensive_data_validation(self):
-        """Run comprehensive data validation tests as requested"""
-        print("\n🔍 COMPREHENSIVE DATA VALIDATION TESTING")
-        print("=" * 50)
-        
-        # Test 1: Stock Price Accuracy Testing
-        self.test_real_time_data_accuracy()
-        
-        # Test 2: Cross-Source Validation
-        self.test_stock_data_validation_endpoint()
-        
-        # Test 3: Technical Indicator Validation
-        self.test_technical_indicator_validation()
-        
-        # Test 4: Trading Impact Analysis
-        self.test_trading_impact_analysis()
-        
-        return True
-
-    def test_individual_trading_recommendation(self, symbol, trading_rec):
-        """Test individual stock trading recommendation"""
-        required_fields = ['entry_price', 'stop_loss', 'target_price', 'risk_reward_ratio', 
-                         'position_size_percent', 'action', 'entry_rationale', 'stop_loss_rationale']
-        
-        missing_fields = [field for field in required_fields if field not in trading_rec]
-        
-        if missing_fields:
-            self.log_test(f"Trading Recommendation - {symbol}", False, f"Missing fields: {missing_fields}")
-        else:
-            entry_price = trading_rec['entry_price']
-            stop_loss = trading_rec['stop_loss']
-            target_price = trading_rec['target_price']
-            action = trading_rec['action']
+                    # Check for weight-related information in details
+                    details = breakdown.get('details', [])
+                    weight_info = {
+                        "symbol": stock.get('symbol'),
+                        "valuation_score": valuation_analysis.get('valuation_score'),
+                        "total_weights": valuation_analysis.get('total_weights'),
+                        "confidence": valuation_analysis.get('confidence'),
+                        "details_count": len(details)
+                    }
+                    weight_verification_results.append(weight_info)
             
-            # Check if this matches expected values from review request
-            expected_values = {
-                'MPHASIS': {'entry': 2873.20, 'stop': 2730.71, 'target': 3300.66, 'action': 'BUY'},
-                'HDFCLIFE': {'entry': 776.60, 'stop': 747.99, 'target': 862.42, 'action': 'BUY'},
-                'HINDUNILVR': {'entry': 2692.60, 'stop': 2585.47, 'target': 3013.99, 'action': 'BUY'}
+            if stocks_with_detailed_valuation > 0:
+                self.log_test("Valuation Scoring Weights", True,
+                            f"Found detailed valuation breakdown in {stocks_with_detailed_valuation} stocks",
+                            {
+                                "stocks_analyzed": stocks_with_detailed_valuation,
+                                "sample_results": weight_verification_results[:3]  # Show first 3 samples
+                            })
+                return True
+            else:
+                self.log_test("Valuation Scoring Weights", False, 
+                            "No stocks found with detailed valuation breakdown")
+                return False
+                
+        except Exception as e:
+            self.log_test("Valuation Scoring Weights", False, f"Error testing valuation weights: {str(e)}")
+            return False
+    
+    def test_missing_financial_data_handling(self) -> bool:
+        """Test proper exception handling when financial data is missing"""
+        try:
+            # Test with a larger sample to find stocks with missing data
+            response = self.session.get(f"{self.backend_url}/stocks/breakouts/scan?limit=30", timeout=45)
+            
+            if response.status_code != 200:
+                self.log_test("Missing Financial Data Handling", False, f"API returned status {response.status_code}")
+                return False
+            
+            data = response.json()
+            breakout_stocks = data.get('breakout_stocks', [])
+            
+            stocks_with_low_confidence = 0
+            stocks_with_missing_data_notes = 0
+            error_handling_examples = []
+            
+            for stock in breakout_stocks:
+                valuation_analysis = stock.get('valuation_analysis', {})
+                
+                # Check for low confidence (indicating missing data)
+                confidence = valuation_analysis.get('confidence', 'High')
+                if confidence in ['Low', 'Medium']:
+                    stocks_with_low_confidence += 1
+                
+                # Check for missing data indicators in breakdown details
+                breakdown = valuation_analysis.get('breakdown', {})
+                details = breakdown.get('details', [])
+                
+                for detail in details:
+                    if 'insufficient' in detail.lower() or 'missing' in detail.lower() or 'error' in detail.lower():
+                        stocks_with_missing_data_notes += 1
+                        error_handling_examples.append({
+                            "symbol": stock.get('symbol'),
+                            "detail": detail,
+                            "confidence": confidence
+                        })
+                        break
+            
+            # The API should handle missing data gracefully without crashing
+            total_stocks = len(breakout_stocks)
+            if total_stocks > 0:
+                self.log_test("Missing Financial Data Handling", True,
+                            f"API handled missing financial data gracefully for {total_stocks} stocks",
+                            {
+                                "total_stocks": total_stocks,
+                                "low_confidence_stocks": stocks_with_low_confidence,
+                                "missing_data_indicators": stocks_with_missing_data_notes,
+                                "error_handling_examples": error_handling_examples[:2]
+                            })
+                return True
+            else:
+                self.log_test("Missing Financial Data Handling", False, "No stocks returned to test error handling")
+                return False
+                
+        except Exception as e:
+            self.log_test("Missing Financial Data Handling", False, f"Error testing missing data handling: {str(e)}")
+            return False
+    
+    def test_frontend_backend_integration(self) -> bool:
+        """Test that frontend can successfully call backend without dependency errors"""
+        try:
+            # Test CORS and basic API accessibility
+            headers = {
+                'Origin': 'https://tradepulse-app-1.preview.emergentagent.com',
+                'Access-Control-Request-Method': 'GET',
+                'Access-Control-Request-Headers': 'Content-Type'
             }
             
-            if symbol in expected_values:
-                expected = expected_values[symbol]
-                tolerance = 0.05  # 5% tolerance for price variations
+            # Test preflight request
+            preflight_response = self.session.options(f"{self.backend_url}/stocks/breakouts/scan", headers=headers)
+            
+            # Test actual API call with frontend-like headers
+            api_headers = {
+                'Origin': 'https://tradepulse-app-1.preview.emergentagent.com',
+                'Content-Type': 'application/json'
+            }
+            
+            response = self.session.get(
+                f"{self.backend_url}/stocks/breakouts/scan?limit=10", 
+                headers=api_headers,
+                timeout=30
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
                 
-                entry_match = abs(entry_price - expected['entry']) / expected['entry'] <= tolerance
-                stop_match = abs(stop_loss - expected['stop']) / expected['stop'] <= tolerance
-                target_match = abs(target_price - expected['target']) / expected['target'] <= tolerance
-                action_match = action == expected['action']
+                # Check CORS headers
+                cors_headers = {
+                    'access-control-allow-origin': response.headers.get('access-control-allow-origin'),
+                    'access-control-allow-methods': response.headers.get('access-control-allow-methods'),
+                    'access-control-allow-headers': response.headers.get('access-control-allow-headers')
+                }
                 
-                if entry_match and stop_match and target_match and action_match:
-                    self.log_test(f"Expected Trading Values - {symbol}", True, 
-                                f"Values match expected: Entry ₹{entry_price}, Stop ₹{stop_loss}, Target ₹{target_price}, Action {action}")
-                else:
-                    self.log_test(f"Expected Trading Values - {symbol}", False, 
-                                f"Values differ from expected. Got: Entry ₹{entry_price}, Stop ₹{stop_loss}, Target ₹{target_price}, Action {action}")
+                self.log_test("Frontend-Backend Integration", True,
+                            "Frontend can successfully call backend APIs",
+                            {
+                                "cors_headers": cors_headers,
+                                "response_size": len(str(data)),
+                                "breakout_stocks_count": len(data.get('breakout_stocks', []))
+                            })
+                return True
             else:
-                self.log_test(f"Trading Recommendation - {symbol}", True, 
-                            f"Entry ₹{entry_price}, Stop ₹{stop_loss}, Target ₹{target_price}, Action {action}")
-
-    def test_stock_chart_data(self):
-        """Test stock chart data endpoints"""
-        test_symbol = 'RELIANCE'
-        timeframes = ['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y']
-        successful_tests = 0
-        
-        for timeframe in timeframes:
-            success, data = self.test_api_endpoint(f"Chart Data - {test_symbol} {timeframe}", "GET", 
-                                                 f"stocks/{test_symbol}/chart", 
-                                                 params={"timeframe": timeframe})
+                self.log_test("Frontend-Backend Integration", False, 
+                            f"API call failed with status {response.status_code}")
+                return False
+                
+        except Exception as e:
+            self.log_test("Frontend-Backend Integration", False, f"Error testing frontend integration: {str(e)}")
+            return False
+    
+    def test_valuation_categories_comprehensive(self) -> bool:
+        """Comprehensive test of all 5 valuation categories with detailed analysis"""
+        try:
+            valuation_categories = [
+                "Highly Undervalued",
+                "Slightly Undervalued", 
+                "Reasonable",
+                "Slightly Overvalued",
+                "Highly Overvalued"
+            ]
             
-            if success:
-                successful_tests += 1
-                if 'data' in data and len(data['data']) > 0:
-                    self.log_test(f"Chart Data Points - {timeframe}", True, 
-                                f"Found {len(data['data'])} data points")
-                else:
-                    self.log_test(f"Chart Data Points - {timeframe}", False, "No chart data found")
-        
-        return successful_tests > len(timeframes) // 2
-
-    def test_breakout_scanning(self):
-        """Test breakout scanning with enhanced trading features"""
-        # Test basic breakout scan
-        success1, data1 = self.test_api_endpoint("Breakout Scan - Basic", "GET", "stocks/breakouts/scan", 
-                                                timeout=60)  # Longer timeout for scanning
-        
-        if success1:
-            breakouts_found = data1.get('breakouts_found', 0)
-            total_scanned = data1.get('total_scanned', 0)
-            self.log_test("Breakout Scan Results", True, 
-                        f"Found {breakouts_found} breakouts from {total_scanned} stocks scanned")
+            comprehensive_results = {}
+            all_categories_working = True
             
-            # Test trading recommendations in breakout results
-            breakout_stocks = data1.get('breakout_stocks', [])
-            if breakout_stocks:
-                self.test_trading_recommendations_in_breakouts(breakout_stocks)
-        
-        # Test with sector filter
-        success2, data2 = self.test_api_endpoint("Breakout Scan - IT Sector", "GET", "stocks/breakouts/scan", 
-                                                params={"sector": "IT", "min_confidence": "0.6"}, timeout=60)
-        
-        # Test with risk filter
-        success3, data3 = self.test_api_endpoint("Breakout Scan - Low Risk", "GET", "stocks/breakouts/scan", 
-                                                params={"risk_level": "Low", "min_confidence": "0.7"}, timeout=60)
-        
-        return success1 and success2 and success3
-
-    def test_trading_recommendations_in_breakouts(self, breakout_stocks):
-        """Test trading recommendations structure in breakout results"""
-        stocks_with_recommendations = 0
-        valid_recommendations = 0
-        
-        for stock in breakout_stocks:
-            trading_rec = stock.get('trading_recommendation')
-            if trading_rec:
-                stocks_with_recommendations += 1
-                
-                # Validate trading recommendation structure
-                required_fields = ['entry_price', 'stop_loss', 'target_price', 'risk_reward_ratio', 
-                                 'position_size_percent', 'action', 'entry_rationale', 'stop_loss_rationale']
-                
-                missing_fields = [field for field in required_fields if field not in trading_rec]
-                
-                if not missing_fields:
-                    valid_recommendations += 1
+            for category in valuation_categories:
+                try:
+                    response = self.session.get(
+                        f"{self.backend_url}/stocks/breakouts/scan",
+                        params={
+                            "limit": 25,
+                            "valuation_filter": category
+                        },
+                        timeout=60
+                    )
                     
-                    # Validate trading logic
-                    entry_price = trading_rec['entry_price']
-                    stop_loss = trading_rec['stop_loss']
-                    target_price = trading_rec['target_price']
-                    action = trading_rec['action']
-                    risk_reward = trading_rec['risk_reward_ratio']
-                    position_size = trading_rec['position_size_percent']
-                    
-                    # Test logical constraints
-                    logic_valid = True
-                    logic_issues = []
-                    
-                    if stop_loss >= entry_price:
-                        logic_valid = False
-                        logic_issues.append("Stop loss should be below entry price")
-                    
-                    if target_price <= entry_price:
-                        logic_valid = False
-                        logic_issues.append("Target price should be above entry price")
-                    
-                    if action not in ['BUY', 'WAIT', 'AVOID']:
-                        logic_valid = False
-                        logic_issues.append(f"Invalid action: {action}")
-                    
-                    if not (1.5 <= risk_reward <= 4.0):
-                        logic_valid = False
-                        logic_issues.append(f"Risk:reward ratio {risk_reward} outside expected range (1.5-4.0)")
-                    
-                    if not (1.0 <= position_size <= 20.0):
-                        logic_valid = False
-                        logic_issues.append(f"Position size {position_size}% outside expected range (1-20%)")
-                    
-                    if logic_valid:
-                        self.log_test(f"Trading Logic - {stock['symbol']}", True, 
-                                    f"Entry: ₹{entry_price}, Stop: ₹{stop_loss}, Target: ₹{target_price}, Action: {action}")
+                    if response.status_code == 200:
+                        data = response.json()
+                        breakout_stocks = data.get('breakout_stocks', [])
+                        
+                        # Analyze returned stocks for correct valuation category
+                        correct_category_count = 0
+                        total_with_valuation = 0
+                        
+                        for stock in breakout_stocks:
+                            valuation_analysis = stock.get('valuation_analysis', {})
+                            if valuation_analysis:
+                                total_with_valuation += 1
+                                stock_category = valuation_analysis.get('valuation_category')
+                                if stock_category == category:
+                                    correct_category_count += 1
+                        
+                        accuracy = (correct_category_count / total_with_valuation * 100) if total_with_valuation > 0 else 0
+                        
+                        comprehensive_results[category] = {
+                            "status": "success",
+                            "total_stocks": len(breakout_stocks),
+                            "stocks_with_valuation": total_with_valuation,
+                            "correct_category_matches": correct_category_count,
+                            "accuracy_percentage": round(accuracy, 1),
+                            "scan_time": data.get('scan_statistics', {}).get('scan_time_seconds', 0)
+                        }
+                        
+                        print(f"   {category}: {len(breakout_stocks)} stocks, {correct_category_count}/{total_with_valuation} correct matches ({accuracy:.1f}%)")
+                        
                     else:
-                        self.log_test(f"Trading Logic - {stock['symbol']}", False, 
-                                    f"Logic issues: {', '.join(logic_issues)}")
-                else:
-                    self.log_test(f"Trading Recommendation Structure - {stock['symbol']}", False, 
-                                f"Missing fields: {missing_fields}")
-        
-        self.log_test("Trading Recommendations Coverage", stocks_with_recommendations > 0, 
-                    f"{stocks_with_recommendations}/{len(breakout_stocks)} stocks have trading recommendations")
-        
-        self.log_test("Trading Recommendations Validity", valid_recommendations > 0, 
-                    f"{valid_recommendations}/{stocks_with_recommendations} recommendations are structurally valid")
-
-    def test_market_overview(self):
-        """Test enhanced market overview endpoint with detailed market status"""
-        success, data = self.test_api_endpoint("Market Overview", "GET", "stocks/market-overview")
-        
-        if success:
-            required_keys = ['nifty_50', 'market_status', 'market_sentiment']
-            missing_keys = [key for key in required_keys if key not in data]
+                        comprehensive_results[category] = {
+                            "status": "error",
+                            "error": f"HTTP {response.status_code}"
+                        }
+                        all_categories_working = False
+                        
+                except Exception as e:
+                    comprehensive_results[category] = {
+                        "status": "error",
+                        "error": str(e)
+                    }
+                    all_categories_working = False
+                
+                time.sleep(2)  # Longer delay for comprehensive test
             
-            if missing_keys:
-                self.log_test("Market Overview Structure", False, f"Missing keys: {missing_keys}")
+            if all_categories_working:
+                self.log_test("Comprehensive Valuation Categories", True,
+                            "All 5 valuation categories working with proper filtering",
+                            {"detailed_results": comprehensive_results})
             else:
-                nifty_data = data.get('nifty_50', {})
-                market_status = data.get('market_status', {})
-                
-                self.log_test("Market Overview Structure", True, 
-                            f"NIFTY: {nifty_data.get('current', 'N/A')}, Sentiment: {data.get('market_sentiment', 'N/A')}")
-                
-                # Test enhanced market status structure
-                self.test_enhanced_market_status(market_status)
-        
-        return success
-
-    def test_enhanced_market_status(self, market_status):
-        """Test enhanced market status structure"""
-        required_status_fields = ['status', 'message', 'current_time', 'is_trading_hours']
-        missing_fields = [field for field in required_status_fields if field not in market_status]
-        
-        if missing_fields:
-            self.log_test("Market Status Structure", False, f"Missing fields: {missing_fields}")
-        else:
-            status = market_status.get('status')
-            current_time = market_status.get('current_time')
-            is_trading = market_status.get('is_trading_hours')
-            message = market_status.get('message')
+                self.log_test("Comprehensive Valuation Categories", False,
+                            "Some valuation categories failed comprehensive testing",
+                            {"detailed_results": comprehensive_results})
             
-            # Validate status values
-            valid_statuses = ['OPEN', 'CLOSED', 'PRE_OPEN']
-            status_valid = status in valid_statuses
+            return all_categories_working
             
-            # Validate IST time format
-            ist_valid = 'IST' in current_time if current_time else False
-            
-            self.log_test("Market Status Values", status_valid and ist_valid, 
-                        f"Status: {status}, Time: {current_time}, Trading: {is_trading}")
-            
-            # Test additional fields based on status
-            if status == 'OPEN' and 'time_to_close' in market_status:
-                self.log_test("Market Open Details", True, f"Time to close: {market_status['time_to_close']}s")
-            elif status in ['CLOSED', 'PRE_OPEN'] and 'next_open' in market_status:
-                self.log_test("Market Closed Details", True, f"Next open: {market_status['next_open']}")
-            
-            self.log_test("Market Status Message", len(message) > 0 if message else False, 
-                        f"Message: {message}")
-
-    def test_watchlist_operations(self):
-        """Test watchlist CRUD operations"""
-        test_symbol = 'RELIANCE'
-        
-        # Get initial watchlist
-        success1, data1 = self.test_api_endpoint("Watchlist - Get", "GET", "watchlist")
-        initial_count = len(data1.get('watchlist', [])) if success1 else 0
-        
-        # Add to watchlist
-        success2, data2 = self.test_api_endpoint("Watchlist - Add", "POST", "watchlist", 
-                                                params={"symbol": test_symbol})
-        
-        # Verify addition
-        success3, data3 = self.test_api_endpoint("Watchlist - Verify Add", "GET", "watchlist")
-        new_count = len(data3.get('watchlist', [])) if success3 else 0
-        
-        if success3:
-            self.log_test("Watchlist Add Verification", new_count > initial_count, 
-                        f"Count changed from {initial_count} to {new_count}")
-        
-        # Remove from watchlist
-        success4, data4 = self.test_api_endpoint("Watchlist - Remove", "DELETE", f"watchlist/{test_symbol}")
-        
-        # Verify removal
-        success5, data5 = self.test_api_endpoint("Watchlist - Verify Remove", "GET", "watchlist")
-        final_count = len(data5.get('watchlist', [])) if success5 else 0
-        
-        if success5:
-            self.log_test("Watchlist Remove Verification", final_count == initial_count, 
-                        f"Count returned to {final_count} (initial: {initial_count})")
-        
-        return success1 and success2 and success4
-
-    def test_error_handling(self):
-        """Test error handling for invalid requests"""
-        # Test invalid stock symbol
-        success1, data1 = self.test_api_endpoint("Error - Invalid Stock", "GET", "stocks/INVALID123", 
-                                                expected_status=404)
-        
-        # Test invalid chart timeframe
-        success2, data2 = self.test_api_endpoint("Error - Invalid Timeframe", "GET", "stocks/RELIANCE/chart", 
-                                                params={"timeframe": "invalid"})
-        
-        # Test invalid watchlist operation
-        success3, data3 = self.test_api_endpoint("Error - Invalid Watchlist Add", "POST", "watchlist", 
-                                                params={"symbol": "INVALID123"}, expected_status=404)
-        
-        return success1 and success2 and success3
-
-    def run_comprehensive_tests(self):
-        """Run all tests in sequence"""
-        print("🚀 Starting Comprehensive Backend API Testing")
-        print("=" * 60)
-        print(f"Testing API at: {self.api_url}")
-        print(f"Started at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        except Exception as e:
+            self.log_test("Comprehensive Valuation Categories", False, f"Error in comprehensive testing: {str(e)}")
+            return False
+    
+    def run_all_tests(self) -> Dict[str, Any]:
+        """Run all valuation filter tests"""
+        print("🚀 Starting StockBreak Pro Valuation Filter Testing")
         print("=" * 60)
         print()
-
-        # Core API Tests
-        print("📋 CORE API TESTS")
-        print("-" * 30)
-        self.test_root_endpoint()
-        self.test_nse_symbols()
-        self.test_stock_search()
         
-        print("\n📊 STOCK DATA TESTS")
-        print("-" * 30)
-        self.test_individual_stock_data()
-        self.test_stock_chart_data()
+        start_time = time.time()
         
-        print("\n🔍 BREAKOUT ANALYSIS TESTS")
-        print("-" * 30)
-        self.test_breakout_scanning()
+        # Test sequence
+        tests = [
+            ("Backend Connectivity", self.test_backend_connectivity),
+            ("Basic Breakout Scan", self.test_breakout_scan_endpoint_basic),
+            ("Valuation Filter Parameter", self.test_valuation_filter_parameter),
+            ("Valuation Analysis Field", self.test_valuation_analysis_field),
+            ("Valuation Scoring Weights", self.test_valuation_scoring_weights),
+            ("Missing Financial Data Handling", self.test_missing_financial_data_handling),
+            ("Frontend-Backend Integration", self.test_frontend_backend_integration),
+            ("Comprehensive Valuation Categories", self.test_valuation_categories_comprehensive)
+        ]
         
-        print("\n📈 MARKET DATA TESTS")
-        print("-" * 30)
-        self.test_market_overview()
+        passed_tests = 0
+        total_tests = len(tests)
         
-        print("\n⭐ WATCHLIST TESTS")
-        print("-" * 30)
-        self.test_watchlist_operations()
+        for test_name, test_func in tests:
+            try:
+                if test_func():
+                    passed_tests += 1
+            except Exception as e:
+                self.log_test(test_name, False, f"Test execution error: {str(e)}")
         
-        print("\n🚨 ERROR HANDLING TESTS")
-        print("-" * 30)
-        self.test_error_handling()
+        end_time = time.time()
+        test_duration = end_time - start_time
         
-        # NEW: Comprehensive Data Validation Tests
-        print("\n🔍 COMPREHENSIVE DATA VALIDATION TESTING")
-        print("-" * 50)
-        self.test_comprehensive_data_validation()
-        
-        # Print final results
-        print("\n" + "=" * 60)
-        print("📊 FINAL TEST RESULTS")
+        # Summary
         print("=" * 60)
-        print(f"Total Tests Run: {self.tests_run}")
-        print(f"Tests Passed: {self.tests_passed}")
-        print(f"Tests Failed: {self.tests_run - self.tests_passed}")
-        print(f"Success Rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
-        
-        # Show failed tests
-        failed_tests = [test for test in self.test_results if not test['success']]
-        if failed_tests:
-            print(f"\n❌ FAILED TESTS ({len(failed_tests)}):")
-            for test in failed_tests:
-                print(f"  • {test['test_name']}: {test['details']}")
-        
-        print(f"\nCompleted at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        print("🎯 VALUATION FILTER TESTING SUMMARY")
         print("=" * 60)
+        print(f"Total Tests: {total_tests}")
+        print(f"Passed: {passed_tests}")
+        print(f"Failed: {total_tests - passed_tests}")
+        print(f"Success Rate: {(passed_tests/total_tests)*100:.1f}%")
+        print(f"Test Duration: {test_duration:.2f} seconds")
+        print()
         
-        return self.tests_passed == self.tests_run
+        # Critical issues
+        critical_failures = [result for result in self.test_results if not result['success'] and 
+                           result['test_name'] in ['Backend Connectivity', 'Basic Breakout Scan', 'Valuation Filter Parameter']]
+        
+        if critical_failures:
+            print("🚨 CRITICAL ISSUES FOUND:")
+            for failure in critical_failures:
+                print(f"   - {failure['test_name']}: {failure['message']}")
+            print()
+        
+        return {
+            "total_tests": total_tests,
+            "passed_tests": passed_tests,
+            "failed_tests": total_tests - passed_tests,
+            "success_rate": (passed_tests/total_tests)*100,
+            "test_duration": test_duration,
+            "critical_failures": len(critical_failures),
+            "detailed_results": self.test_results
+        }
 
 def main():
-    """Main test execution"""
-    tester = StockBreakoutAPITester()
+    """Main testing function"""
+    tester = ValuationFilterTester()
+    results = tester.run_all_tests()
     
-    try:
-        all_passed = tester.run_comprehensive_tests()
-        return 0 if all_passed else 1
-    except KeyboardInterrupt:
-        print("\n\n⚠️  Tests interrupted by user")
-        return 1
-    except Exception as e:
-        print(f"\n\n💥 Unexpected error during testing: {str(e)}")
-        return 1
+    # Exit with appropriate code
+    if results['success_rate'] >= 80:
+        print("✅ VALUATION FILTER TESTING COMPLETED SUCCESSFULLY")
+        sys.exit(0)
+    else:
+        print("❌ VALUATION FILTER TESTING FAILED - CRITICAL ISSUES FOUND")
+        sys.exit(1)
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

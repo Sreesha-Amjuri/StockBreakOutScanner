@@ -1,0 +1,512 @@
+2025-09-05 17:41:02,298 - server - INFO - [server.py:2730] - === Stock Screener API Starting ===
+2025-09-05 17:41:02,299 - server - INFO - [server.py:2731] - Rate limiting enabled: MAX_RETRIES=5, INITIAL_WAIT=0.5s, MAX_WAIT=130s
+2025-09-05 17:41:02,300 - server - INFO - [server.py:2732] - Batch processing: BATCH_DELAY=0.2s, Cache expiry=30min
+2025-09-05 17:41:02,303 - server - INFO - [server.py:2758] - === Stock Screener API Started Successfully ===
+2025-09-05 17:41:02,304 - server - INFO - [server.py:2759] - Available symbols: 594
+2025-09-05 17:41:02,304 - server - INFO - [server.py:2760] - Sectors covered: 39
+2025-09-05 17:41:02,305 - server - INFO - [server.py:2764] - Background maintenance task started
+2025-09-05 17:49:28,666 - server - WARNING - [server.py:1033] - psutil not available, returning basic metrics
+2025-09-05 17:51:18,574 - server - WARNING - [server.py:839] - Invalid dividend yield: None
+2025-09-05 17:51:20,400 - yfinance - ERROR - [quote.py:592] - HTTP Error 404: 
+2025-09-05 17:51:21,628 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 17:51:22,035 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 17:51:22,822 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 17:51:22,823 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-05 17:51:26,981 - yfinance - ERROR - [quote.py:592] - HTTP Error 404: 
+2025-09-05 17:51:27,612 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 17:51:28,789 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 17:51:29,586 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 17:51:29,587 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-05 17:51:33,436 - server - WARNING - [server.py:549] - Rate limit reached, waiting 18.6 seconds
+2025-09-05 17:51:33,437 - server - WARNING - [server.py:549] - Rate limit reached, waiting 18.6 seconds
+2025-09-05 17:51:33,438 - server - WARNING - [server.py:549] - Rate limit reached, waiting 18.6 seconds
+2025-09-05 17:51:33,438 - server - WARNING - [server.py:549] - Rate limit reached, waiting 18.6 seconds
+2025-09-05 17:51:33,439 - server - WARNING - [server.py:549] - Rate limit reached, waiting 18.6 seconds
+2025-09-05 17:51:44,427 - server - WARNING - [server.py:549] - Rate limit reached, waiting 7.6 seconds
+2025-09-05 17:51:44,428 - server - WARNING - [server.py:549] - Rate limit reached, waiting 7.6 seconds
+2025-09-05 17:51:44,428 - server - WARNING - [server.py:549] - Rate limit reached, waiting 7.6 seconds
+2025-09-05 17:51:44,429 - server - WARNING - [server.py:549] - Rate limit reached, waiting 7.6 seconds
+2025-09-05 17:51:44,429 - server - WARNING - [server.py:549] - Rate limit reached, waiting 7.6 seconds
+2025-09-05 17:52:05,789 - server - INFO - [server.py:2071] - Scan completed: {'total_symbols_in_db': 594, 'total_scanned': 50, 'breakouts_found': 17, 'success_rate': '34.0%', 'cache_usage': '39 cached entries'}
+2025-09-05 17:52:25,289 - server - INFO - [server.py:2768] - === Stock Screener API Shutting Down ===
+2025-09-05 17:52:25,290 - server - INFO - [server.py:2771] - Cleanup completed
+2025-09-05 17:52:44,170 - server - INFO - [server.py:2730] - === Stock Screener API Starting ===
+2025-09-05 17:52:44,171 - server - INFO - [server.py:2731] - Rate limiting enabled: MAX_RETRIES=5, INITIAL_WAIT=0.5s, MAX_WAIT=130s
+2025-09-05 17:52:44,172 - server - INFO - [server.py:2732] - Batch processing: BATCH_DELAY=0.2s, Cache expiry=30min
+2025-09-05 17:52:44,175 - server - INFO - [server.py:2758] - === Stock Screener API Started Successfully ===
+2025-09-05 17:52:44,176 - server - INFO - [server.py:2759] - Available symbols: 594
+2025-09-05 17:52:44,176 - server - INFO - [server.py:2760] - Sectors covered: 39
+2025-09-05 17:52:44,177 - server - INFO - [server.py:2764] - Background maintenance task started
+2025-09-05 21:25:52,920 - server - INFO - [server.py:2071] - Scan completed: {'total_symbols_in_db': 594, 'total_scanned': 5, 'breakouts_found': 1, 'success_rate': '20.0%', 'cache_usage': '5 cached entries'}
+2025-09-05 21:41:59,309 - server - WARNING - [server.py:839] - Invalid dividend yield: None
+2025-09-05 21:42:01,664 - yfinance - ERROR - [quote.py:592] - HTTP Error 404: 
+2025-09-05 21:42:02,355 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:42:03,103 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:42:03,578 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:42:03,579 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-05 21:42:05,401 - server - INFO - [server.py:521] - Using cached data for ADANIENT
+2025-09-05 21:42:05,401 - server - INFO - [server.py:521] - Using cached data for ADANIPORTS
+2025-09-05 21:42:05,402 - server - INFO - [server.py:521] - Using cached data for APOLLOHOSP
+2025-09-05 21:42:05,402 - server - INFO - [server.py:521] - Using cached data for ASIANPAINT
+2025-09-05 21:42:05,402 - server - INFO - [server.py:521] - Using cached data for AXISBANK
+2025-09-05 21:42:19,088 - server - WARNING - [server.py:839] - Invalid dividend yield: None
+2025-09-05 21:42:22,624 - yfinance - ERROR - [quote.py:592] - HTTP Error 404: 
+2025-09-05 21:42:23,223 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:42:23,833 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:42:24,509 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:42:24,510 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-05 21:42:28,304 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:42:28,805 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:42:29,663 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:42:29,664 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-05 21:42:39,445 - server - WARNING - [server.py:549] - Rate limit reached, waiting 26.0 seconds
+2025-09-05 21:42:39,446 - server - WARNING - [server.py:549] - Rate limit reached, waiting 26.0 seconds
+2025-09-05 21:42:39,447 - server - WARNING - [server.py:549] - Rate limit reached, waiting 26.0 seconds
+2025-09-05 21:42:39,447 - server - WARNING - [server.py:549] - Rate limit reached, waiting 26.0 seconds
+2025-09-05 21:42:39,448 - server - WARNING - [server.py:549] - Rate limit reached, waiting 26.0 seconds
+2025-09-05 21:42:50,051 - server - WARNING - [server.py:549] - Rate limit reached, waiting 15.4 seconds
+2025-09-05 21:42:50,053 - server - WARNING - [server.py:549] - Rate limit reached, waiting 15.4 seconds
+2025-09-05 21:42:50,054 - server - WARNING - [server.py:549] - Rate limit reached, waiting 15.4 seconds
+2025-09-05 21:42:50,054 - server - WARNING - [server.py:549] - Rate limit reached, waiting 15.4 seconds
+2025-09-05 21:42:50,055 - server - WARNING - [server.py:549] - Rate limit reached, waiting 15.4 seconds
+2025-09-05 21:43:00,677 - server - WARNING - [server.py:549] - Rate limit reached, waiting 4.7 seconds
+2025-09-05 21:43:00,678 - server - WARNING - [server.py:549] - Rate limit reached, waiting 4.7 seconds
+2025-09-05 21:43:00,678 - server - WARNING - [server.py:549] - Rate limit reached, waiting 4.7 seconds
+2025-09-05 21:43:00,679 - server - WARNING - [server.py:549] - Rate limit reached, waiting 4.7 seconds
+2025-09-05 21:43:00,680 - server - WARNING - [server.py:549] - Rate limit reached, waiting 4.7 seconds
+2025-09-05 21:43:04,236 - server - ERROR - [server.py:2276] - Error fetching watchlist: mongodb:27017: [Errno 11001] getaddrinfo failed, Timeout: 30s, Topology Description: <TopologyDescription id: 68bad6143c6bfad298629bcc, topology_type: Unknown, servers: [<ServerDescription ('mongodb', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('mongodb:27017: [Errno 11001] getaddrinfo failed')>]>
+2025-09-05 21:43:08,806 - server - INFO - [server.py:2071] - Scan completed: {'total_symbols_in_db': 594, 'total_scanned': 50, 'breakouts_found': 16, 'success_rate': '32.0%', 'cache_usage': '39 cached entries'}
+2025-09-05 21:43:08,851 - server - INFO - [server.py:521] - Using cached data for ADANIENT
+2025-09-05 21:43:08,852 - server - INFO - [server.py:521] - Using cached data for ADANIPORTS
+2025-09-05 21:43:08,852 - server - INFO - [server.py:521] - Using cached data for APOLLOHOSP
+2025-09-05 21:43:08,853 - server - INFO - [server.py:521] - Using cached data for ASIANPAINT
+2025-09-05 21:43:08,853 - server - INFO - [server.py:521] - Using cached data for AXISBANK
+2025-09-05 21:43:08,854 - server - INFO - [server.py:521] - Using cached data for BAJAJ-AUTO
+2025-09-05 21:43:08,854 - server - INFO - [server.py:521] - Using cached data for BAJAJFINSV
+2025-09-05 21:43:08,855 - server - INFO - [server.py:521] - Using cached data for BAJFINANCE
+2025-09-05 21:43:08,856 - server - INFO - [server.py:521] - Using cached data for BHARTIARTL
+2025-09-05 21:43:08,856 - server - INFO - [server.py:521] - Using cached data for BPCL
+2025-09-05 21:43:08,857 - server - INFO - [server.py:521] - Using cached data for BRITANNIA
+2025-09-05 21:43:08,857 - server - INFO - [server.py:521] - Using cached data for CIPLA
+2025-09-05 21:43:08,858 - server - INFO - [server.py:521] - Using cached data for COALINDIA
+2025-09-05 21:43:08,858 - server - INFO - [server.py:521] - Using cached data for DIVISLAB
+2025-09-05 21:43:08,858 - server - INFO - [server.py:521] - Using cached data for DRREDDY
+2025-09-05 21:43:08,859 - server - INFO - [server.py:521] - Using cached data for EICHERMOT
+2025-09-05 21:43:08,859 - server - INFO - [server.py:521] - Using cached data for GRASIM
+2025-09-05 21:43:08,859 - server - INFO - [server.py:521] - Using cached data for HCLTECH
+2025-09-05 21:43:08,860 - server - INFO - [server.py:521] - Using cached data for HDFCBANK
+2025-09-05 21:43:08,860 - server - INFO - [server.py:521] - Using cached data for HDFCLIFE
+2025-09-05 21:43:08,861 - server - INFO - [server.py:521] - Using cached data for HEROMOTOCO
+2025-09-05 21:43:08,861 - server - INFO - [server.py:521] - Using cached data for HINDALCO
+2025-09-05 21:43:08,862 - server - INFO - [server.py:521] - Using cached data for HINDUNILVR
+2025-09-05 21:43:08,862 - server - INFO - [server.py:521] - Using cached data for ICICIBANK
+2025-09-05 21:43:08,863 - server - INFO - [server.py:521] - Using cached data for INDUSINDBK
+2025-09-05 21:43:08,863 - server - INFO - [server.py:521] - Using cached data for IOC
+2025-09-05 21:43:08,864 - server - INFO - [server.py:521] - Using cached data for ITC
+2025-09-05 21:43:08,864 - server - INFO - [server.py:521] - Using cached data for JSWSTEEL
+2025-09-05 21:43:08,865 - server - INFO - [server.py:521] - Using cached data for KOTAKBANK
+2025-09-05 21:43:08,866 - server - INFO - [server.py:521] - Using cached data for LT
+2025-09-05 21:43:08,866 - server - INFO - [server.py:521] - Using cached data for M&M
+2025-09-05 21:43:08,867 - server - INFO - [server.py:521] - Using cached data for MARUTI
+2025-09-05 21:43:08,867 - server - INFO - [server.py:521] - Using cached data for NESTLEIND
+2025-09-05 21:43:08,868 - server - INFO - [server.py:521] - Using cached data for NTPC
+2025-09-05 21:43:08,868 - server - INFO - [server.py:521] - Using cached data for TCS
+2025-09-05 21:43:08,869 - server - INFO - [server.py:521] - Using cached data for TECHM
+2025-09-05 21:43:08,869 - server - INFO - [server.py:521] - Using cached data for TITAN
+2025-09-05 21:43:08,870 - server - INFO - [server.py:521] - Using cached data for ULTRACEMCO
+2025-09-05 21:43:08,870 - server - INFO - [server.py:521] - Using cached data for UPL
+2025-09-05 21:43:10,171 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:43:10,690 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:43:11,373 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:43:11,375 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-05 21:43:20,041 - server - INFO - [server.py:2071] - Scan completed: {'total_symbols_in_db': 594, 'total_scanned': 50, 'breakouts_found': 23, 'success_rate': '46.0%', 'cache_usage': '49 cached entries'}
+2025-09-05 21:43:33,913 - server - ERROR - [server.py:2276] - Error fetching watchlist: mongodb:27017: [Errno 11001] getaddrinfo failed, Timeout: 30s, Topology Description: <TopologyDescription id: 68bad6143c6bfad298629bcc, topology_type: Unknown, servers: [<ServerDescription ('mongodb', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('mongodb:27017: [Errno 11001] getaddrinfo failed')>]>
+2025-09-05 21:43:34,166 - server - INFO - [server.py:521] - Using cached data for ADANIENT
+2025-09-05 21:43:34,166 - server - INFO - [server.py:521] - Using cached data for ADANIPORTS
+2025-09-05 21:43:34,166 - server - INFO - [server.py:521] - Using cached data for APOLLOHOSP
+2025-09-05 21:43:34,167 - server - INFO - [server.py:521] - Using cached data for ASIANPAINT
+2025-09-05 21:43:34,167 - server - INFO - [server.py:521] - Using cached data for AXISBANK
+2025-09-05 21:43:34,168 - server - INFO - [server.py:521] - Using cached data for BAJAJ-AUTO
+2025-09-05 21:43:34,168 - server - INFO - [server.py:521] - Using cached data for BAJAJFINSV
+2025-09-05 21:43:34,168 - server - INFO - [server.py:521] - Using cached data for BAJFINANCE
+2025-09-05 21:43:34,169 - server - INFO - [server.py:521] - Using cached data for BHARTIARTL
+2025-09-05 21:43:34,169 - server - INFO - [server.py:521] - Using cached data for BPCL
+2025-09-05 21:43:34,169 - server - INFO - [server.py:521] - Using cached data for BRITANNIA
+2025-09-05 21:43:34,169 - server - INFO - [server.py:521] - Using cached data for CIPLA
+2025-09-05 21:43:34,170 - server - INFO - [server.py:521] - Using cached data for COALINDIA
+2025-09-05 21:43:34,170 - server - INFO - [server.py:521] - Using cached data for DIVISLAB
+2025-09-05 21:43:34,171 - server - INFO - [server.py:521] - Using cached data for DRREDDY
+2025-09-05 21:43:34,171 - server - INFO - [server.py:521] - Using cached data for EICHERMOT
+2025-09-05 21:43:34,171 - server - INFO - [server.py:521] - Using cached data for GRASIM
+2025-09-05 21:43:34,172 - server - INFO - [server.py:521] - Using cached data for HCLTECH
+2025-09-05 21:43:34,172 - server - INFO - [server.py:521] - Using cached data for HDFCBANK
+2025-09-05 21:43:34,172 - server - INFO - [server.py:521] - Using cached data for HDFCLIFE
+2025-09-05 21:43:34,172 - server - INFO - [server.py:521] - Using cached data for HEROMOTOCO
+2025-09-05 21:43:34,173 - server - INFO - [server.py:521] - Using cached data for HINDALCO
+2025-09-05 21:43:34,173 - server - INFO - [server.py:521] - Using cached data for HINDUNILVR
+2025-09-05 21:43:34,173 - server - INFO - [server.py:521] - Using cached data for ICICIBANK
+2025-09-05 21:43:34,174 - server - INFO - [server.py:521] - Using cached data for INDUSINDBK
+2025-09-05 21:43:34,174 - server - INFO - [server.py:521] - Using cached data for IOC
+2025-09-05 21:43:34,175 - server - INFO - [server.py:521] - Using cached data for ITC
+2025-09-05 21:43:34,175 - server - INFO - [server.py:521] - Using cached data for JSWSTEEL
+2025-09-05 21:43:34,175 - server - INFO - [server.py:521] - Using cached data for KOTAKBANK
+2025-09-05 21:43:34,176 - server - INFO - [server.py:521] - Using cached data for LT
+2025-09-05 21:43:34,176 - server - INFO - [server.py:521] - Using cached data for M&M
+2025-09-05 21:43:34,176 - server - INFO - [server.py:521] - Using cached data for MARUTI
+2025-09-05 21:43:34,176 - server - INFO - [server.py:521] - Using cached data for NESTLEIND
+2025-09-05 21:43:34,177 - server - INFO - [server.py:521] - Using cached data for NTPC
+2025-09-05 21:43:34,177 - server - INFO - [server.py:521] - Using cached data for ONGC
+2025-09-05 21:43:34,177 - server - INFO - [server.py:521] - Using cached data for POWERGRID
+2025-09-05 21:43:34,178 - server - INFO - [server.py:521] - Using cached data for RELIANCE
+2025-09-05 21:43:34,178 - server - INFO - [server.py:521] - Using cached data for SBILIFE
+2025-09-05 21:43:34,178 - server - INFO - [server.py:521] - Using cached data for SBIN
+2025-09-05 21:43:34,178 - server - INFO - [server.py:521] - Using cached data for SHREECEM
+2025-09-05 21:43:34,178 - server - INFO - [server.py:521] - Using cached data for SUNPHARMA
+2025-09-05 21:43:34,179 - server - INFO - [server.py:521] - Using cached data for TATACONSUM
+2025-09-05 21:43:34,179 - server - INFO - [server.py:521] - Using cached data for TATAMOTORS
+2025-09-05 21:43:34,179 - server - INFO - [server.py:521] - Using cached data for TATASTEEL
+2025-09-05 21:43:34,179 - server - INFO - [server.py:521] - Using cached data for TCS
+2025-09-05 21:43:34,179 - server - INFO - [server.py:521] - Using cached data for TECHM
+2025-09-05 21:43:34,180 - server - INFO - [server.py:521] - Using cached data for TITAN
+2025-09-05 21:43:34,180 - server - INFO - [server.py:521] - Using cached data for ULTRACEMCO
+2025-09-05 21:43:34,180 - server - INFO - [server.py:521] - Using cached data for UPL
+2025-09-05 21:43:34,875 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:43:35,359 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:43:35,834 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:43:35,835 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-05 21:43:35,849 - server - INFO - [server.py:2071] - Scan completed: {'total_symbols_in_db': 594, 'total_scanned': 50, 'breakouts_found': 23, 'success_rate': '46.0%', 'cache_usage': '49 cached entries'}
+2025-09-05 21:44:02,327 - server - INFO - [server.py:521] - Using cached data for ADANIENT
+2025-09-05 21:44:02,328 - server - INFO - [server.py:521] - Using cached data for ADANIPORTS
+2025-09-05 21:44:02,328 - server - INFO - [server.py:521] - Using cached data for APOLLOHOSP
+2025-09-05 21:44:02,328 - server - INFO - [server.py:521] - Using cached data for ASIANPAINT
+2025-09-05 21:44:02,328 - server - INFO - [server.py:521] - Using cached data for AXISBANK
+2025-09-05 21:44:02,328 - server - INFO - [server.py:521] - Using cached data for BAJAJ-AUTO
+2025-09-05 21:44:02,329 - server - INFO - [server.py:521] - Using cached data for BAJAJFINSV
+2025-09-05 21:44:02,329 - server - INFO - [server.py:521] - Using cached data for BAJFINANCE
+2025-09-05 21:44:02,329 - server - INFO - [server.py:521] - Using cached data for BHARTIARTL
+2025-09-05 21:44:02,330 - server - INFO - [server.py:521] - Using cached data for BPCL
+2025-09-05 21:44:02,330 - server - INFO - [server.py:521] - Using cached data for BRITANNIA
+2025-09-05 21:44:02,331 - server - INFO - [server.py:521] - Using cached data for CIPLA
+2025-09-05 21:44:02,331 - server - INFO - [server.py:521] - Using cached data for COALINDIA
+2025-09-05 21:44:02,332 - server - INFO - [server.py:521] - Using cached data for DIVISLAB
+2025-09-05 21:44:02,332 - server - INFO - [server.py:521] - Using cached data for DRREDDY
+2025-09-05 21:44:02,333 - server - INFO - [server.py:521] - Using cached data for EICHERMOT
+2025-09-05 21:44:02,333 - server - INFO - [server.py:521] - Using cached data for GRASIM
+2025-09-05 21:44:02,334 - server - INFO - [server.py:521] - Using cached data for HCLTECH
+2025-09-05 21:44:02,334 - server - INFO - [server.py:521] - Using cached data for HDFCBANK
+2025-09-05 21:44:02,334 - server - INFO - [server.py:521] - Using cached data for HDFCLIFE
+2025-09-05 21:44:02,335 - server - INFO - [server.py:521] - Using cached data for HEROMOTOCO
+2025-09-05 21:44:02,335 - server - INFO - [server.py:521] - Using cached data for HINDALCO
+2025-09-05 21:44:02,335 - server - INFO - [server.py:521] - Using cached data for HINDUNILVR
+2025-09-05 21:44:02,336 - server - INFO - [server.py:521] - Using cached data for ICICIBANK
+2025-09-05 21:44:02,336 - server - INFO - [server.py:521] - Using cached data for INDUSINDBK
+2025-09-05 21:44:02,338 - server - INFO - [server.py:521] - Using cached data for IOC
+2025-09-05 21:44:02,338 - server - INFO - [server.py:521] - Using cached data for ITC
+2025-09-05 21:44:02,338 - server - INFO - [server.py:521] - Using cached data for JSWSTEEL
+2025-09-05 21:44:02,338 - server - INFO - [server.py:521] - Using cached data for KOTAKBANK
+2025-09-05 21:44:02,338 - server - INFO - [server.py:521] - Using cached data for LT
+2025-09-05 21:44:02,339 - server - INFO - [server.py:521] - Using cached data for M&M
+2025-09-05 21:44:02,339 - server - INFO - [server.py:521] - Using cached data for MARUTI
+2025-09-05 21:44:02,339 - server - INFO - [server.py:521] - Using cached data for NESTLEIND
+2025-09-05 21:44:02,340 - server - INFO - [server.py:521] - Using cached data for NTPC
+2025-09-05 21:44:02,340 - server - INFO - [server.py:521] - Using cached data for ONGC
+2025-09-05 21:44:02,340 - server - INFO - [server.py:521] - Using cached data for POWERGRID
+2025-09-05 21:44:02,340 - server - INFO - [server.py:521] - Using cached data for RELIANCE
+2025-09-05 21:44:02,341 - server - INFO - [server.py:521] - Using cached data for SBILIFE
+2025-09-05 21:44:02,341 - server - INFO - [server.py:521] - Using cached data for SBIN
+2025-09-05 21:44:02,341 - server - INFO - [server.py:521] - Using cached data for SHREECEM
+2025-09-05 21:44:02,341 - server - INFO - [server.py:521] - Using cached data for SUNPHARMA
+2025-09-05 21:44:02,341 - server - INFO - [server.py:521] - Using cached data for TATACONSUM
+2025-09-05 21:44:02,342 - server - INFO - [server.py:521] - Using cached data for TATAMOTORS
+2025-09-05 21:44:02,342 - server - INFO - [server.py:521] - Using cached data for TATASTEEL
+2025-09-05 21:44:02,342 - server - INFO - [server.py:521] - Using cached data for TCS
+2025-09-05 21:44:02,342 - server - INFO - [server.py:521] - Using cached data for TECHM
+2025-09-05 21:44:02,342 - server - INFO - [server.py:521] - Using cached data for TITAN
+2025-09-05 21:44:02,342 - server - INFO - [server.py:521] - Using cached data for ULTRACEMCO
+2025-09-05 21:44:02,342 - server - INFO - [server.py:521] - Using cached data for UPL
+2025-09-05 21:44:03,018 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:44:03,593 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:44:04,174 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-05 21:44:04,176 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-05 21:44:04,192 - server - INFO - [server.py:2071] - Scan completed: {'total_symbols_in_db': 594, 'total_scanned': 50, 'breakouts_found': 23, 'success_rate': '46.0%', 'cache_usage': '49 cached entries'}
+2025-09-05 21:46:00,947 - server - ERROR - [server.py:2276] - Error fetching watchlist: mongodb:27017: [Errno 11001] getaddrinfo failed, Timeout: 30s, Topology Description: <TopologyDescription id: 68bad6143c6bfad298629bcc, topology_type: Unknown, servers: [<ServerDescription ('mongodb', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('mongodb:27017: [Errno 11001] getaddrinfo failed')>]>
+2025-09-05 21:52:09,929 - server - ERROR - [server.py:2276] - Error fetching watchlist: mongodb:27017: [Errno 11001] getaddrinfo failed, Timeout: 30s, Topology Description: <TopologyDescription id: 68bad6143c6bfad298629bcc, topology_type: Unknown, servers: [<ServerDescription ('mongodb', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('mongodb:27017: [Errno 11001] getaddrinfo failed')>]>
+2025-09-05 22:38:07,141 - server - INFO - [server.py:990] - Cleared 49 expired cache entries
+2025-09-06 16:12:45,635 - server - WARNING - [server.py:839] - Invalid dividend yield: None
+2025-09-06 16:12:47,439 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 16:12:47,907 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 16:12:48,597 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 16:12:48,598 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-06 16:13:05,912 - server - WARNING - [server.py:839] - Invalid dividend yield: None
+2025-09-06 16:13:07,606 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 16:13:08,197 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 16:13:08,674 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 16:13:08,675 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-06 16:13:39,772 - server - ERROR - [server.py:2276] - Error fetching watchlist: mongodb:27017: [Errno 11001] getaddrinfo failed, Timeout: 30s, Topology Description: <TopologyDescription id: 68bad6143c6bfad298629bcc, topology_type: Unknown, servers: [<ServerDescription ('mongodb', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('mongodb:27017: [Errno 11001] getaddrinfo failed')>]>
+2025-09-06 16:14:01,890 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 16:14:03,001 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 16:14:03,460 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 16:14:03,462 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-06 16:14:06,000 - server - WARNING - [server.py:549] - Rate limit reached, waiting 34.2 seconds
+2025-09-06 16:14:06,000 - server - WARNING - [server.py:549] - Rate limit reached, waiting 34.1 seconds
+2025-09-06 16:14:06,001 - server - WARNING - [server.py:549] - Rate limit reached, waiting 34.1 seconds
+2025-09-06 16:14:06,001 - server - WARNING - [server.py:549] - Rate limit reached, waiting 34.1 seconds
+2025-09-06 16:14:06,002 - server - WARNING - [server.py:549] - Rate limit reached, waiting 34.1 seconds
+2025-09-06 16:14:10,002 - server - ERROR - [server.py:2276] - Error fetching watchlist: mongodb:27017: [Errno 11001] getaddrinfo failed, Timeout: 30s, Topology Description: <TopologyDescription id: 68bad6143c6bfad298629bcc, topology_type: Unknown, servers: [<ServerDescription ('mongodb', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('mongodb:27017: [Errno 11001] getaddrinfo failed')>]>
+2025-09-06 16:14:16,603 - server - WARNING - [server.py:549] - Rate limit reached, waiting 23.5 seconds
+2025-09-06 16:14:16,604 - server - WARNING - [server.py:549] - Rate limit reached, waiting 23.5 seconds
+2025-09-06 16:14:16,605 - server - WARNING - [server.py:549] - Rate limit reached, waiting 23.5 seconds
+2025-09-06 16:14:16,605 - server - WARNING - [server.py:549] - Rate limit reached, waiting 23.5 seconds
+2025-09-06 16:14:16,606 - server - WARNING - [server.py:549] - Rate limit reached, waiting 23.5 seconds
+2025-09-06 16:14:27,216 - server - WARNING - [server.py:549] - Rate limit reached, waiting 12.9 seconds
+2025-09-06 16:14:27,216 - server - WARNING - [server.py:549] - Rate limit reached, waiting 12.9 seconds
+2025-09-06 16:14:27,217 - server - WARNING - [server.py:549] - Rate limit reached, waiting 12.9 seconds
+2025-09-06 16:14:27,218 - server - WARNING - [server.py:549] - Rate limit reached, waiting 12.9 seconds
+2025-09-06 16:14:27,219 - server - WARNING - [server.py:549] - Rate limit reached, waiting 12.9 seconds
+2025-09-06 16:14:30,454 - server - INFO - [server.py:521] - Using cached data for ADANIENT
+2025-09-06 16:14:30,455 - server - INFO - [server.py:521] - Using cached data for ADANIPORTS
+2025-09-06 16:14:30,455 - server - INFO - [server.py:521] - Using cached data for APOLLOHOSP
+2025-09-06 16:14:30,455 - server - INFO - [server.py:521] - Using cached data for ASIANPAINT
+2025-09-06 16:14:30,456 - server - INFO - [server.py:521] - Using cached data for AXISBANK
+2025-09-06 16:14:30,456 - server - INFO - [server.py:521] - Using cached data for BAJAJ-AUTO
+2025-09-06 16:14:30,457 - server - INFO - [server.py:521] - Using cached data for BAJAJFINSV
+2025-09-06 16:14:30,458 - server - INFO - [server.py:521] - Using cached data for BAJFINANCE
+2025-09-06 16:14:30,459 - server - INFO - [server.py:521] - Using cached data for BHARTIARTL
+2025-09-06 16:14:30,459 - server - INFO - [server.py:521] - Using cached data for BPCL
+2025-09-06 16:14:30,460 - server - INFO - [server.py:521] - Using cached data for BRITANNIA
+2025-09-06 16:14:30,460 - server - INFO - [server.py:521] - Using cached data for CIPLA
+2025-09-06 16:14:30,461 - server - INFO - [server.py:521] - Using cached data for COALINDIA
+2025-09-06 16:14:30,462 - server - INFO - [server.py:521] - Using cached data for DIVISLAB
+2025-09-06 16:14:30,462 - server - INFO - [server.py:521] - Using cached data for DRREDDY
+2025-09-06 16:14:30,463 - server - INFO - [server.py:521] - Using cached data for EICHERMOT
+2025-09-06 16:14:30,463 - server - INFO - [server.py:521] - Using cached data for GRASIM
+2025-09-06 16:14:30,464 - server - INFO - [server.py:521] - Using cached data for HCLTECH
+2025-09-06 16:14:30,464 - server - INFO - [server.py:521] - Using cached data for HDFCBANK
+2025-09-06 16:14:30,465 - server - INFO - [server.py:521] - Using cached data for HDFCLIFE
+2025-09-06 16:14:30,465 - server - INFO - [server.py:521] - Using cached data for HEROMOTOCO
+2025-09-06 16:14:30,465 - server - INFO - [server.py:521] - Using cached data for HINDALCO
+2025-09-06 16:14:30,466 - server - INFO - [server.py:521] - Using cached data for HINDUNILVR
+2025-09-06 16:14:30,466 - server - INFO - [server.py:521] - Using cached data for ICICIBANK
+2025-09-06 16:14:30,467 - server - INFO - [server.py:521] - Using cached data for INDUSINDBK
+2025-09-06 16:14:30,467 - server - INFO - [server.py:521] - Using cached data for IOC
+2025-09-06 16:14:30,468 - server - INFO - [server.py:521] - Using cached data for ITC
+2025-09-06 16:14:30,469 - server - INFO - [server.py:521] - Using cached data for JSWSTEEL
+2025-09-06 16:14:30,469 - server - INFO - [server.py:521] - Using cached data for KOTAKBANK
+2025-09-06 16:14:30,499 - server - WARNING - [server.py:549] - Rate limit reached, waiting 9.7 seconds
+2025-09-06 16:14:30,499 - server - WARNING - [server.py:549] - Rate limit reached, waiting 9.7 seconds
+2025-09-06 16:14:30,500 - server - WARNING - [server.py:549] - Rate limit reached, waiting 9.6 seconds
+2025-09-06 16:14:30,501 - server - WARNING - [server.py:549] - Rate limit reached, waiting 9.6 seconds
+2025-09-06 16:14:30,501 - server - WARNING - [server.py:549] - Rate limit reached, waiting 9.6 seconds
+2025-09-06 16:14:37,846 - server - WARNING - [server.py:549] - Rate limit reached, waiting 2.3 seconds
+2025-09-06 16:14:37,847 - server - WARNING - [server.py:549] - Rate limit reached, waiting 2.3 seconds
+2025-09-06 16:14:37,848 - server - WARNING - [server.py:549] - Rate limit reached, waiting 2.3 seconds
+2025-09-06 16:14:37,848 - server - WARNING - [server.py:549] - Rate limit reached, waiting 2.3 seconds
+2025-09-06 16:14:37,849 - server - WARNING - [server.py:549] - Rate limit reached, waiting 2.3 seconds
+2025-09-06 16:14:41,456 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 16:14:42,104 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 16:14:42,618 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 16:14:42,620 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-06 16:14:47,884 - server - INFO - [server.py:2071] - Scan completed: {'total_symbols_in_db': 594, 'total_scanned': 50, 'breakouts_found': 13, 'success_rate': '26.0%', 'cache_usage': '33 cached entries'}
+2025-09-06 16:15:00,099 - server - INFO - [server.py:2071] - Scan completed: {'total_symbols_in_db': 594, 'total_scanned': 50, 'breakouts_found': 20, 'success_rate': '40.0%', 'cache_usage': '45 cached entries'}
+2025-09-06 16:15:44,430 - server - INFO - [server.py:521] - Using cached data for ADANIENT
+2025-09-06 16:15:44,431 - server - INFO - [server.py:521] - Using cached data for ADANIPORTS
+2025-09-06 16:15:44,431 - server - INFO - [server.py:521] - Using cached data for APOLLOHOSP
+2025-09-06 16:15:44,432 - server - INFO - [server.py:521] - Using cached data for ASIANPAINT
+2025-09-06 16:15:44,433 - server - INFO - [server.py:521] - Using cached data for AXISBANK
+2025-09-06 16:15:44,433 - server - INFO - [server.py:521] - Using cached data for BAJAJ-AUTO
+2025-09-06 16:15:44,434 - server - INFO - [server.py:521] - Using cached data for BAJAJFINSV
+2025-09-06 16:15:44,434 - server - INFO - [server.py:521] - Using cached data for BAJFINANCE
+2025-09-06 16:15:44,435 - server - INFO - [server.py:521] - Using cached data for BHARTIARTL
+2025-09-06 16:15:44,435 - server - INFO - [server.py:521] - Using cached data for BPCL
+2025-09-06 16:15:44,436 - server - INFO - [server.py:521] - Using cached data for BRITANNIA
+2025-09-06 16:15:44,436 - server - INFO - [server.py:521] - Using cached data for CIPLA
+2025-09-06 16:15:44,437 - server - INFO - [server.py:521] - Using cached data for COALINDIA
+2025-09-06 16:15:44,437 - server - INFO - [server.py:521] - Using cached data for DIVISLAB
+2025-09-06 16:15:44,438 - server - INFO - [server.py:521] - Using cached data for DRREDDY
+2025-09-06 16:15:44,439 - server - INFO - [server.py:521] - Using cached data for EICHERMOT
+2025-09-06 16:15:44,439 - server - INFO - [server.py:521] - Using cached data for GRASIM
+2025-09-06 16:15:44,440 - server - INFO - [server.py:521] - Using cached data for HCLTECH
+2025-09-06 16:15:44,440 - server - INFO - [server.py:521] - Using cached data for HDFCBANK
+2025-09-06 16:15:44,440 - server - INFO - [server.py:521] - Using cached data for HDFCLIFE
+2025-09-06 16:15:44,441 - server - INFO - [server.py:521] - Using cached data for HEROMOTOCO
+2025-09-06 16:15:44,441 - server - INFO - [server.py:521] - Using cached data for HINDALCO
+2025-09-06 16:15:44,441 - server - INFO - [server.py:521] - Using cached data for HINDUNILVR
+2025-09-06 16:15:44,441 - server - INFO - [server.py:521] - Using cached data for ICICIBANK
+2025-09-06 16:15:44,442 - server - INFO - [server.py:521] - Using cached data for INDUSINDBK
+2025-09-06 16:15:44,443 - server - INFO - [server.py:521] - Using cached data for IOC
+2025-09-06 16:15:44,443 - server - INFO - [server.py:521] - Using cached data for ITC
+2025-09-06 16:15:44,443 - server - INFO - [server.py:521] - Using cached data for JSWSTEEL
+2025-09-06 16:15:44,443 - server - INFO - [server.py:521] - Using cached data for KOTAKBANK
+2025-09-06 16:15:44,444 - server - INFO - [server.py:521] - Using cached data for NTPC
+2025-09-06 16:15:44,444 - server - INFO - [server.py:521] - Using cached data for ONGC
+2025-09-06 16:15:44,444 - server - INFO - [server.py:521] - Using cached data for POWERGRID
+2025-09-06 16:15:44,444 - server - INFO - [server.py:521] - Using cached data for RELIANCE
+2025-09-06 16:15:44,445 - server - INFO - [server.py:521] - Using cached data for SBILIFE
+2025-09-06 16:15:44,445 - server - INFO - [server.py:521] - Using cached data for SBIN
+2025-09-06 16:15:44,446 - server - INFO - [server.py:521] - Using cached data for SHREECEM
+2025-09-06 16:15:44,447 - server - INFO - [server.py:521] - Using cached data for SUNPHARMA
+2025-09-06 16:15:44,447 - server - INFO - [server.py:521] - Using cached data for TATACONSUM
+2025-09-06 16:15:44,448 - server - INFO - [server.py:521] - Using cached data for TATAMOTORS
+2025-09-06 16:15:44,448 - server - INFO - [server.py:521] - Using cached data for TATASTEEL
+2025-09-06 16:15:44,449 - server - INFO - [server.py:521] - Using cached data for TCS
+2025-09-06 16:15:44,450 - server - INFO - [server.py:521] - Using cached data for TECHM
+2025-09-06 16:15:44,450 - server - INFO - [server.py:521] - Using cached data for TITAN
+2025-09-06 16:15:44,451 - server - INFO - [server.py:521] - Using cached data for ULTRACEMCO
+2025-09-06 16:15:44,451 - server - INFO - [server.py:521] - Using cached data for UPL
+2025-09-06 16:15:45,170 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 16:15:45,652 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 16:15:46,194 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 16:15:46,195 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-06 16:15:48,908 - server - INFO - [server.py:2071] - Scan completed: {'total_symbols_in_db': 594, 'total_scanned': 50, 'breakouts_found': 23, 'success_rate': '46.0%', 'cache_usage': '49 cached entries'}
+2025-09-06 16:43:58,912 - LiteLLM - INFO - [utils.py:3337] - 
+LiteLLM completion() model= gpt-4o-mini; provider = openai
+2025-09-06 16:44:17,367 - LiteLLM - INFO - [utils.py:1272] - Wrapper: Completed Call, calling success_handler
+2025-09-06 16:44:47,807 - server - ERROR - [server.py:2675] - Chat error: mongodb:27017: [Errno 11001] getaddrinfo failed, Timeout: 30s, Topology Description: <TopologyDescription id: 68bad6143c6bfad298629bcc, topology_type: Unknown, servers: [<ServerDescription ('mongodb', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('mongodb:27017: [Errno 11001] getaddrinfo failed')>]>
+2025-09-06 16:45:17,145 - LiteLLM - INFO - [utils.py:3337] - 
+LiteLLM completion() model= gpt-4o-mini; provider = openai
+2025-09-06 16:45:23,678 - LiteLLM - INFO - [utils.py:1272] - Wrapper: Completed Call, calling success_handler
+2025-09-06 16:45:54,191 - server - ERROR - [server.py:2675] - Chat error: mongodb:27017: [Errno 11001] getaddrinfo failed, Timeout: 30s, Topology Description: <TopologyDescription id: 68bad6143c6bfad298629bcc, topology_type: Unknown, servers: [<ServerDescription ('mongodb', 27017) server_type: Unknown, rtt: None, error=AutoReconnect('mongodb:27017: [Errno 11001] getaddrinfo failed')>]>
+2025-09-06 16:51:05,708 - server - INFO - [server.py:990] - Cleared 49 expired cache entries
+2025-09-06 17:05:39,515 - server - INFO - [server.py:2768] - === Stock Screener API Shutting Down ===
+2025-09-06 17:05:39,517 - server - INFO - [server.py:2771] - Cleanup completed
+2025-09-06 17:06:57,932 - server - INFO - [server.py:2730] - === Stock Screener API Starting ===
+2025-09-06 17:06:57,934 - server - INFO - [server.py:2731] - Rate limiting enabled: MAX_RETRIES=5, INITIAL_WAIT=0.5s, MAX_WAIT=130s
+2025-09-06 17:06:57,935 - server - INFO - [server.py:2732] - Batch processing: BATCH_DELAY=0.2s, Cache expiry=30min
+2025-09-06 17:06:57,938 - server - INFO - [server.py:2758] - === Stock Screener API Started Successfully ===
+2025-09-06 17:06:57,939 - server - INFO - [server.py:2759] - Available symbols: 594
+2025-09-06 17:06:57,939 - server - INFO - [server.py:2760] - Sectors covered: 39
+2025-09-06 17:06:57,940 - server - INFO - [server.py:2764] - Background maintenance task started
+2025-09-06 17:07:40,037 - yfinance - ERROR - [quote.py:592] - HTTP Error 404: 
+2025-09-06 17:07:41,021 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 17:07:41,941 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 17:07:42,560 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-06 17:07:42,561 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-06 17:07:44,316 - server - WARNING - [server.py:549] - Rate limit reached, waiting 13.2 seconds
+2025-09-06 17:07:44,316 - server - WARNING - [server.py:549] - Rate limit reached, waiting 13.2 seconds
+2025-09-06 17:07:44,317 - server - WARNING - [server.py:549] - Rate limit reached, waiting 13.2 seconds
+2025-09-06 17:07:44,318 - server - WARNING - [server.py:549] - Rate limit reached, waiting 13.2 seconds
+2025-09-06 17:07:44,319 - server - WARNING - [server.py:549] - Rate limit reached, waiting 13.1 seconds
+2025-09-06 17:07:54,930 - server - WARNING - [server.py:549] - Rate limit reached, waiting 2.5 seconds
+2025-09-06 17:07:54,931 - server - WARNING - [server.py:549] - Rate limit reached, waiting 2.5 seconds
+2025-09-06 17:07:54,932 - server - WARNING - [server.py:549] - Rate limit reached, waiting 2.5 seconds
+2025-09-06 17:07:54,932 - server - WARNING - [server.py:549] - Rate limit reached, waiting 2.5 seconds
+2025-09-06 17:07:54,933 - server - WARNING - [server.py:549] - Rate limit reached, waiting 2.5 seconds
+2025-09-06 17:08:09,970 - server - INFO - [server.py:2071] - Scan completed: {'total_symbols_in_db': 594, 'total_scanned': 50, 'breakouts_found': 19, 'success_rate': '38.0%', 'cache_usage': '39 cached entries'}
+2025-09-06 17:08:24,284 - LiteLLM - INFO - [utils.py:3337] - 
+LiteLLM completion() model= gpt-4o-mini; provider = openai
+2025-09-06 17:08:36,646 - LiteLLM - INFO - [utils.py:1272] - Wrapper: Completed Call, calling success_handler
+2025-09-06 17:11:40,816 - LiteLLM - INFO - [utils.py:3337] - 
+LiteLLM completion() model= gpt-4o-mini; provider = openai
+2025-09-06 17:11:49,854 - LiteLLM - INFO - [utils.py:1272] - Wrapper: Completed Call, calling success_handler
+2025-09-06 17:14:51,941 - LiteLLM - INFO - [utils.py:3337] - 
+LiteLLM completion() model= gpt-4o-mini; provider = openai
+2025-09-06 17:15:01,900 - LiteLLM - INFO - [utils.py:1272] - Wrapper: Completed Call, calling success_handler
+2025-09-06 17:16:27,358 - LiteLLM - INFO - [utils.py:3337] - 
+LiteLLM completion() model= gpt-4o-mini; provider = openai
+2025-09-06 17:16:28,895 - LiteLLM - INFO - [utils.py:1272] - Wrapper: Completed Call, calling success_handler
+2025-09-06 17:16:35,525 - LiteLLM - INFO - [utils.py:3337] - 
+LiteLLM completion() model= gpt-4o-mini; provider = openai
+2025-09-06 17:17:03,393 - LiteLLM - INFO - [utils.py:1272] - Wrapper: Completed Call, calling success_handler
+2025-09-06 17:18:12,740 - LiteLLM - INFO - [utils.py:3337] - 
+LiteLLM completion() model= gpt-4o-mini; provider = openai
+2025-09-06 17:18:26,043 - LiteLLM - INFO - [utils.py:1272] - Wrapper: Completed Call, calling success_handler
+2025-09-07 10:39:26,615 - server - INFO - [server.py:990] - Cleared 39 expired cache entries
+2025-09-07 18:07:10,306 - LiteLLM - INFO - [utils.py:3337] - 
+LiteLLM completion() model= gpt-4o-mini; provider = openai
+2025-09-07 18:07:14,923 - LiteLLM - INFO - [utils.py:1272] - Wrapper: Completed Call, calling success_handler
+2025-09-07 18:08:27,279 - yfinance - ERROR - [quote.py:592] - HTTP Error 404: 
+2025-09-07 18:08:27,992 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-07 18:08:28,551 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-07 18:08:28,991 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-07 18:08:28,992 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-07 18:08:30,860 - server - WARNING - [server.py:549] - Rate limit reached, waiting 23.5 seconds
+2025-09-07 18:08:30,860 - server - WARNING - [server.py:549] - Rate limit reached, waiting 23.5 seconds
+2025-09-07 18:08:30,860 - server - WARNING - [server.py:549] - Rate limit reached, waiting 23.5 seconds
+2025-09-07 18:08:30,860 - server - WARNING - [server.py:549] - Rate limit reached, waiting 23.5 seconds
+2025-09-07 18:08:30,860 - server - WARNING - [server.py:549] - Rate limit reached, waiting 23.5 seconds
+2025-09-07 18:08:41,372 - server - WARNING - [server.py:549] - Rate limit reached, waiting 13.0 seconds
+2025-09-07 18:08:41,372 - server - WARNING - [server.py:549] - Rate limit reached, waiting 13.0 seconds
+2025-09-07 18:08:41,372 - server - WARNING - [server.py:549] - Rate limit reached, waiting 13.0 seconds
+2025-09-07 18:08:41,372 - server - WARNING - [server.py:549] - Rate limit reached, waiting 13.0 seconds
+2025-09-07 18:08:41,372 - server - WARNING - [server.py:549] - Rate limit reached, waiting 13.0 seconds
+2025-09-07 18:08:51,905 - server - WARNING - [server.py:549] - Rate limit reached, waiting 2.4 seconds
+2025-09-07 18:08:51,906 - server - WARNING - [server.py:549] - Rate limit reached, waiting 2.4 seconds
+2025-09-07 18:08:51,906 - server - WARNING - [server.py:549] - Rate limit reached, waiting 2.4 seconds
+2025-09-07 18:08:51,906 - server - WARNING - [server.py:549] - Rate limit reached, waiting 2.4 seconds
+2025-09-07 18:08:51,906 - server - WARNING - [server.py:549] - Rate limit reached, waiting 2.4 seconds
+2025-09-07 18:09:02,761 - server - INFO - [server.py:2071] - Scan completed: {'total_symbols_in_db': 594, 'total_scanned': 50, 'breakouts_found': 17, 'success_rate': '34.0%', 'cache_usage': '39 cached entries'}
+2025-09-07 20:38:29,442 - server - INFO - [server.py:990] - Cleared 39 expired cache entries
+2025-09-08 09:10:59,892 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-08 09:11:00,510 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-08 09:11:01,186 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-08 09:11:01,187 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-08 09:11:02,553 - server - WARNING - [server.py:549] - Rate limit reached, waiting 31.7 seconds
+2025-09-08 09:11:02,553 - server - WARNING - [server.py:549] - Rate limit reached, waiting 31.7 seconds
+2025-09-08 09:11:02,553 - server - WARNING - [server.py:549] - Rate limit reached, waiting 31.7 seconds
+2025-09-08 09:11:02,553 - server - WARNING - [server.py:549] - Rate limit reached, waiting 31.7 seconds
+2025-09-08 09:11:02,553 - server - WARNING - [server.py:549] - Rate limit reached, waiting 31.7 seconds
+2025-09-08 09:11:13,111 - server - WARNING - [server.py:549] - Rate limit reached, waiting 21.2 seconds
+2025-09-08 09:11:13,111 - server - WARNING - [server.py:549] - Rate limit reached, waiting 21.2 seconds
+2025-09-08 09:11:13,111 - server - WARNING - [server.py:549] - Rate limit reached, waiting 21.2 seconds
+2025-09-08 09:11:13,111 - server - WARNING - [server.py:549] - Rate limit reached, waiting 21.2 seconds
+2025-09-08 09:11:13,111 - server - WARNING - [server.py:549] - Rate limit reached, waiting 21.2 seconds
+2025-09-08 09:11:23,643 - server - WARNING - [server.py:549] - Rate limit reached, waiting 10.6 seconds
+2025-09-08 09:11:23,643 - server - WARNING - [server.py:549] - Rate limit reached, waiting 10.6 seconds
+2025-09-08 09:11:23,643 - server - WARNING - [server.py:549] - Rate limit reached, waiting 10.6 seconds
+2025-09-08 09:11:23,643 - server - WARNING - [server.py:549] - Rate limit reached, waiting 10.6 seconds
+2025-09-08 09:11:23,643 - server - WARNING - [server.py:549] - Rate limit reached, waiting 10.6 seconds
+2025-09-08 09:11:34,196 - server - WARNING - [server.py:549] - Rate limit reached, waiting 0.1 seconds
+2025-09-08 09:11:34,196 - server - WARNING - [server.py:549] - Rate limit reached, waiting 0.1 seconds
+2025-09-08 09:11:34,196 - server - WARNING - [server.py:549] - Rate limit reached, waiting 0.1 seconds
+2025-09-08 09:11:34,197 - server - WARNING - [server.py:549] - Rate limit reached, waiting 0.1 seconds
+2025-09-08 09:11:34,197 - server - WARNING - [server.py:549] - Rate limit reached, waiting 0.1 seconds
+2025-09-08 09:11:37,625 - server - INFO - [server.py:2071] - Scan completed: {'total_symbols_in_db': 594, 'total_scanned': 50, 'breakouts_found': 19, 'success_rate': '38.0%', 'cache_usage': '34 cached entries'}
+2025-09-08 09:33:28,809 - server - INFO - [server.py:521] - Using cached data for ADANIENT
+2025-09-08 09:33:28,809 - server - INFO - [server.py:521] - Using cached data for ADANIPORTS
+2025-09-08 09:33:28,809 - server - INFO - [server.py:521] - Using cached data for APOLLOHOSP
+2025-09-08 09:33:28,809 - server - INFO - [server.py:521] - Using cached data for ASIANPAINT
+2025-09-08 09:33:28,809 - server - INFO - [server.py:521] - Using cached data for AXISBANK
+2025-09-08 09:33:28,809 - server - INFO - [server.py:521] - Using cached data for BAJAJ-AUTO
+2025-09-08 09:33:28,809 - server - INFO - [server.py:521] - Using cached data for BAJAJFINSV
+2025-09-08 09:33:28,809 - server - INFO - [server.py:521] - Using cached data for BAJFINANCE
+2025-09-08 09:33:28,809 - server - INFO - [server.py:521] - Using cached data for BHARTIARTL
+2025-09-08 09:33:28,809 - server - INFO - [server.py:521] - Using cached data for BPCL
+2025-09-08 09:33:28,810 - server - INFO - [server.py:521] - Using cached data for BRITANNIA
+2025-09-08 09:33:28,810 - server - INFO - [server.py:521] - Using cached data for CIPLA
+2025-09-08 09:33:28,810 - server - INFO - [server.py:521] - Using cached data for COALINDIA
+2025-09-08 09:33:28,810 - server - INFO - [server.py:521] - Using cached data for DIVISLAB
+2025-09-08 09:33:28,810 - server - INFO - [server.py:521] - Using cached data for DRREDDY
+2025-09-08 09:33:28,810 - server - INFO - [server.py:521] - Using cached data for EICHERMOT
+2025-09-08 09:33:28,810 - server - INFO - [server.py:521] - Using cached data for GRASIM
+2025-09-08 09:33:28,810 - server - INFO - [server.py:521] - Using cached data for HCLTECH
+2025-09-08 09:33:28,810 - server - INFO - [server.py:521] - Using cached data for HDFCBANK
+2025-09-08 09:33:28,810 - server - INFO - [server.py:521] - Using cached data for HDFCLIFE
+2025-09-08 09:33:28,810 - server - INFO - [server.py:521] - Using cached data for HEROMOTOCO
+2025-09-08 09:33:28,810 - server - INFO - [server.py:521] - Using cached data for HINDALCO
+2025-09-08 09:33:28,811 - server - INFO - [server.py:521] - Using cached data for HINDUNILVR
+2025-09-08 09:33:28,812 - server - INFO - [server.py:521] - Using cached data for ICICIBANK
+2025-09-08 09:33:28,812 - server - INFO - [server.py:521] - Using cached data for INDUSINDBK
+2025-09-08 09:33:28,813 - server - INFO - [server.py:521] - Using cached data for IOC
+2025-09-08 09:33:28,813 - server - INFO - [server.py:521] - Using cached data for ITC
+2025-09-08 09:33:28,813 - server - INFO - [server.py:521] - Using cached data for JSWSTEEL
+2025-09-08 09:33:28,813 - server - INFO - [server.py:521] - Using cached data for KOTAKBANK
+2025-09-08 09:33:28,813 - server - INFO - [server.py:521] - Using cached data for TCS
+2025-09-08 09:33:28,813 - server - INFO - [server.py:521] - Using cached data for TECHM
+2025-09-08 09:33:28,813 - server - INFO - [server.py:521] - Using cached data for TITAN
+2025-09-08 09:33:28,813 - server - INFO - [server.py:521] - Using cached data for ULTRACEMCO
+2025-09-08 09:33:28,813 - server - INFO - [server.py:521] - Using cached data for UPL
+2025-09-08 09:33:40,075 - yfinance - ERROR - [history.py:281] - $LT.NS: possibly delisted; no price data found  (period=1y)
+2025-09-08 09:33:41,903 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=1y) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-08 09:33:42,495 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-08 09:33:43,118 - yfinance - ERROR - [history.py:281] - $INFOSYS.NS: possibly delisted; no price data found  (period=5d) (Yahoo error = "No data found, symbol may be delisted")
+2025-09-08 09:33:43,119 - server - WARNING - [server.py:1768] - No real-time data available for INFOSYS
+2025-09-08 09:33:55,932 - server - INFO - [server.py:2071] - Scan completed: {'total_symbols_in_db': 594, 'total_scanned': 50, 'breakouts_found': 27, 'success_rate': '54.0%', 'cache_usage': '45 cached entries'}
+2025-09-08 09:35:46,084 - LiteLLM - INFO - [utils.py:3337] - 
+LiteLLM completion() model= gpt-4o-mini; provider = openai
+2025-09-08 09:35:59,345 - LiteLLM - INFO - [utils.py:1272] - Wrapper: Completed Call, calling success_handler
+2025-09-08 09:36:50,844 - LiteLLM - INFO - [utils.py:3337] - 
+LiteLLM completion() model= gpt-4o-mini; provider = openai
+2025-09-08 09:36:55,457 - LiteLLM - INFO - [utils.py:1272] - Wrapper: Completed Call, calling success_handler
+2025-09-08 09:37:54,810 - LiteLLM - INFO - [utils.py:3337] - 
+LiteLLM completion() model= gpt-4o-mini; provider = openai
+2025-09-08 09:38:09,095 - LiteLLM - INFO - [utils.py:1272] - Wrapper: Completed Call, calling success_handler

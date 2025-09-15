@@ -1,0 +1,116 @@
+{
+  "total_tests": 12,
+  "passed_tests": 2,
+  "failed_tests": 10,
+  "success_rate": 16.666666666666664,
+  "test_results": [
+    {
+      "test_name": "Valuation Filter: Highly Undervalued",
+      "status": "\u274c FAIL",
+      "passed": false,
+      "details": "API error: 502",
+      "timestamp": "2025-09-04T13:47:03.554831",
+      "data": {
+        "response": ""
+      }
+    },
+    {
+      "test_name": "Valuation Filter: Slightly Undervalued",
+      "status": "\u274c FAIL",
+      "passed": false,
+      "details": "API error: 502",
+      "timestamp": "2025-09-04T13:47:03.716804",
+      "data": {
+        "response": ""
+      }
+    },
+    {
+      "test_name": "Valuation Filter: Reasonable",
+      "status": "\u274c FAIL",
+      "passed": false,
+      "details": "API error: 502",
+      "timestamp": "2025-09-04T13:47:03.945087",
+      "data": {
+        "response": ""
+      }
+    },
+    {
+      "test_name": "Valuation Filter: Slightly Overvalued",
+      "status": "\u274c FAIL",
+      "passed": false,
+      "details": "API error: 502",
+      "timestamp": "2025-09-04T13:47:04.153328",
+      "data": {
+        "response": ""
+      }
+    },
+    {
+      "test_name": "Valuation Filter: Highly Overvalued",
+      "status": "\u274c FAIL",
+      "passed": false,
+      "details": "API error: 502",
+      "timestamp": "2025-09-04T13:47:04.348426",
+      "data": {
+        "response": ""
+      }
+    },
+    {
+      "test_name": "Valuation Analysis Inclusion",
+      "status": "\u274c FAIL",
+      "passed": false,
+      "details": "API error: 502",
+      "timestamp": "2025-09-04T13:47:04.548508",
+      "data": {
+        "response": ""
+      }
+    },
+    {
+      "test_name": "Valuation Scoring Calculation",
+      "status": "\u274c FAIL",
+      "passed": false,
+      "details": "API error: 502",
+      "timestamp": "2025-09-04T13:47:04.713784",
+      "data": null
+    },
+    {
+      "test_name": "Valuation Confidence Levels",
+      "status": "\u274c FAIL",
+      "passed": false,
+      "details": "API error: 502",
+      "timestamp": "2025-09-04T13:47:04.915404",
+      "data": null
+    },
+    {
+      "test_name": "Error Handling - Missing Data",
+      "status": "\u274c FAIL",
+      "passed": false,
+      "details": "API error: 502",
+      "timestamp": "2025-09-04T13:47:05.149555",
+      "data": null
+    },
+    {
+      "test_name": "Weighted Scoring System",
+      "status": "\u274c FAIL",
+      "passed": false,
+      "details": "API error: 502",
+      "timestamp": "2025-09-04T13:47:05.347340",
+      "data": null
+    },
+    {
+      "test_name": "Combined Filters",
+      "status": "\u2705 PASS",
+      "passed": true,
+      "details": "No stocks match combined filters (acceptable)",
+      "timestamp": "2025-09-04T13:47:11.223531",
+      "data": null
+    },
+    {
+      "test_name": "API Performance with Valuation",
+      "status": "\u2705 PASS",
+      "passed": true,
+      "details": "Scan completed in 35.36s with 15 results",
+      "timestamp": "2025-09-04T13:47:46.587152",
+      "data": null
+    }
+  ]
+}

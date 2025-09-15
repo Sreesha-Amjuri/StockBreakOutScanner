@@ -15,20 +15,12 @@ import {
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
 import StockDetails from "./components/StockDetails";
-import ThemeToggle from "./components/ThemeToggle";
-import AIChat from "./components/AIChat";
-import { useTheme } from "./contexts/ThemeContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-
-// Fallback to localhost if environment variable is not set
-const API_BASE = BACKEND_URL || 'http://localhost:8001';
-const API = `${API_BASE}/api`;
+const API = `${BACKEND_URL}/api`;
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { isDarkMode } = useTheme();
-  
   // Existing state
   const [breakoutStocks, setBreakoutStocks] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
@@ -36,23 +28,17 @@ const Dashboard = () => {
   const [lastUpdated, setLastUpdated] = useState(null);
   const [sectors, setSectors] = useState([]);
   const [marketOverview, setMarketOverview] = useState(null);
-  const [scanStats, setScanStats] = useState({ stocks_scanned: 0, breakouts_found: 0 });
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSector, setSelectedSector] = useState('All');
+  const [minConfidence, setMinConfidence] = useState(0.5);
   const [selectedRiskLevel, setSelectedRiskLevel] = useState('All');
-  const [selectedValuation, setSelectedValuation] = useState('All'); // NEW: Valuation filter
-  const [minConfidence, setMinConfidence] = useState(0.3);
 
   // Advanced sorting state
   const [sortConfig, setSortConfig] = useState([]);
   const [sortField, setSortField] = useState('confidence_score');
   const [sortDirection, setSortDirection] = useState('desc');
-
-  // AI Chat state
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [selectedStockForChat, setSelectedStockForChat] = useState(null);
 
   const fetchMarketOverview = async () => {
     try {
@@ -85,7 +71,7 @@ const Dashboard = () => {
   const fetchSectors = async () => {
     try {
       const response = await axios.get(`${API}/stocks/symbols`);
-      setSectors(['All', ...Object.keys(response.data.sector_distribution)]);
+      setSectors(['All', ...response.data.sectors]);
     } catch (error) {
       console.error('Error fetching sectors:', error);
     }
@@ -98,17 +84,12 @@ const Dashboard = () => {
     }
     
     setLoading(true);
-    
     try {
-      toast.info("🚀 Scanning large cap stocks with optimized performance...");
+      toast.info("Scanning stocks for breakout opportunities...");
       
       const params = new URLSearchParams({
         min_confidence: minConfidence.toString(),
-<<<<<<< HEAD
-        limit: '50'  // Optimized limit for faster performance
-=======
-        limit: '200'  // Increased to scan 200 stocks (expanded NSE coverage)
->>>>>>> 56e1bd6ed17e94c62452365f1d274eecf9db15ab
+        limit: '100'  // Increased to scan 100 stocks (NIFTY 100)
       });
       
       if (selectedSector !== 'All') {
@@ -119,61 +100,25 @@ const Dashboard = () => {
         params.append('risk_level', selectedRiskLevel);
       }
       
-      if (selectedValuation !== 'All') {
-        params.append('valuation_filter', selectedValuation);
-      }
-      
-<<<<<<< HEAD
-      console.log('Requesting optimized breakout scan with params:', params.toString());
-      
-      // Show progress update
-      toast.info("📊 Optimized scanning with concurrent processing...", {
-        duration: 3000
-=======
-      const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`, {
-        timeout: 120000 // 120 second timeout for expanded scanning
->>>>>>> 56e1bd6ed17e94c62452365f1d274eecf9db15ab
-      });
+      console.log('Requesting breakout scan with params:', params.toString());
       
       const response = await axios.get(`${API}/stocks/breakouts/scan?${params}`, {
-        timeout: 120000 // 2 minute timeout for optimized scanning
+        timeout: 60000 // 60 second timeout
       });
       
-      console.log('Optimized scan completed:', response.data);
-      console.log('Scan statistics from API:', response.data.scan_statistics);
+      console.log('Breakout scan response:', response.data);
+      console.log('Number of breakouts found:', response.data.breakouts_found);
+      console.log('Breakout stocks array length:', response.data.breakout_stocks?.length);
       
       if (response.data && Array.isArray(response.data.breakout_stocks)) {
         setBreakoutStocks(response.data.breakout_stocks);
         setLastUpdated(new Date().toLocaleTimeString());
         
-        // Update scan statistics
-        const statsUpdate = {
-          stocks_scanned: response.data.scan_statistics?.total_scanned || 0,
-          breakouts_found: response.data.scan_statistics?.breakouts_found || 0
-        };
-        
-        console.log('Updating scan statistics with:', statsUpdate);
-        setScanStats(statsUpdate);
-        
         const count = response.data.breakout_stocks.length;
-<<<<<<< HEAD
-        const scanned = response.data.scan_statistics?.total_scanned || 0;
-        
         if (count > 0) {
-          toast.success(`🎯 Found ${count} breakout opportunities from ${scanned} stocks scanned! ⚡ Optimized performance`, {
-            duration: 6000
-          });
+          toast.success(`Found ${count} breakout opportunities!`);
         } else {
-          toast.info(`📊 Scanned ${scanned} stocks - No breakouts found with current filters. Try lowering confidence level.`, {
-            duration: 6000
-          });
-=======
-        const scanned = response.data.total_scanned || 0;
-        if (count > 0) {
-          toast.success(`Found ${count} breakout opportunities from ${scanned} stocks!`);
-        } else {
-          toast.info(`No breakout opportunities found from ${scanned} stocks scanned`);
->>>>>>> 56e1bd6ed17e94c62452365f1d274eecf9db15ab
+          toast.info("No breakout opportunities found at current settings");
         }
       } else {
         console.error('Invalid response structure:', response.data);
@@ -182,24 +127,14 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error('Error scanning breakouts:', error);
-<<<<<<< HEAD
-      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-        toast.error('🚨 Request timeout! Try scanning with a smaller limit or check your connection.', {
-          duration: 6000
-        });
-      } else if (error.response?.status === 404) {
-        toast.error('API endpoint not found. Please check the backend is running.');
-      } else if (error.response?.status >= 500) {
-        toast.error('Server error. Please try again in a moment.');
-=======
       console.error('Error response:', error.response?.data);
       
       if (error.code === 'ECONNABORTED') {
-        toast.error("Request timeout - scanning large stock universe takes time");
->>>>>>> 56e1bd6ed17e94c62452365f1d274eecf9db15ab
+        toast.error("Request timeout - server is taking too long");
       } else {
-        toast.error('Error scanning stocks. Please try again.');
+        toast.error(`Failed to scan for breakouts: ${error.message}`);
       }
+      setBreakoutStocks([]);
     } finally {
       setLoading(false);
     }
@@ -230,8 +165,7 @@ const Dashboard = () => {
 
   const removeFromWatchlist = async (symbol) => {
     try {
-      await axios.delete(`${API}/watchlist?symbol=${symbol}`);
-      //await axios.delete(`${API}/watchlist/${symbol}`);
+      await axios.delete(`${API}/watchlist/${symbol}`);
       await fetchWatchlist();
       toast.success(`Removed ${symbol} from watchlist`);
     } catch (error) {
@@ -267,8 +201,6 @@ const Dashboard = () => {
         return parseFloat(stock.confidence_score) || 0;
       case 'risk_level':
         return stock.risk_assessment?.risk_level || '';
-      case 'valuation_category':  // NEW: Valuation sorting
-        return stock.valuation_analysis?.valuation_category || 'Reasonable';
       case 'rsi':
         return parseFloat(stock.technical_data?.rsi) || 0;
       case 'sector':
@@ -316,10 +248,7 @@ const Dashboard = () => {
     initializeApp();
   }, []);
 
-  // Debug effect to monitor scanStats changes
-  useEffect(() => {
-    console.log('ScanStats state updated:', scanStats);
-  }, [scanStats]);
+  // Combined filtering and sorting logic
   const processedBreakoutStocks = React.useMemo(() => {
     // First apply search filter
     const searchFiltered = breakoutStocks.filter(stock =>
@@ -331,8 +260,7 @@ const Dashboard = () => {
     const fullyFiltered = searchFiltered.filter(stock => {
       const sectorMatch = selectedSector === 'All' || stock.sector === selectedSector;
       const riskMatch = selectedRiskLevel === 'All' || stock.risk_assessment?.risk_level === selectedRiskLevel;
-      const valuationMatch = selectedValuation === 'All' || stock.valuation_analysis?.valuation_category === selectedValuation; // NEW: Valuation filter
-      return sectorMatch && riskMatch && valuationMatch;
+      return sectorMatch && riskMatch;
     });
     
     // Finally apply sorting if configured
@@ -392,10 +320,6 @@ const Dashboard = () => {
             aValue = a.risk_assessment?.risk_level || 'Medium';
             bValue = b.risk_assessment?.risk_level || 'Medium';
             break;
-          case 'valuation_category':  // NEW: Valuation sorting case
-            aValue = a.valuation_analysis?.valuation_category || 'Reasonable';
-            bValue = b.valuation_analysis?.valuation_category || 'Reasonable';
-            break;
           case 'rsi':
             aValue = a.technical_data?.rsi || 0;
             bValue = b.technical_data?.rsi || 0;
@@ -427,7 +351,7 @@ const Dashboard = () => {
         return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
       });
     }
-  }, [breakoutStocks, searchTerm, selectedSector, selectedRiskLevel, selectedValuation, sortConfig, sortField, sortDirection, applySorting]);
+  }, [breakoutStocks, searchTerm, selectedSector, selectedRiskLevel, sortConfig, sortField, sortDirection, applySorting]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', {
@@ -529,6 +453,69 @@ const Dashboard = () => {
     setSortDirection(newSortDirection);
   };
 
+  const getSortValue = (stock, field) => {
+    switch (field) {
+      case 'symbol':
+        return stock.symbol;
+      case 'current_price':
+        return parseFloat(stock.current_price) || 0;
+      case 'change_percent':
+        return parseFloat(stock.change_percent) || 0;
+      case 'entry_price':
+        return parseFloat(stock.trading_recommendation?.entry_price) || 0;
+      case 'stop_loss':
+        return parseFloat(stock.trading_recommendation?.stop_loss) || 0;
+      case 'target_price':
+        return parseFloat(stock.trading_recommendation?.target_price) || 0;
+      case 'action':
+        return stock.trading_recommendation?.action || '';
+      case 'risk_reward_ratio':
+        return parseFloat(stock.trading_recommendation?.risk_reward_ratio) || 0;
+      case 'position_size':
+        return parseFloat(stock.trading_recommendation?.position_size_percent) || 0;
+      case 'breakout_type':
+        return stock.breakout_type || '';
+      case 'confidence_score':
+        return parseFloat(stock.confidence_score) || 0;
+      case 'risk_level':
+        return stock.risk_assessment?.risk_level || '';
+      case 'rsi':
+        return parseFloat(stock.technical_data?.rsi) || 0;
+      case 'sector':
+        return stock.sector || '';
+      default:
+        return '';
+    }
+  };
+
+  const applySorting = (stocks) => {
+    if (sortConfig.length === 0) {
+      return stocks;
+    }
+
+    return [...stocks].sort((a, b) => {
+      for (const { field, direction } of sortConfig) {
+        const aValue = getSortValue(a, field);
+        const bValue = getSortValue(b, field);
+        
+        let comparison = 0;
+        
+        if (typeof aValue === 'string' && typeof bValue === 'string') {
+          comparison = aValue.localeCompare(bValue);
+        } else if (typeof aValue === 'number' && typeof bValue === 'number') {
+          comparison = aValue - bValue;
+        }
+        
+        if (comparison !== 0) {
+          return direction === 'asc' ? comparison : -comparison;
+        }
+      }
+      return 0;
+    });
+  };
+
+
+
 
 
   // Get sort icon
@@ -552,11 +539,11 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <Toaster />
       
       {/* Header */}
-      <header className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50 transition-colors duration-300">
+      <header className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-3">
@@ -564,12 +551,12 @@ const Dashboard = () => {
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">StockBreak Pro</h1>
-                <p className="text-sm text-slate-600 dark:text-slate-400">NIFTY 50 + Next 50 Analysis Platform</p>
+                <h1 className="text-xl font-bold text-slate-900">StockBreak Pro</h1>
+                <p className="text-sm text-slate-600">NSE Breakout Screener</p>
               </div>
             </div>
             
-            {/* Search Bar and Theme Toggle */}
+            {/* Search Bar */}
             <div className="flex items-center space-x-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -581,18 +568,12 @@ const Dashboard = () => {
                 />
               </div>
               
-              {/* Theme Toggle */}
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-slate-600 dark:text-slate-400">Theme</span>
-                <ThemeToggle />
-              </div>
-              
               {marketOverview && (
                 <div className="flex items-center space-x-6">
                   <div className="text-right">
-                    <p className="text-sm text-slate-600 dark:text-slate-400">NIFTY 50</p>
+                    <p className="text-sm text-slate-600">NIFTY 50</p>
                     <div className="flex items-center space-x-2">
-                      <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      <span className="font-semibold text-slate-900">
                         {marketOverview.nifty_50.current.toFixed(2)}
                       </span>
                       <span className={`text-sm font-medium ${
@@ -657,87 +638,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
-
-        {/* Professional Watchlist Display */}
-        {watchlist.length > 0 && (
-          <Card className="bg-white/60 backdrop-blur-sm border-slate-200 mb-8">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Heart className="w-5 h-5 text-purple-600" />
-                  <span>My Watchlist ({watchlist.length} stocks)</span>
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={fetchWatchlist}
-                  className="text-xs"
-                >
-                  🔄 Refresh
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {watchlist.map((stock, index) => (
-                  <Card key={stock.symbol || index} className="border border-slate-200 hover:border-purple-300 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/stock/${stock.symbol}`)}>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <h3 className="font-semibold text-slate-900">{stock.symbol}</h3>
-                          <p className="text-sm text-slate-600">Large Cap Stock</p>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeFromWatchlist(stock.symbol);
-                          }}
-                          className="text-xs"
-                        >
-                          Remove
-                        </Button>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-slate-600">Added:</span>
-                          <span className="text-sm font-medium">{new Date(stock.added_at).toLocaleDateString()}</span>
-                        </div>
-                        
-                        <div className="pt-2">
-                          <Button
-                            size="sm"
-                            variant="default"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/stock/${stock.symbol}`);
-                            }}
-                            className="w-full text-xs"
-                          >
-                            <BarChart3 className="w-3 h-3 mr-1" />
-                            View Analysis
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-              
-              {watchlist.length === 0 && (
-                <div className="text-center py-8">
-                  <Heart className="w-16 h-16 text-slate-400 mx-auto mb-4" />
-                  <p className="text-slate-600">No stocks in watchlist</p>
-                  <p className="text-sm text-slate-500">Add stocks from the breakout analysis below</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
           <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
@@ -745,7 +645,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-600 mb-1">Breakouts Found</p>
-                  <p className="text-2xl font-bold text-slate-900">{scanStats.breakouts_found}</p>
+                  <p className="text-2xl font-bold text-slate-900">{processedBreakoutStocks.length}</p>
                 </div>
                 <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center">
                   <TrendingUp className="w-6 h-6 text-emerald-600" />
@@ -759,11 +659,7 @@ const Dashboard = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-600 mb-1">Stocks Scanned</p>
-<<<<<<< HEAD
-                  <p className="text-2xl font-bold text-slate-900">{scanStats.stocks_scanned}</p>
-=======
-                  <p className="text-2xl font-bold text-slate-900">200+</p>
->>>>>>> 56e1bd6ed17e94c62452365f1d274eecf9db15ab
+                  <p className="text-2xl font-bold text-slate-900">100</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                   <BarChart3 className="w-6 h-6 text-blue-600" />
@@ -862,7 +758,7 @@ const Dashboard = () => {
               </div>
               
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Risk Level</label>
+                <label className="text-sm font-medium text-slate-700">Risk Level</label>
                 <Select value={selectedRiskLevel} onValueChange={setSelectedRiskLevel}>
                   <SelectTrigger>
                     <SelectValue />
@@ -872,49 +768,6 @@ const Dashboard = () => {
                     <SelectItem value="Low">Low Risk</SelectItem>
                     <SelectItem value="Medium">Medium Risk</SelectItem>
                     <SelectItem value="High">High Risk</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* NEW: Valuation Filter */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Valuation</label>
-                <Select value={selectedValuation} onValueChange={setSelectedValuation}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="All">All Valuations</SelectItem>
-                    <SelectItem value="Highly Undervalued">
-                      <span className="flex items-center">
-                        <span className="w-2 h-2 bg-green-600 rounded-full mr-2"></span>
-                        Highly Undervalued
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="Slightly Undervalued">
-                      <span className="flex items-center">
-                        <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-                        Slightly Undervalued
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="Reasonable">
-                      <span className="flex items-center">
-                        <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
-                        Reasonable
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="Slightly Overvalued">
-                      <span className="flex items-center">
-                        <span className="w-2 h-2 bg-orange-500 rounded-full mr-2"></span>
-                        Slightly Overvalued
-                      </span>
-                    </SelectItem>
-                    <SelectItem value="Highly Overvalued">
-                      <span className="flex items-center">
-                        <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
-                        Highly Overvalued
-                      </span>
-                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1057,22 +910,12 @@ const Dashboard = () => {
                         </div>
                       </TableHead>
                       <TableHead 
-                        className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 select-none transition-colors"
+                        className="cursor-pointer hover:bg-slate-100 select-none transition-colors"
                         onClick={(e) => handleSort('risk_level', e)}
                       >
                         <div className="flex items-center">
                           Risk Level
                           {getSortIcon('risk_level')}
-                        </div>
-                      </TableHead>
-                      {/* NEW: Valuation Column */}
-                      <TableHead 
-                        className="cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 select-none transition-colors"
-                        onClick={(e) => handleSort('valuation_category', e)}
-                      >
-                        <div className="flex items-center">
-                          Valuation
-                          {getSortIcon('valuation_category')}
                         </div>
                       </TableHead>
                       <TableHead 
@@ -1164,19 +1007,6 @@ const Dashboard = () => {
                               {stock.risk_assessment?.risk_level || 'Medium'}
                             </Badge>
                           </TableCell>
-                          {/* NEW: Valuation Cell */}
-                          <TableCell>
-                            <Badge className={`px-2 py-1 rounded-full text-xs font-medium ${
-                              stock.valuation_analysis?.color_class || 'text-gray-600 bg-gray-50'
-                            }`}>
-                              {stock.valuation_analysis?.valuation_category || 'Reasonable'}
-                            </Badge>
-                            {stock.valuation_analysis?.valuation_score && (
-                              <div className="text-xs text-slate-500 mt-1">
-                                Score: {stock.valuation_analysis.valuation_score.toFixed(1)}
-                              </div>
-                            )}
-                          </TableCell>
                           <TableCell>
                             <span className={`font-medium ${
                               stock.technical_data.rsi > 70 ? 'text-red-600' : 
@@ -1211,22 +1041,7 @@ const Dashboard = () => {
                                 }
                                 className="text-xs"
                               >
-                                <Heart className={`w-3 h-3 mr-1 ${
-                                  isInWatchlist(stock.symbol) ? 'fill-current' : ''
-                                }`} />
-                                {isInWatchlist(stock.symbol) ? 'Saved' : 'Save'}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  setSelectedStockForChat(stock);
-                                  setIsChatOpen(true);
-                                }}
-                                className="text-xs text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                                title="Analyze with AI"
-                              >
-                                <Zap className="w-3 h-3" />
+                                <Heart className={`w-3 h-3 ${isInWatchlist(stock.symbol) ? 'fill-current' : ''}`} />
                               </Button>
                             </div>
                           </TableCell>
@@ -1281,13 +1096,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
-
-        {/* AI Chat Component */}
-        <AIChat 
-          selectedStock={selectedStockForChat}
-          isOpen={isChatOpen}
-          onToggle={() => setIsChatOpen(!isChatOpen)}
-        />
 
         {/* Disclaimer */}
         <Card className="mt-8 bg-amber-50/50 border-amber-200">

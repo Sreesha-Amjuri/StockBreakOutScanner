@@ -89,4 +89,33 @@ frontend/node_modules/.cache/default-development/5.pack
 frontend/node_modules/.cache/default-development/6.pack
 frontend/node_modules/.cache/default-development/6.pack_
 frontend/node_modules/.cache/default-development/7.pack
+<<<<<<< HEAD
+frontend/node_modules/.cache/default-development/1.pack_
+frontend/node_modules/.cache/default-development/9.pack
+frontend/node_modules/.cache/default-development/4.pack_
+frontend/node_modules/.cache/default-development/10.pack
+frontend/node_modules/.cache/default-development/12.pack
+-e 
+# Environment files
+*.env
+*.env.*
+frontend/node_modules/.cache/default-development/8.pack
+-e 
+# Environment files
+*.env
+*.env.*
+-e 
+# Environment files
+*.env
+*.env.*
+-e 
+# Environment files
+*.env
+*.env.*
+-e 
+# Environment files
+*.env
+*.env.*
+=======
 .env
+>>>>>>> 56e1bd6ed17e94c62452365f1d274eecf9db15ab
