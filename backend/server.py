@@ -1640,6 +1640,77 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Security(
     return User(**user)
 
 
+
+# Authentication Endpoints
+@api_router.post("/auth/register", response_model=Token)
+async def register(user_data: UserRegister):
+    """Register a new user"""
+    try:
+        # Check if user already exists
+        existing_user = await db.users.find_one({"email": user_data.email})
+        if existing_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        # Create new user
+        user = User(
+            email=user_data.email,
+            name=user_data.name
+        )
+        
+        # Hash password and store
+        hashed_password = hash_password(user_data.password)
+        user_dict = user.dict()
+        user_dict['password'] = hashed_password
+        
+        await db.users.insert_one(user_dict)
+        
+        # Create access token
+        access_token = create_access_token(user.id, user.email)
+        
+        return Token(access_token=access_token, user=user)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Registration error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Registration failed")
+
+@api_router.post("/auth/login", response_model=Token)
+async def login(credentials: UserLogin):
+    """Login user and return JWT token"""
+    try:
+        # Find user
+        user_data = await db.users.find_one({"email": credentials.email})
+        if not user_data:
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        # Verify password
+        if not verify_password(credentials.password, user_data['password']):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        # Create user object (without password)
+        user = User(
+            id=user_data['id'],
+            email=user_data['email'],
+            name=user_data['name'],
+            created_at=user_data['created_at']
+        )
+        
+        # Create access token
+        access_token = create_access_token(user.id, user.email)
+        
+        return Token(access_token=access_token, user=user)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login error: {str(e)}")
+        raise HTTPException(status_code=500, detail="Login failed")
+
+@api_router.get("/auth/me", response_model=User)
+async def get_me(current_user: User = Depends(get_current_user)):
+    """Get current authenticated user info"""
+    return current_user
+
+
 # API Routes
 @api_router.get("/")
 async def root():
