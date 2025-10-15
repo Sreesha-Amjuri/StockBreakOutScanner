@@ -48,6 +48,14 @@ mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
+# JWT Configuration
+JWT_SECRET = os.environ.get('JWT_SECRET', 'stockbreak-pro-secret-key-2024-secure')
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRATION_HOURS = 720  # 30 days
+
+# Security
+security = HTTPBearer()
+
 # Create the main app without a prefix
 app = FastAPI()
 
