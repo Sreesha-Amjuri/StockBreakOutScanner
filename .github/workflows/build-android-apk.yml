@@ -1,0 +1,119 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:  # Allows manual trigger from GitHub UI
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'yarn'
+        cache-dependency-path: mobile/yarn.lock
+
+    - name: Setup Java JDK
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v2
+
+    - name: Install dependencies
+      run: |
+        cd mobile
+        yarn install --frozen-lockfile
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x mobile/android/gradlew
+
+    - name: Build Android APK
+      run: |
+        cd mobile/android
+        ./gradlew assembleRelease --no-daemon
+
+    - name: Sign APK
+      run: |
+        cd mobile/android/app/build/outputs/apk/release
+        echo "APK built successfully"
+        ls -lh
+
+    - name: Upload APK to Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: StockBreakPro-APK
+        path: mobile/android/app/build/outputs/apk/release/app-release.apk
+        retention-days: 30
+
+    - name: Create Release
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v1.0.${{ github.run_number }}
+        release_name: StockBreak Pro v1.0.${{ github.run_number }}
+        body: |
+          ## 🎉 StockBreak Pro Android App
+          
+          ### 📱 Features
+          - Beautiful pastel purple UI
+          - User authentication (register/login)
+          - Real-time stock breakout scanning
+          - Technical analysis & trading recommendations
+          - Watchlist management
+          - Material Design components
+          
+          ### 📥 Installation
+          1. Download the APK below
+          2. Enable "Unknown Sources" in Settings
+          3. Install the APK
+          4. Open StockBreak Pro and register!
+          
+          ### 📊 System Requirements
+          - Android 6.0 (Marshmallow) or higher
+          - Internet connection
+          
+          **Build**: #${{ github.run_number }}
+          **Commit**: ${{ github.sha }}
+        draft: false
+        prerelease: false
+
+    - name: Upload APK to Release
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: mobile/android/app/build/outputs/apk/release/app-release.apk
+        asset_name: StockBreakPro-v1.0.${{ github.run_number }}.apk
+        asset_content_type: application/vnd.android.package-archive
+
+    - name: Build Summary
+      run: |
+        echo "## ✅ Build Successful! 🎉" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📱 StockBreak Pro APK Built Successfully" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**APK Location**: \`mobile/android/app/build/outputs/apk/release/app-release.apk\`" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Download**: Go to the 'Releases' section or 'Actions' artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📥 How to Install" >> $GITHUB_STEP_SUMMARY
+        echo "1. Download the APK" >> $GITHUB_STEP_SUMMARY
+        echo "2. Enable 'Unknown Sources' in Android Settings" >> $GITHUB_STEP_SUMMARY
+        echo "3. Install and enjoy!" >> $GITHUB_STEP_SUMMARY
