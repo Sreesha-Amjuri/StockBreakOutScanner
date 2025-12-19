@@ -44,6 +44,12 @@ mobile/android/app/build/
 mobile/android/.gradle/
 mobile/ios/build/
 
+# But DO NOT ignore gradle wrapper (needed for builds)
+!mobile/android/gradle/wrapper/gradle-wrapper.jar
+!mobile/android/gradle/wrapper/gradle-wrapper.properties
+!mobile/android/gradlew
+!mobile/android/gradlew.bat
+
 # Temporary files
 *.tmp
 *.temp
