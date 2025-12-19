@@ -552,6 +552,184 @@ class StockBreakoutAPITester:
         
         return success1 and success2 and success3
 
+    def test_new_action_and_breakout_type_filters(self):
+        """Test the new Action and Breakout Type filters as requested in review"""
+        print("\n🎯 NEW ACTION & BREAKOUT TYPE FILTER TESTING")
+        print("-" * 50)
+        
+        # Test 1: Action Filter Tests
+        action_tests = [
+            {"action": "BUY", "name": "BUY Action Filter"},
+            {"action": "SELL", "name": "SELL Action Filter"}, 
+            {"action": "HOLD", "name": "HOLD Action Filter"}
+        ]
+        
+        action_results = {}
+        
+        for test in action_tests:
+            action = test["action"]
+            name = test["name"]
+            
+            success, data = self.test_api_endpoint(name, "GET", "stocks/breakouts/scan", 
+                                                 params={"action": action, "limit": "50"}, timeout=60)
+            
+            if success:
+                breakout_stocks = data.get('breakout_stocks', [])
+                filters_applied = data.get('filters_applied', {})
+                
+                # Verify filter was applied correctly
+                applied_action = filters_applied.get('action')
+                filter_applied_correctly = applied_action == action
+                
+                self.log_test(f"Action Filter Applied - {action}", filter_applied_correctly, 
+                            f"Requested: {action}, Applied: {applied_action}")
+                
+                # Verify all returned stocks have the correct action
+                correct_action_count = 0
+                total_with_recommendations = 0
+                
+                for stock in breakout_stocks:
+                    trading_rec = stock.get('trading_recommendation', {})
+                    if trading_rec:
+                        total_with_recommendations += 1
+                        stock_action = trading_rec.get('action', 'UNKNOWN')
+                        if stock_action == action:
+                            correct_action_count += 1
+                
+                if total_with_recommendations > 0:
+                    action_accuracy = (correct_action_count / total_with_recommendations) * 100
+                    self.log_test(f"Action Filter Accuracy - {action}", action_accuracy >= 95, 
+                                f"{correct_action_count}/{total_with_recommendations} stocks have correct action ({action_accuracy:.1f}%)")
+                    
+                    action_results[action] = {
+                        'total_results': len(breakout_stocks),
+                        'with_recommendations': total_with_recommendations,
+                        'correct_action': correct_action_count
+                    }
+                else:
+                    self.log_test(f"Action Filter Results - {action}", True, 
+                                f"Found {len(breakout_stocks)} results, no trading recommendations to verify")
+                    action_results[action] = {'total_results': len(breakout_stocks)}
+        
+        # Test 2: Breakout Type Filter Tests
+        breakout_type_tests = [
+            {"breakout_type": "200_dma", "name": "200 DMA Breakout Filter"},
+            {"breakout_type": "resistance", "name": "Resistance Breakout Filter"},
+            {"breakout_type": "momentum", "name": "Momentum Breakout Filter"}
+        ]
+        
+        breakout_type_results = {}
+        
+        for test in breakout_type_tests:
+            breakout_type = test["breakout_type"]
+            name = test["name"]
+            
+            success, data = self.test_api_endpoint(name, "GET", "stocks/breakouts/scan", 
+                                                 params={"breakout_type": breakout_type, "limit": "50"}, timeout=60)
+            
+            if success:
+                breakout_stocks = data.get('breakout_stocks', [])
+                filters_applied = data.get('filters_applied', {})
+                
+                # Verify filter was applied correctly
+                applied_breakout_type = filters_applied.get('breakout_type')
+                filter_applied_correctly = applied_breakout_type == breakout_type
+                
+                self.log_test(f"Breakout Type Filter Applied - {breakout_type}", filter_applied_correctly, 
+                            f"Requested: {breakout_type}, Applied: {applied_breakout_type}")
+                
+                # Verify all returned stocks have the correct breakout type
+                correct_type_count = 0
+                
+                for stock in breakout_stocks:
+                    stock_breakout_type = stock.get('breakout_type', 'unknown')
+                    if stock_breakout_type == breakout_type:
+                        correct_type_count += 1
+                
+                if len(breakout_stocks) > 0:
+                    type_accuracy = (correct_type_count / len(breakout_stocks)) * 100
+                    self.log_test(f"Breakout Type Filter Accuracy - {breakout_type}", type_accuracy >= 95, 
+                                f"{correct_type_count}/{len(breakout_stocks)} stocks have correct type ({type_accuracy:.1f}%)")
+                    
+                    breakout_type_results[breakout_type] = {
+                        'total_results': len(breakout_stocks),
+                        'correct_type': correct_type_count
+                    }
+                else:
+                    self.log_test(f"Breakout Type Filter Results - {breakout_type}", True, 
+                                f"No results found for {breakout_type} breakout type")
+                    breakout_type_results[breakout_type] = {'total_results': 0}
+        
+        # Test 3: Combined Filter Tests
+        combined_tests = [
+            {"action": "BUY", "breakout_type": "200_dma", "name": "BUY + 200 DMA Combined"},
+            {"action": "BUY", "breakout_type": "resistance", "name": "BUY + Resistance Combined"},
+            {"action": "HOLD", "breakout_type": "momentum", "name": "HOLD + Momentum Combined"}
+        ]
+        
+        for test in combined_tests:
+            action = test["action"]
+            breakout_type = test["breakout_type"]
+            name = test["name"]
+            
+            success, data = self.test_api_endpoint(name, "GET", "stocks/breakouts/scan", 
+                                                 params={"action": action, "breakout_type": breakout_type, "limit": "30"}, timeout=60)
+            
+            if success:
+                breakout_stocks = data.get('breakout_stocks', [])
+                filters_applied = data.get('filters_applied', {})
+                
+                # Verify both filters were applied
+                applied_action = filters_applied.get('action')
+                applied_breakout_type = filters_applied.get('breakout_type')
+                
+                both_filters_applied = (applied_action == action and applied_breakout_type == breakout_type)
+                
+                self.log_test(f"Combined Filters Applied - {name}", both_filters_applied, 
+                            f"Action: {applied_action} (req: {action}), Type: {applied_breakout_type} (req: {breakout_type})")
+                
+                # Verify results match both criteria
+                matching_stocks = 0
+                for stock in breakout_stocks:
+                    trading_rec = stock.get('trading_recommendation', {})
+                    stock_action = trading_rec.get('action', 'UNKNOWN') if trading_rec else 'UNKNOWN'
+                    stock_breakout_type = stock.get('breakout_type', 'unknown')
+                    
+                    if stock_action == action and stock_breakout_type == breakout_type:
+                        matching_stocks += 1
+                
+                if len(breakout_stocks) > 0:
+                    combined_accuracy = (matching_stocks / len(breakout_stocks)) * 100
+                    self.log_test(f"Combined Filter Accuracy - {name}", combined_accuracy >= 95, 
+                                f"{matching_stocks}/{len(breakout_stocks)} stocks match both criteria ({combined_accuracy:.1f}%)")
+                else:
+                    self.log_test(f"Combined Filter Results - {name}", True, 
+                                f"No results found for combined filters")
+        
+        # Test 4: Verify filters_applied section includes new filters
+        success, data = self.test_api_endpoint("Filters Applied Section Test", "GET", "stocks/breakouts/scan", 
+                                             params={"action": "BUY", "breakout_type": "200_dma"}, timeout=60)
+        
+        if success:
+            filters_applied = data.get('filters_applied', {})
+            required_filter_keys = ['action', 'breakout_type', 'sector', 'min_confidence', 'risk_level', 'limit']
+            
+            missing_keys = [key for key in required_filter_keys if key not in filters_applied]
+            
+            if not missing_keys:
+                self.log_test("Filters Applied Section Complete", True, 
+                            f"All required filter keys present: {list(filters_applied.keys())}")
+            else:
+                self.log_test("Filters Applied Section Complete", False, 
+                            f"Missing filter keys: {missing_keys}")
+        
+        # Summary of filter testing
+        print(f"\n📊 FILTER TESTING SUMMARY")
+        print(f"Action Filter Results: {action_results}")
+        print(f"Breakout Type Filter Results: {breakout_type_results}")
+        
+        return True
+
     def test_full_nse_coverage_scanning(self):
         """Test Full NSE Coverage - scan ALL NSE stocks (600+) as requested"""
         print("\n🔍 FULL NSE COVERAGE TESTING")
