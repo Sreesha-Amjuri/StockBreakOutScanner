@@ -314,11 +314,21 @@ const Dashboard = () => {
       stock.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
     
-    // Then apply sector and risk filters
+    // Then apply all filters: sector, risk, action, and breakout type
     const fullyFiltered = searchFiltered.filter(stock => {
       const sectorMatch = selectedSector === 'All' || stock.sector === selectedSector;
       const riskMatch = selectedRiskLevel === 'All' || stock.risk_assessment?.risk_level === selectedRiskLevel;
-      return sectorMatch && riskMatch;
+      
+      // Action filter - map action names
+      const stockAction = stock.trading_recommendation?.action || 'HOLD';
+      const actionMatch = selectedAction === 'All' || stockAction === selectedAction;
+      
+      // Breakout type filter
+      const stockBreakoutType = stock.breakout_type || '';
+      const apiBreakoutType = breakoutTypeApiMap[selectedBreakoutType] || 'All';
+      const breakoutMatch = selectedBreakoutType === 'All' || stockBreakoutType === apiBreakoutType;
+      
+      return sectorMatch && riskMatch && actionMatch && breakoutMatch;
     });
     
     // Finally apply sorting if configured
