@@ -78,6 +78,26 @@ if not exist "backend\server.py" (
     exit /b 1
 )
 
+REM Check if backend .env exists, create if missing
+if not exist "backend\.env" (
+    echo [INFO] Creating backend .env file...
+    (
+    echo MONGO_URL=mongodb://localhost:27017
+    echo DB_NAME=stockbreak_db
+    echo CORS_ORIGINS=*
+    ) > "backend\.env"
+    echo [OK] Backend .env created
+)
+
+REM Check if frontend .env exists, create if missing
+if not exist "frontend\.env" (
+    echo [INFO] Creating frontend .env file...
+    (
+    echo REACT_APP_BACKEND_URL=http://localhost:8001
+    ) > "frontend\.env"
+    echo [OK] Frontend .env created
+)
+
 REM Create backend start script
 echo @echo off > "%TEMP%\start_backend.bat"
 echo title StockBreak Pro - Backend Server >> "%TEMP%\start_backend.bat"
