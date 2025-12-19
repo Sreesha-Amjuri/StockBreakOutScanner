@@ -219,7 +219,7 @@ Then rebuild the APK.
 
 ### Current API URL
 ```
-https://tradewise-176.preview.emergentagent.com/api
+https://breakout-dash.preview.emergentagent.com/api
 ```
 
 ---
@@ -266,7 +266,7 @@ After installation, test:
 **Solution**:
 - Check internet connection
 - Verify API URL in `.env`
-- Backend might be down - check: https://tradewise-176.preview.emergentagent.com/api/
+- Backend might be down - check: https://breakout-dash.preview.emergentagent.com/api/
 
 ### Login Fails
 **Solution**:
@@ -328,7 +328,7 @@ After installation, test:
 - Complete Summary: `/app/ANDROID_APP_COMPLETE.md`
 
 ### Backend API Documentation:
-- Base URL: `https://tradewise-176.preview.emergentagent.com/api`
+- Base URL: `https://breakout-dash.preview.emergentagent.com/api`
 - Auth Endpoints: `/api/auth/register`, `/api/auth/login`, `/api/auth/me`
 - Stock Endpoints: `/api/stocks/*`
 - Watchlist Endpoints: `/api/watchlist/*`

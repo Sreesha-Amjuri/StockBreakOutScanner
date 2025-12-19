@@ -10,7 +10,7 @@ from datetime import datetime
 
 def test_technical_indicators(symbol):
     """Test all 13 technical indicators for a specific stock"""
-    url = f"https://tradewise-176.preview.emergentagent.com/api/stocks/{symbol}"
+    url = f"https://breakout-dash.preview.emergentagent.com/api/stocks/{symbol}"
     
     try:
         response = requests.get(url, timeout=30)

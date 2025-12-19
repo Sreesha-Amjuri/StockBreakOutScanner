@@ -89,7 +89,7 @@ def test_endpoint(name, url, method="GET", params=None, timeout=30):
         return False, {}
 
 def main():
-    base_url = "https://tradewise-176.preview.emergentagent.com/api"
+    base_url = "https://breakout-dash.preview.emergentagent.com/api"
     
     print("🚀 StockBreak Pro v2.0 - Quick Professional Features Test")
     print("=" * 65)

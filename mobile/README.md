@@ -78,7 +78,7 @@ The app features:
 3. **Configure Environment**
    The `.env` file is already configured with:
    ```
-   API_BASE_URL=https://tradewise-176.preview.emergentagent.com/api
+   API_BASE_URL=https://breakout-dash.preview.emergentagent.com/api
    ```
 
 ### Building the APK
@@ -351,7 +351,7 @@ Private - StockBreak Pro
 ## 🤝 Support
 
 For issues or questions:
-- Backend API: https://tradewise-176.preview.emergentagent.com/api
+- Backend API: https://breakout-dash.preview.emergentagent.com/api
 - Email: support@stockbreakpro.com
 
 ## 📚 Additional Resources

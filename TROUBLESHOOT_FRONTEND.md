@@ -228,7 +228,7 @@ This should work! Let me know if it doesn't.
 
 If nothing works locally, you can use the deployed version:
 ```
-https://tradewise-176.preview.emergentagent.com
+https://breakout-dash.preview.emergentagent.com
 ```
 
 This is already running and working!
