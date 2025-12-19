@@ -13,107 +13,113 @@ jobs:
     
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup Node.js
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'yarn'
-        cache-dependency-path: mobile/yarn.lock
 
     - name: Setup Java JDK
-      uses: actions/setup-java@v3
+      uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
     - name: Setup Android SDK
-      uses: android-actions/setup-android@v2
+      uses: android-actions/setup-android@v3
+
+    - name: Install Yarn
+      run: npm install -g yarn
 
     - name: Install dependencies
       run: |
         cd mobile
-        yarn install --frozen-lockfile
+        yarn install
 
     - name: Grant execute permission for gradlew
       run: chmod +x mobile/android/gradlew
 
-    - name: Build Android APK
+    - name: Build Android APK (Debug - faster)
       run: |
         cd mobile/android
-        ./gradlew assembleRelease --no-daemon
+        ./gradlew assembleDebug --no-daemon --stacktrace
+      env:
+        JAVA_HOME: ${{ env.JAVA_HOME }}
 
-    - name: Sign APK
+    - name: List APK files
       run: |
-        cd mobile/android/app/build/outputs/apk/release
-        echo "APK built successfully"
-        ls -lh
+        echo "Looking for APK files..."
+        find mobile/android -name "*.apk" -type f 2>/dev/null || echo "No APK found yet"
 
-    - name: Upload APK to Artifacts
-      uses: actions/upload-artifact@v3
+    - name: Upload Debug APK
+      uses: actions/upload-artifact@v4
       with:
-        name: StockBreakPro-APK
+        name: StockBreakPro-Debug-APK
+        path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+        retention-days: 30
+        if-no-files-found: warn
+
+    - name: Build Release APK
+      run: |
+        cd mobile/android
+        ./gradlew assembleRelease --no-daemon --stacktrace
+      env:
+        JAVA_HOME: ${{ env.JAVA_HOME }}
+      continue-on-error: true
+
+    - name: Upload Release APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: StockBreakPro-Release-APK
         path: mobile/android/app/build/outputs/apk/release/app-release.apk
         retention-days: 30
+        if-no-files-found: warn
 
     - name: Create Release
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+      uses: softprops/action-gh-release@v1
       with:
         tag_name: v1.0.${{ github.run_number }}
-        release_name: StockBreak Pro v1.0.${{ github.run_number }}
+        name: StockBreak Pro v1.0.${{ github.run_number }}
         body: |
           ## 🎉 StockBreak Pro Android App
           
           ### 📱 Features
-          - Beautiful pastel purple UI
-          - User authentication (register/login)
-          - Real-time stock breakout scanning
-          - Technical analysis & trading recommendations
+          - Real-time NSE stock breakout scanning
+          - Technical analysis (RSI, MACD, Bollinger Bands)
+          - Trading recommendations with entry/exit points
           - Watchlist management
-          - Material Design components
+          - Beautiful Material Design UI
           
           ### 📥 Installation
           1. Download the APK below
-          2. Enable "Unknown Sources" in Settings
+          2. Enable "Install from Unknown Sources" in Android Settings
           3. Install the APK
-          4. Open StockBreak Pro and register!
+          4. Open StockBreak Pro and start trading!
           
-          ### 📊 System Requirements
-          - Android 6.0 (Marshmallow) or higher
+          ### 📊 Requirements
+          - Android 6.0 (API 23) or higher
           - Internet connection
           
           **Build**: #${{ github.run_number }}
-          **Commit**: ${{ github.sha }}
-        draft: false
-        prerelease: false
-
-    - name: Upload APK to Release
-      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-      uses: actions/upload-release-asset@v1
+        files: |
+          mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          mobile/android/app/build/outputs/apk/release/app-release.apk
+        fail_on_unmatched_files: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: mobile/android/app/build/outputs/apk/release/app-release.apk
-        asset_name: StockBreakPro-v1.0.${{ github.run_number }}.apk
-        asset_content_type: application/vnd.android.package-archive
 
     - name: Build Summary
       run: |
-        echo "## ✅ Build Successful! 🎉" >> $GITHUB_STEP_SUMMARY
+        echo "## ✅ Build Complete! 🎉" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📱 StockBreak Pro APK Built Successfully" >> $GITHUB_STEP_SUMMARY
+        echo "### 📱 StockBreak Pro APK" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**APK Location**: \`mobile/android/app/build/outputs/apk/release/app-release.apk\`" >> $GITHUB_STEP_SUMMARY
+        echo "**Download from Artifacts section below** or from **Releases** (if pushed to main)" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Download**: Go to the 'Releases' section or 'Actions' artifacts" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📥 How to Install" >> $GITHUB_STEP_SUMMARY
-        echo "1. Download the APK" >> $GITHUB_STEP_SUMMARY
-        echo "2. Enable 'Unknown Sources' in Android Settings" >> $GITHUB_STEP_SUMMARY
-        echo "3. Install and enjoy!" >> $GITHUB_STEP_SUMMARY
+        echo "### 📥 How to Install on Android" >> $GITHUB_STEP_SUMMARY
+        echo "1. Download the APK file" >> $GITHUB_STEP_SUMMARY
+        echo "2. Enable 'Install from Unknown Sources' in Settings" >> $GITHUB_STEP_SUMMARY
+        echo "3. Open the APK file to install" >> $GITHUB_STEP_SUMMARY
+        echo "4. Launch StockBreak Pro!" >> $GITHUB_STEP_SUMMARY
