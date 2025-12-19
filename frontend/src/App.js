@@ -803,7 +803,7 @@ const Dashboard = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-slate-700">Sector</label>
                 <Select value={selectedSector} onValueChange={setSelectedSector}>
@@ -844,6 +844,38 @@ const Dashboard = () => {
                     <SelectItem value="Low">Low Risk</SelectItem>
                     <SelectItem value="Medium">Medium Risk</SelectItem>
                     <SelectItem value="High">High Risk</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Action</label>
+                <Select value={selectedAction} onValueChange={setSelectedAction}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select action" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {actionOptions.map(action => (
+                      <SelectItem key={action} value={action}>
+                        {action === 'All' ? 'All Actions' : action}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Breakout Type</label>
+                <Select value={selectedBreakoutType} onValueChange={setSelectedBreakoutType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {breakoutTypeOptions.map(type => (
+                      <SelectItem key={type} value={type}>
+                        {type === 'All' ? 'All Types' : type}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
