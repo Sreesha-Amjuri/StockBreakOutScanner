@@ -29,11 +29,4 @@ allprojects {
         google()
         mavenCentral()
     }
-    
-    // Exclude problematic BouncyCastle versions
-    configurations.all {
-        resolutionStrategy {
-            force 'org.bouncycastle:bcprov-jdk18on:1.77'
-        }
-    }
 }
