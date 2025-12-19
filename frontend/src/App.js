@@ -35,6 +35,31 @@ const Dashboard = () => {
   const [selectedSector, setSelectedSector] = useState('All');
   const [minConfidence, setMinConfidence] = useState(0.3);
   const [selectedRiskLevel, setSelectedRiskLevel] = useState('All');
+  const [selectedAction, setSelectedAction] = useState('All');
+  const [selectedBreakoutType, setSelectedBreakoutType] = useState('All');
+
+  // Filter options
+  const actionOptions = ['All', 'BUY', 'SELL', 'HOLD'];
+  const breakoutTypeOptions = [
+    'All',
+    'Support Breakout',
+    'Resistance Breakout',
+    'Trendline Breakout',
+    'Channel Breakout',
+    '200DMA',
+    'Momentum'
+  ];
+
+  // Breakout type mapping for API
+  const breakoutTypeApiMap = {
+    'All': 'All',
+    'Support Breakout': 'support',
+    'Resistance Breakout': 'resistance',
+    'Trendline Breakout': 'trendline',
+    'Channel Breakout': 'channel',
+    '200DMA': '200_dma',
+    'Momentum': 'momentum'
+  };
 
   // Advanced sorting state
   const [sortConfig, setSortConfig] = useState([]);
