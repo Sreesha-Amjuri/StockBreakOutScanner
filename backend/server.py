@@ -1798,6 +1798,8 @@ async def scan_breakout_stocks(
     sector: Optional[str] = None,
     min_confidence: float = 0.5,
     risk_level: Optional[str] = None,
+    action: Optional[str] = None,
+    breakout_type: Optional[str] = None,
     limit: int = 100,
     use_cache: bool = True
 ):
