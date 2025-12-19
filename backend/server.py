@@ -1851,7 +1851,18 @@ async def scan_breakout_stocks(
                         continue
                     
                     # Apply risk level filter
-                    if risk_level and result.get('risk_assessment', {}).get('risk_level') != risk_level:
+                    if risk_level and risk_level != 'All' and result.get('risk_assessment', {}).get('risk_level') != risk_level:
+                        continue
+                    
+                    # Apply action filter
+                    trading_rec = result.get('trading_recommendation', {})
+                    stock_action = trading_rec.get('action', 'WAIT') if trading_rec else 'WAIT'
+                    if action and action != 'All' and stock_action != action:
+                        continue
+                    
+                    # Apply breakout type filter
+                    stock_breakout_type = breakout_data.get('type', '')
+                    if breakout_type and breakout_type != 'All' and stock_breakout_type != breakout_type:
                         continue
                     
                     stock_sector = result.get('sector', 'Unknown')
@@ -1911,6 +1922,8 @@ async def scan_breakout_stocks(
                 "sector": sector or "All",
                 "min_confidence": min_confidence,
                 "risk_level": risk_level or "All",
+                "action": action or "All",
+                "breakout_type": breakout_type or "All",
                 "limit": limit,
                 "use_cache": use_cache
             },
