@@ -57,17 +57,14 @@ android {
 
 dependencies {
     implementation("com.facebook.react:react-android")
-    implementation("com.facebook.react:flipper-integration")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     
-    debugImplementation("com.facebook.flipper:flipper:0.182.0")
-    debugImplementation("com.facebook.flipper:flipper-network-plugin:0.182.0")
-    debugImplementation("com.facebook.flipper:flipper-fresco-plugin:0.182.0")
-    
-    if (hermesEnabled.toBoolean()) {
+    // Hermes JS engine (default for React Native 0.70+)
+    def enableHermes = project.hasProperty("hermesEnabled") ? project.hermesEnabled.toBoolean() : true
+    if (enableHermes) {
         implementation("com.facebook.react:hermes-android")
     } else {
-        implementation jscFlavor
+        implementation("org.webkit:android-jsc:+")
     }
 }
