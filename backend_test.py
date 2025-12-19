@@ -1322,6 +1322,10 @@ class StockBreakoutAPITester:
         print("-" * 30)
         self.test_breakout_scanning()
         
+        print("\n🎯 NEW FILTER TESTS (Action & Breakout Type)")
+        print("-" * 50)
+        self.test_new_action_and_breakout_type_filters()
+        
         print("\n📈 MARKET DATA TESTS")
         print("-" * 30)
         self.test_market_overview()
