@@ -132,7 +132,7 @@ const Dashboard = () => {
       }
       
       if (selectedBreakoutType !== 'All') {
-        params.append('breakout_type', breakoutTypeApiMap[selectedBreakoutType]);
+        params.append('breakout_type', BREAKOUT_TYPE_API_MAP[selectedBreakoutType]);
       }
       
       console.log('Requesting NSE breakout scan with params:', params.toString());
@@ -325,7 +325,7 @@ const Dashboard = () => {
       
       // Breakout type filter
       const stockBreakoutType = stock.breakout_type || '';
-      const apiBreakoutType = breakoutTypeApiMap[selectedBreakoutType] || 'All';
+      const apiBreakoutType = BREAKOUT_TYPE_API_MAP[selectedBreakoutType] || 'All';
       const breakoutMatch = selectedBreakoutType === 'All' || stockBreakoutType === apiBreakoutType;
       
       return sectorMatch && riskMatch && actionMatch && breakoutMatch;
@@ -419,7 +419,7 @@ const Dashboard = () => {
         return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
       });
     }
-  }, [breakoutStocks, searchTerm, selectedSector, selectedRiskLevel, selectedAction, selectedBreakoutType, breakoutTypeApiMap, sortConfig, sortField, sortDirection, applySorting]);
+  }, [breakoutStocks, searchTerm, selectedSector, selectedRiskLevel, selectedAction, selectedBreakoutType, sortConfig, sortField, sortDirection, applySorting]);
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', {
@@ -865,7 +865,7 @@ const Dashboard = () => {
                     <SelectValue placeholder="Select action" />
                   </SelectTrigger>
                   <SelectContent>
-                    {actionOptions.map(action => (
+                    {ACTION_OPTIONS.map(action => (
                       <SelectItem key={action} value={action}>
                         {action === 'All' ? 'All Actions' : action}
                       </SelectItem>
@@ -881,7 +881,7 @@ const Dashboard = () => {
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    {breakoutTypeOptions.map(type => (
+                    {BREAKOUT_TYPE_OPTIONS.map(type => (
                       <SelectItem key={type} value={type}>
                         {type === 'All' ? 'All Types' : type}
                       </SelectItem>
