@@ -2158,6 +2158,30 @@ async def add_to_watchlist(symbol: str, target_price: Optional[float] = None, st
         logger.error(f"Error adding to watchlist: {str(e)}")
         raise HTTPException(status_code=500, detail="Error adding to watchlist")
 
+@api_router.delete("/watchlist/{symbol}")
+async def remove_from_watchlist(symbol: str):
+    """Remove stock from watchlist"""
+    try:
+        # Check if stock exists in watchlist
+        existing = await db.watchlist.find_one({"symbol": symbol})
+        if not existing:
+            raise HTTPException(status_code=404, detail=f"{symbol} not found in watchlist")
+        
+        # Delete from watchlist
+        result = await db.watchlist.delete_one({"symbol": symbol})
+        
+        if result.deleted_count > 0:
+            logger.info(f"Removed {symbol} from watchlist")
+            return {"message": f"Removed {symbol} from watchlist", "symbol": symbol}
+        else:
+            raise HTTPException(status_code=500, detail=f"Failed to remove {symbol} from watchlist")
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error removing from watchlist: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error removing from watchlist")
+
 # Enhanced professional endpoints
 @api_router.get("/market/news")
 async def get_market_news():
