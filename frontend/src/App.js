@@ -19,6 +19,29 @@ import StockDetails from "./components/StockDetails";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
+// Filter options - defined outside component for stability
+const ACTION_OPTIONS = ['All', 'BUY', 'SELL', 'HOLD'];
+const BREAKOUT_TYPE_OPTIONS = [
+  'All',
+  'Support Breakout',
+  'Resistance Breakout',
+  'Trendline Breakout',
+  'Channel Breakout',
+  '200DMA',
+  'Momentum'
+];
+
+// Breakout type mapping for API
+const BREAKOUT_TYPE_API_MAP = {
+  'All': 'All',
+  'Support Breakout': 'support',
+  'Resistance Breakout': 'resistance',
+  'Trendline Breakout': 'trendline',
+  'Channel Breakout': 'channel',
+  '200DMA': '200_dma',
+  'Momentum': 'momentum'
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   // Existing state
