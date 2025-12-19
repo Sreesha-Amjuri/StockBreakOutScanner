@@ -127,6 +127,14 @@ const Dashboard = () => {
         params.append('risk_level', selectedRiskLevel);
       }
       
+      if (selectedAction !== 'All') {
+        params.append('action', selectedAction);
+      }
+      
+      if (selectedBreakoutType !== 'All') {
+        params.append('breakout_type', breakoutTypeApiMap[selectedBreakoutType]);
+      }
+      
       console.log('Requesting NSE breakout scan with params:', params.toString());
       
       // Show progress update
