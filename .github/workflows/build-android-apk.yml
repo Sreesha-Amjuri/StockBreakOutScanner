@@ -37,22 +37,28 @@ jobs:
         cd mobile
         yarn install
 
-    - name: Setup Gradle 8.5
+    - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3
       with:
-        gradle-version: '8.5'
+        gradle-version: '8.7'
         cache-disabled: true
 
-    - name: Clear Gradle Caches
+    - name: Clear problematic Gradle caches
       run: |
+        echo "Clearing Gradle caches to avoid BouncyCastle issues..."
         rm -rf ~/.gradle/caches/jars-*
         rm -rf ~/.gradle/caches/transforms-*
         rm -rf ~/.gradle/caches/modules-2/files-2.1/org.bouncycastle
+        rm -rf ~/.gradle/daemon
 
     - name: Build Debug APK
       run: |
         cd mobile/android
-        gradle assembleDebug --no-daemon --no-configuration-cache --stacktrace
+        gradle assembleDebug \
+          --no-daemon \
+          --no-configuration-cache \
+          -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m" \
+          --stacktrace
       env:
         JAVA_HOME: ${{ env.JAVA_HOME }}
 
@@ -67,7 +73,11 @@ jobs:
     - name: Build Release APK
       run: |
         cd mobile/android
-        gradle assembleRelease --no-daemon --no-configuration-cache --stacktrace
+        gradle assembleRelease \
+          --no-daemon \
+          --no-configuration-cache \
+          -Dorg.gradle.jvmargs="-Xmx4g -XX:MaxMetaspaceSize=512m" \
+          --stacktrace
       env:
         JAVA_HOME: ${{ env.JAVA_HOME }}
       continue-on-error: true
