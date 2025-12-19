@@ -5,7 +5,7 @@ on:
     branches: [ main, master ]
   pull_request:
     branches: [ main, master ]
-  workflow_dispatch:  # Allows manual trigger from GitHub UI
+  workflow_dispatch:
 
 jobs:
   build-android:
@@ -32,25 +32,44 @@ jobs:
     - name: Install Yarn
       run: npm install -g yarn
 
-    - name: Install dependencies
+    - name: Install mobile dependencies
       run: |
         cd mobile
         yarn install
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x mobile/android/gradlew
-
-    - name: Build Android APK (Debug - faster)
+    - name: Setup Gradle Wrapper
       run: |
         cd mobile/android
-        ./gradlew assembleDebug --no-daemon --stacktrace
+        # Download gradle wrapper if missing
+        if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
+          echo "Downloading Gradle wrapper..."
+          mkdir -p gradle/wrapper
+          curl -L -o gradle/wrapper/gradle-wrapper.jar https://raw.githubusercontent.com/gradle/gradle/v8.1.1/gradle/wrapper/gradle-wrapper.jar
+        fi
+        # Create wrapper properties if missing
+        if [ ! -f gradle/wrapper/gradle-wrapper.properties ]; then
+          echo "Creating gradle-wrapper.properties..."
+          cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
+        distributionBase=GRADLE_USER_HOME
+        distributionPath=wrapper/dists
+        distributionUrl=https\://services.gradle.org/distributions/gradle-8.1.1-bin.zip
+        zipStoreBase=GRADLE_USER_HOME
+        zipStorePath=wrapper/dists
+        EOF
+        fi
+        chmod +x gradlew
+
+    - name: Install Gradle 8.1.1 directly
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        gradle-version: '8.1.1'
+
+    - name: Build Debug APK with Gradle
+      run: |
+        cd mobile/android
+        gradle assembleDebug --no-daemon --stacktrace
       env:
         JAVA_HOME: ${{ env.JAVA_HOME }}
-
-    - name: List APK files
-      run: |
-        echo "Looking for APK files..."
-        find mobile/android -name "*.apk" -type f 2>/dev/null || echo "No APK found yet"
 
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
@@ -63,7 +82,7 @@ jobs:
     - name: Build Release APK
       run: |
         cd mobile/android
-        ./gradlew assembleRelease --no-daemon --stacktrace
+        gradle assembleRelease --no-daemon --stacktrace
       env:
         JAVA_HOME: ${{ env.JAVA_HOME }}
       continue-on-error: true
@@ -75,6 +94,11 @@ jobs:
         path: mobile/android/app/build/outputs/apk/release/app-release.apk
         retention-days: 30
         if-no-files-found: warn
+
+    - name: List built APKs
+      run: |
+        echo "=== Built APK Files ==="
+        find mobile/android -name "*.apk" -type f 2>/dev/null || echo "No APK files found"
 
     - name: Create Release
       if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
@@ -96,7 +120,7 @@ jobs:
           1. Download the APK below
           2. Enable "Install from Unknown Sources" in Android Settings
           3. Install the APK
-          4. Open StockBreak Pro and start trading!
+          4. Open StockBreak Pro and start analyzing!
           
           ### 📊 Requirements
           - Android 6.0 (API 23) or higher
@@ -114,12 +138,7 @@ jobs:
       run: |
         echo "## ✅ Build Complete! 🎉" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📱 StockBreak Pro APK" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Download from Artifacts section below** or from **Releases** (if pushed to main)" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "### 📥 How to Install on Android" >> $GITHUB_STEP_SUMMARY
-        echo "1. Download the APK file" >> $GITHUB_STEP_SUMMARY
-        echo "2. Enable 'Install from Unknown Sources' in Settings" >> $GITHUB_STEP_SUMMARY
-        echo "3. Open the APK file to install" >> $GITHUB_STEP_SUMMARY
-        echo "4. Launch StockBreak Pro!" >> $GITHUB_STEP_SUMMARY
+        echo "### 📱 Download Your APK" >> $GITHUB_STEP_SUMMARY
+        echo "1. Scroll down to **Artifacts** section" >> $GITHUB_STEP_SUMMARY
+        echo "2. Click **StockBreakPro-Debug-APK** to download" >> $GITHUB_STEP_SUMMARY
+        echo "3. Extract ZIP and install the APK on your Android phone" >> $GITHUB_STEP_SUMMARY
