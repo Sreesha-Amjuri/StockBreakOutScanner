@@ -59,6 +59,15 @@ JWT_EXPIRATION_HOURS = 720  # 30 days
 # Security
 security = HTTPBearer()
 
+# OpenAI Configuration for AI-powered analysis
+EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
+openai_client = None
+if EMERGENT_LLM_KEY:
+    openai_client = OpenAI(api_key=EMERGENT_LLM_KEY)
+
+# Background Scheduler for automatic signal updates
+scheduler = AsyncIOScheduler()
+
 # Create the main app without a prefix
 app = FastAPI()
 
@@ -80,6 +89,11 @@ CACHE_EXPIRY_MINUTES = 15  # Cache expires after 15 minutes
 # Batch processing configuration
 BATCH_SIZE = 50  # Process stocks in batches of 50
 MAX_CONCURRENT_BATCHES = 3  # Maximum concurrent batch operations
+
+# Signal and Alert caches
+SIGNALS_CACHE = {}
+SIGNALS_CACHE_EXPIRY = 15 * 60  # 15 minutes in seconds
+LAST_SIGNAL_UPDATE = None
 
 # Define Models
 class StatusCheck(BaseModel):
