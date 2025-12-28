@@ -204,7 +204,7 @@ const AlertsNotification = ({ onStockClick }) => {
                   <Bell className="w-10 h-10 mx-auto mb-2 text-slate-400" />
                   <p>No alerts yet</p>
                   <p className="text-sm mt-1">
-                    We'll notify you when stocks in your watchlist are about to breakout
+                    We&apos;ll notify you when stocks in your watchlist are about to breakout
                   </p>
                 </div>
               ) : (
