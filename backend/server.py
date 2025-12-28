@@ -2227,6 +2227,8 @@ async def add_to_watchlist(symbol: str, target_price: Optional[float] = None, st
             }
         
         await db.watchlist.insert_one(watchlist_item)
+        # Remove _id before returning (MongoDB adds it after insert)
+        watchlist_item.pop('_id', None)
         return {"message": f"Added {symbol} to watchlist", "item": watchlist_item}
         
     except HTTPException:
