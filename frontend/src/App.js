@@ -1239,9 +1239,10 @@ const Dashboard = () => {
             )}
           </CardContent>
         </Card>
+        )}
 
-        {/* Sector Performance */}
-        {marketOverview?.sector_performance && (
+        {/* Sector Performance - Show on overview tab */}
+        {activeTab === 'overview' && marketOverview?.sector_performance && (
           <Card className="mt-8 bg-white/60 backdrop-blur-sm border-slate-200">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
