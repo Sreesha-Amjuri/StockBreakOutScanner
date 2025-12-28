@@ -157,7 +157,8 @@ test_plan:
     - "Alerts API"
     - "Signal Refresh API"
     - "Mark Alert as Read API"
-  stuck_tasks: []
+  stuck_tasks: 
+    - "AI Reasoning Integration"
   test_all: false
   test_priority: "high_first"
 
