@@ -2187,9 +2187,8 @@ async def add_to_watchlist(symbol: str, target_price: Optional[float] = None, st
     try:
         symbol = symbol.upper()
         
-        # Get current stock data
-        stock_data = await fetch_comprehensive_stock_data(symbol)
-        if not stock_data:
+        # Check if symbol exists in our database
+        if symbol not in NSE_SYMBOLS:
             raise HTTPException(status_code=404, detail=f"Stock not found: {symbol}")
         
         # Check if already in watchlist
@@ -2197,16 +2196,35 @@ async def add_to_watchlist(symbol: str, target_price: Optional[float] = None, st
         if existing:
             raise HTTPException(status_code=400, detail=f"{symbol} is already in watchlist")
         
-        watchlist_item = {
-            "id": str(uuid.uuid4()),
-            "symbol": symbol,
-            "name": stock_data['name'],
-            "added_price": stock_data['current_price'],
-            "target_price": target_price,
-            "stop_loss": stop_loss,
-            "notes": notes,
-            "added_date": datetime.now(timezone.utc).isoformat()  # Store as ISO string
-        }
+        # Try to get current stock data
+        stock_data = await fetch_comprehensive_stock_data(symbol)
+        
+        # Create watchlist item - use available data or defaults
+        if stock_data:
+            watchlist_item = {
+                "id": str(uuid.uuid4()),
+                "symbol": symbol,
+                "name": stock_data['name'],
+                "added_price": stock_data['current_price'],
+                "target_price": target_price,
+                "stop_loss": stop_loss,
+                "notes": notes,
+                "added_date": datetime.now(timezone.utc).isoformat(),
+                "added_at": datetime.now(timezone.utc).isoformat()
+            }
+        else:
+            # Fallback if API is rate-limited - still allow adding to watchlist
+            watchlist_item = {
+                "id": str(uuid.uuid4()),
+                "symbol": symbol,
+                "name": f"{symbol} ({NSE_SYMBOLS.get(symbol, 'NSE')})",
+                "added_price": 0,  # Will update when data available
+                "target_price": target_price,
+                "stop_loss": stop_loss,
+                "notes": notes or "Added while API rate-limited - price will update",
+                "added_date": datetime.now(timezone.utc).isoformat(),
+                "added_at": datetime.now(timezone.utc).isoformat()
+            }
         
         await db.watchlist.insert_one(watchlist_item)
         return {"message": f"Added {symbol} to watchlist", "item": watchlist_item}
