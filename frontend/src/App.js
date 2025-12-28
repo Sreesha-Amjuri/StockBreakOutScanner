@@ -607,6 +607,9 @@ const Dashboard = () => {
                   )}
                 </div>
               )}
+              
+              {/* Alerts Notification Bell */}
+              <AlertsNotification onStockClick={(symbol) => navigate(`/stock/${symbol}`)} />
             </div>
           </div>
         </div>
@@ -615,8 +618,45 @@ const Dashboard = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Market Status - Enhanced Display */}
-        {marketOverview?.market_status && (
+        {/* Top Picks Carousel - NEW */}
+        <div className="mb-8">
+          <TopPicksCarousel onStockClick={(symbol) => navigate(`/stock/${symbol}`)} />
+        </div>
+
+        {/* Dashboard Tabs */}
+        <div className="flex space-x-2 mb-6">
+          <Button
+            variant={activeTab === 'overview' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('overview')}
+          >
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Overview
+          </Button>
+          <Button
+            variant={activeTab === 'signals' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('signals')}
+          >
+            <Zap className="w-4 h-4 mr-2" />
+            Dynamic Signals
+          </Button>
+          <Button
+            variant={activeTab === 'scanner' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('scanner')}
+          >
+            <Search className="w-4 h-4 mr-2" />
+            Breakout Scanner
+          </Button>
+        </div>
+
+        {/* Signals Tab - NEW */}
+        {activeTab === 'signals' && (
+          <div className="mb-8">
+            <SignalsPanel onStockClick={(symbol) => navigate(`/stock/${symbol}`)} />
+          </div>
+        )}
+        
+        {/* Overview Tab - Market Status */}
+        {activeTab === 'overview' && marketOverview?.market_status && (
           <Card className="mb-8 bg-white/60 backdrop-blur-sm border-slate-200">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
