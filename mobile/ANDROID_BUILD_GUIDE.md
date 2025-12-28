@@ -102,7 +102,7 @@ adb logcat *:E  # View error logs
 ## API Configuration
 
 The app connects to the backend API at:
-`https://breakout-dash.preview.emergentagent.com/api`
+`https://stockport-3.preview.emergentagent.com/api`
 
 To change the API URL, edit `/app/mobile/.env`:
 ```
@@ -169,7 +169,7 @@ The app requires:
 
 For issues or questions:
 - Check the backend logs: `tail -f /var/log/supervisor/backend.err.log`
-- Test API endpoints: `curl https://breakout-dash.preview.emergentagent.com/api/`
+- Test API endpoints: `curl https://stockport-3.preview.emergentagent.com/api/`
 - Review React Native logs: `adb logcat`
 
 ## Version Information

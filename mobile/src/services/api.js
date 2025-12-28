@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '@env';
 
-const API_URL = API_BASE_URL || 'https://breakout-dash.preview.emergentagent.com/api';
+const API_URL = API_BASE_URL || 'https://stockport-3.preview.emergentagent.com/api';
 
 // Create axios instance
 const api = axios.create({
