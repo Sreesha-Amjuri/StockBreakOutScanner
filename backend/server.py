@@ -3080,20 +3080,46 @@ async def background_maintenance_task():
             logger.error(f"Background maintenance task error: {str(e)}")
             await asyncio.sleep(60)  # Wait 1 minute before retrying
 
+async def scheduled_signal_update():
+    """Scheduled task to update watchlist signals every 15 minutes"""
+    try:
+        logger.info("Running scheduled signal update...")
+        await update_watchlist_signals()
+        logger.info("Scheduled signal update completed")
+    except Exception as e:
+        logger.error(f"Scheduled signal update error: {str(e)}")
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize background tasks and startup procedures"""
     logger.info("=== Stock Screener API Started Successfully ===")
     logger.info(f"Available symbols: {len(NSE_SYMBOLS)}")
     logger.info(f"Sectors covered: {len(set(NSE_SYMBOLS.values()))}")
+    logger.info(f"OpenAI integration: {'Enabled' if openai_client else 'Disabled (using rule-based reasoning)'}")
     
     # Start background maintenance task
     asyncio.create_task(background_maintenance_task())
     logger.info("Background maintenance task started")
+    
+    # Start scheduler for automatic signal updates every 15 minutes
+    scheduler.add_job(
+        scheduled_signal_update,
+        trigger=IntervalTrigger(minutes=15),
+        id='signal_update_job',
+        name='Update watchlist signals',
+        replace_existing=True
+    )
+    scheduler.start()
+    logger.info("Scheduler started - Signal updates every 15 minutes")
+    
+    # Run initial signal update
+    asyncio.create_task(update_watchlist_signals())
+    logger.info("Initial signal update scheduled")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
     logger.info("=== Stock Screener API Shutting Down ===")
+    scheduler.shutdown(wait=False)
     client.close()
     executor.shutdown(wait=True)
     logger.info("Cleanup completed")
