@@ -62,8 +62,9 @@ security = HTTPBearer()
 # OpenAI Configuration for AI-powered analysis
 EMERGENT_LLM_KEY = os.environ.get('EMERGENT_LLM_KEY', '')
 openai_client = None
-if EMERGENT_LLM_KEY:
-    openai_client = OpenAI(api_key=EMERGENT_LLM_KEY)
+# Note: Emergent LLM Key requires emergentintegrations library
+# Falls back to rule-based reasoning if not available
+logger.info("AI Reasoning: Using rule-based analysis (Emergent integration library not available)")
 
 # Background Scheduler for automatic signal updates
 scheduler = AsyncIOScheduler()
