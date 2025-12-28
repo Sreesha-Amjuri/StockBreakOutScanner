@@ -126,8 +126,8 @@ class AdditionalBackendTester:
         success5, data5 = self.test_api_endpoint("NSE Symbols API", "GET", "stocks/symbols")
         
         if success5:
-            if 'symbols' in data5 and 'count' in data5:
-                symbol_count = data5.get('count', 0)
+            if 'symbols' in data5 and 'total_stocks' in data5:
+                symbol_count = data5.get('total_stocks', 0)
                 symbols = data5.get('symbols', [])
                 expected_symbols = ['RELIANCE', 'TCS', 'INFOSYS']
                 found_symbols = [s for s in expected_symbols if s in symbols]
@@ -135,7 +135,7 @@ class AdditionalBackendTester:
                 self.log_test("NSE Symbols", len(found_symbols) == len(expected_symbols), 
                             f"Total symbols: {symbol_count}, Expected symbols found: {len(found_symbols)}/{len(expected_symbols)}")
             else:
-                self.log_test("NSE Symbols", False, "Missing 'symbols' or 'count' field")
+                self.log_test("NSE Symbols", False, "Missing 'symbols' or 'total_stocks' field")
         
         return all([success1, success2, success3, success4, success5])
 
