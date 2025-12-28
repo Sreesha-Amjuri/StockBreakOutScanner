@@ -956,8 +956,10 @@ const Dashboard = () => {
             </div>
           </CardContent>
         </Card>
+        )}
 
-        {/* Breakout Stocks Table */}
+        {/* Breakout Stocks Table - Show on scanner tab */}
+        {activeTab === 'scanner' && (
         <Card className="bg-white/60 backdrop-blur-sm border-slate-200">
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
