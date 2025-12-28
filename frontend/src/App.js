@@ -690,8 +690,8 @@ const Dashboard = () => {
           </Card>
         )}
 
-        {/* Professional Watchlist Display */}
-        {watchlist.length > 0 && (
+        {/* Professional Watchlist Display - Show on overview and signals tabs */}
+        {(activeTab === 'overview' || activeTab === 'signals') && watchlist.length > 0 && (
           <Card className="bg-white/60 backdrop-blur-sm border-slate-200 mb-8">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
