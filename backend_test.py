@@ -1297,6 +1297,118 @@ class StockBreakoutAPITester:
         
         return success1 and success2 and success3
 
+    def test_stockbreak_pro_features(self):
+        """Test the new StockBreak Pro features as requested in review"""
+        print("\n🌟 STOCKBREAK PRO NEW FEATURES TESTING")
+        print("-" * 45)
+        
+        # Test 1: Top Picks API
+        success1, data1 = self.test_api_endpoint("Top Picks API", "GET", "signals/top-picks")
+        
+        if success1:
+            # Validate top picks structure
+            if 'top_picks' in data1:
+                top_picks = data1['top_picks']
+                self.log_test("Top Picks Structure", len(top_picks) > 0, 
+                            f"Found {len(top_picks)} top picks")
+                
+                # Validate each top pick has required fields
+                if top_picks:
+                    first_pick = top_picks[0]
+                    required_fields = ['symbol', 'name', 'signal', 'confidence', 'reasoning', 'potential_upside']
+                    missing_fields = [field for field in required_fields if field not in first_pick]
+                    
+                    if not missing_fields:
+                        self.log_test("Top Picks Fields", True, 
+                                    f"Sample: {first_pick['symbol']} - {first_pick['signal']} ({first_pick['confidence']:.1%} confidence)")
+                    else:
+                        self.log_test("Top Picks Fields", False, f"Missing fields: {missing_fields}")
+            else:
+                self.log_test("Top Picks Structure", False, "No 'top_picks' field in response")
+        
+        # Test 2: Watchlist Signals API
+        success2, data2 = self.test_api_endpoint("Watchlist Signals API", "GET", "signals/watchlist")
+        
+        if success2:
+            # Validate watchlist signals structure
+            if 'signals' in data2:
+                signals = data2['signals']
+                self.log_test("Watchlist Signals Structure", True, 
+                            f"Found {len(signals)} watchlist signals")
+                
+                # Check for TCS signal as mentioned in review request
+                tcs_signal = next((s for s in signals if s.get('symbol') == 'TCS'), None)
+                if tcs_signal:
+                    signal_type = tcs_signal.get('signal')
+                    reasoning = tcs_signal.get('reasoning', '')
+                    self.log_test("TCS Signal Present", True, 
+                                f"TCS signal: {signal_type}, Reasoning: {reasoning[:50]}...")
+                else:
+                    self.log_test("TCS Signal Present", False, "TCS signal not found in watchlist")
+            else:
+                self.log_test("Watchlist Signals Structure", False, "No 'signals' field in response")
+        
+        # Test 3: Alerts API
+        success3, data3 = self.test_api_endpoint("Alerts API", "GET", "alerts")
+        
+        if success3:
+            # Validate alerts structure
+            if 'alerts' in data3:
+                alerts = data3['alerts']
+                unread_count = data3.get('unread_count', 0)
+                self.log_test("Alerts Structure", True, 
+                            f"Found {len(alerts)} alerts, {unread_count} unread")
+                
+                # Check for TCS breakout alert as mentioned in review request
+                tcs_alert = next((a for a in alerts if 'TCS' in a.get('symbol', '') or 'TCS' in a.get('message', '')), None)
+                if tcs_alert:
+                    alert_type = tcs_alert.get('alert_type', 'unknown')
+                    message = tcs_alert.get('message', '')
+                    self.log_test("TCS Breakout Alert", True, 
+                                f"TCS alert: {alert_type}, Message: {message[:50]}...")
+                else:
+                    self.log_test("TCS Breakout Alert", False, "TCS breakout alert not found")
+            else:
+                self.log_test("Alerts Structure", False, "No 'alerts' field in response")
+        
+        # Test 4: Signal Refresh API
+        success4, data4 = self.test_api_endpoint("Signal Refresh API", "POST", "signals/refresh")
+        
+        if success4:
+            # Validate refresh response
+            if 'message' in data4 and 'success' in data4:
+                signals_count = data4.get('signals_count', 0)
+                alerts_count = data4.get('alerts_count', 0)
+                self.log_test("Signal Refresh Success", True, 
+                            f"Refreshed {signals_count} signals, {alerts_count} alerts")
+            else:
+                self.log_test("Signal Refresh Success", False, "Invalid refresh response structure")
+        
+        # Test 5: Mark Alerts as Read API
+        success5, data5 = self.test_api_endpoint("Mark Alerts Read API", "POST", "alerts/read-all")
+        
+        if success5:
+            # Validate mark read response
+            if 'message' in data5:
+                modified_count = data5.get('modified_count', 0)
+                self.log_test("Mark Alerts Read Success", True, 
+                            f"Marked {modified_count} alerts as read")
+            else:
+                self.log_test("Mark Alerts Read Success", False, "Invalid mark read response structure")
+        
+        # Test 6: Verify watchlist has expected stocks (RELIANCE, TCS, INFOSYS)
+        success6, watchlist_data = self.test_api_endpoint("Watchlist Verification", "GET", "watchlist")
+        
+        if success6:
+            watchlist = watchlist_data.get('watchlist', [])
+            expected_stocks = ['RELIANCE', 'TCS', 'INFOSYS']
+            found_stocks = [item.get('symbol') for item in watchlist if item.get('symbol') in expected_stocks]
+            
+            self.log_test("Expected Watchlist Stocks", len(found_stocks) >= 2, 
+                        f"Found {len(found_stocks)}/{len(expected_stocks)} expected stocks: {found_stocks}")
+        
+        return all([success1, success2, success3, success4, success5])
+
     def run_comprehensive_tests(self):
         """Run all tests in sequence"""
         print("🚀 Starting Comprehensive Backend API Testing")
