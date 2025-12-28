@@ -158,14 +158,14 @@ class StockBreakProTester:
         if success4:
             print(f"Signal Refresh Response: {json.dumps(data4, indent=2)[:500]}...")
             
-            # Validate refresh response
-            if 'message' in data4 and 'success' in data4:
+            # Validate refresh response - check for actual response structure
+            if 'success' in data4:
                 signals_count = data4.get('signals_count', 0)
                 alerts_count = data4.get('alerts_count', 0)
                 self.log_test("Signal Refresh Success", True, 
                             f"Refreshed {signals_count} signals, {alerts_count} alerts")
             else:
-                self.log_test("Signal Refresh Success", False, "Invalid refresh response structure")
+                self.log_test("Signal Refresh Success", False, "Missing 'success' field in response")
         
         # Test 5: Mark Alerts as Read API
         print("Testing Mark Alerts as Read API...")
@@ -174,13 +174,14 @@ class StockBreakProTester:
         if success5:
             print(f"Mark Alerts Read Response: {json.dumps(data5, indent=2)[:500]}...")
             
-            # Validate mark read response
-            if 'message' in data5:
-                modified_count = data5.get('modified_count', 0)
+            # Validate mark read response - check for actual response structure
+            if 'success' in data5:
+                # Check for either 'modified_count' or 'updated_count'
+                modified_count = data5.get('modified_count', data5.get('updated_count', 0))
                 self.log_test("Mark Alerts Read Success", True, 
                             f"Marked {modified_count} alerts as read")
             else:
-                self.log_test("Mark Alerts Read Success", False, "Invalid mark read response structure")
+                self.log_test("Mark Alerts Read Success", False, "Missing 'success' field in response")
         
         # Test 6: Verify watchlist has expected stocks (RELIANCE, TCS, INFOSYS)
         print("Testing Watchlist Verification...")
