@@ -234,6 +234,48 @@ class AlertRequest(BaseModel):
     condition: str  # "above", "below"
     email: Optional[str] = None
 
+# New Models for Dynamic Signals and Alerts
+class StockSignal(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    symbol: str
+    name: str
+    signal: str  # "BUY", "SELL", "HOLD"
+    confidence: float
+    current_price: float
+    target_price: Optional[float] = None
+    stop_loss: Optional[float] = None
+    reasoning: str  # AI-generated explanation
+    technical_summary: str
+    risk_level: str
+    potential_return: Optional[float] = None
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class BreakoutAlert(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    symbol: str
+    name: str
+    alert_type: str  # "BREAKOUT_IMMINENT", "BREAKOUT_CONFIRMED", "STOP_LOSS_HIT", "TARGET_HIT"
+    message: str
+    current_price: float
+    breakout_level: Optional[float] = None
+    confidence: float
+    is_read: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class TopPick(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    symbol: str
+    name: str
+    signal: str
+    confidence: float
+    current_price: float
+    target_price: float
+    potential_upside: float
+    reasoning: str
+    sector: str
+    risk_level: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
 # Comprehensive NSE Stock Database (2500+ stocks across all sectors)
 # This includes stocks from NIFTY 50, NIFTY Next 50, NIFTY 500, Midcap 100, Smallcap 100, and additional tradeable stocks
 NSE_SYMBOLS = {
