@@ -850,8 +850,10 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </div>
+        )}
 
-        {/* Filters */}
+        {/* Filters - Show on scanner tab */}
+        {activeTab === 'scanner' && (
         <Card className="bg-white/60 backdrop-blur-sm border-slate-200 mb-8">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
