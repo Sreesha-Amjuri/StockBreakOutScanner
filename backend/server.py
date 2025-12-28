@@ -2515,6 +2515,518 @@ async def get_rate_limiting_status():
             "timestamp": datetime.now(timezone.utc).isoformat()
         }
 
+# ==================== AI-POWERED ANALYSIS FUNCTIONS ====================
+
+async def generate_ai_reasoning(symbol: str, technical_data: Dict, signal: str, current_price: float) -> str:
+    """Generate AI-powered reasoning for buy/sell/hold signals using OpenAI"""
+    if not openai_client:
+        # Fallback to rule-based reasoning if OpenAI not available
+        return generate_rule_based_reasoning(symbol, technical_data, signal)
+    
+    try:
+        rsi = technical_data.get('rsi', 50)
+        macd = technical_data.get('macd', 0)
+        macd_signal = technical_data.get('macd_signal', 0)
+        sma_20 = technical_data.get('sma_20', current_price)
+        sma_50 = technical_data.get('sma_50', current_price)
+        sma_200 = technical_data.get('sma_200', current_price)
+        volume_ratio = technical_data.get('volume_ratio', 1)
+        
+        prompt = f"""Analyze this Indian stock and explain the {signal} signal in simple terms for a beginner investor.
+
+Stock: {symbol}
+Current Price: ₹{current_price:.2f}
+Signal: {signal}
+
+Technical Indicators:
+- RSI: {rsi:.1f} (Overbought >70, Oversold <30)
+- MACD: {macd:.2f}, Signal Line: {macd_signal:.2f}
+- Price vs 20-day MA: {'Above' if current_price > sma_20 else 'Below'} (₹{sma_20:.2f})
+- Price vs 50-day MA: {'Above' if current_price > sma_50 else 'Below'} (₹{sma_50:.2f})
+- Price vs 200-day MA: {'Above' if current_price > sma_200 else 'Below'} (₹{sma_200:.2f})
+- Volume: {volume_ratio:.1f}x average
+
+Provide a 2-3 sentence explanation in simple language why this is a {signal} signal. Focus on the key factors driving this recommendation. Be direct and actionable."""
+
+        response = openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a stock market analyst explaining signals to beginner Indian investors. Be concise, clear, and focus on actionable insights. Use simple language."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=150,
+            temperature=0.7
+        )
+        
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logger.error(f"OpenAI API error for {symbol}: {str(e)}")
+        return generate_rule_based_reasoning(symbol, technical_data, signal)
+
+def generate_rule_based_reasoning(symbol: str, technical_data: Dict, signal: str) -> str:
+    """Generate rule-based reasoning as fallback"""
+    rsi = technical_data.get('rsi', 50)
+    macd = technical_data.get('macd', 0)
+    macd_signal = technical_data.get('macd_signal', 0)
+    volume_ratio = technical_data.get('volume_ratio', 1)
+    
+    reasons = []
+    
+    if signal == "BUY":
+        if rsi < 40:
+            reasons.append(f"RSI at {rsi:.0f} indicates oversold conditions, suggesting potential upside")
+        if macd > macd_signal:
+            reasons.append("MACD shows bullish crossover with positive momentum")
+        if volume_ratio > 1.3:
+            reasons.append(f"Trading volume is {volume_ratio:.1f}x higher than average, showing strong interest")
+        if not reasons:
+            reasons.append("Technical indicators suggest bullish momentum building")
+    elif signal == "SELL":
+        if rsi > 70:
+            reasons.append(f"RSI at {rsi:.0f} indicates overbought conditions, suggesting potential pullback")
+        if macd < macd_signal:
+            reasons.append("MACD shows bearish crossover with weakening momentum")
+        if volume_ratio < 0.7:
+            reasons.append("Low volume indicates fading interest")
+        if not reasons:
+            reasons.append("Technical indicators suggest bearish pressure increasing")
+    else:  # HOLD
+        reasons.append("Price consolidating near key levels. Wait for clearer directional signal before acting.")
+    
+    return " ".join(reasons)
+
+def calculate_signal(technical_data: Dict, risk_assessment: Dict) -> tuple:
+    """Calculate buy/sell/hold signal based on technical indicators"""
+    score = 0
+    max_score = 100
+    
+    rsi = technical_data.get('rsi', 50)
+    macd = technical_data.get('macd', 0)
+    macd_signal = technical_data.get('macd_signal', 0)
+    volume_ratio = technical_data.get('volume_ratio', 1)
+    sma_20 = technical_data.get('sma_20')
+    sma_50 = technical_data.get('sma_50')
+    sma_200 = technical_data.get('sma_200')
+    current_price = technical_data.get('current_price', 0)
+    
+    # RSI scoring (0-25 points)
+    if rsi:
+        if rsi < 30:
+            score += 25  # Strong buy signal
+        elif rsi < 40:
+            score += 20
+        elif rsi < 50:
+            score += 10
+        elif rsi < 60:
+            score += 5
+        elif rsi < 70:
+            score -= 5
+        elif rsi < 80:
+            score -= 15
+        else:
+            score -= 25  # Strong sell signal
+    
+    # MACD scoring (0-25 points)
+    if macd is not None and macd_signal is not None:
+        macd_diff = macd - macd_signal
+        if macd_diff > 0:
+            score += min(25, macd_diff * 10)  # Bullish
+        else:
+            score += max(-25, macd_diff * 10)  # Bearish
+    
+    # Moving average scoring (0-30 points)
+    if current_price and sma_20 and sma_50 and sma_200:
+        if current_price > sma_20:
+            score += 10
+        if current_price > sma_50:
+            score += 10
+        if current_price > sma_200:
+            score += 10
+        if current_price < sma_20:
+            score -= 10
+        if current_price < sma_50:
+            score -= 10
+        if current_price < sma_200:
+            score -= 10
+    
+    # Volume scoring (0-20 points)
+    if volume_ratio:
+        if volume_ratio > 1.5:
+            score += 20 if score > 0 else -10  # Volume confirms trend
+        elif volume_ratio > 1.2:
+            score += 10 if score > 0 else -5
+        elif volume_ratio < 0.7:
+            score -= 10  # Low volume is concerning
+    
+    # Calculate confidence
+    confidence = min(abs(score) / max_score, 1.0)
+    
+    # Determine signal
+    if score >= 30:
+        signal = "BUY"
+    elif score <= -30:
+        signal = "SELL"
+    else:
+        signal = "HOLD"
+    
+    return signal, confidence
+
+async def analyze_watchlist_stock(symbol: str) -> Optional[Dict]:
+    """Analyze a single stock from watchlist for signals and breakout prediction"""
+    try:
+        stock_data = await fetch_comprehensive_stock_data(symbol)
+        if not stock_data or 'error' in stock_data:
+            return None
+        
+        technical_data = stock_data.get('technical_indicators', {})
+        technical_data['current_price'] = stock_data.get('current_price', 0)
+        risk_assessment = stock_data.get('risk_assessment', {})
+        
+        signal, confidence = calculate_signal(technical_data, risk_assessment)
+        
+        # Generate AI reasoning
+        reasoning = await generate_ai_reasoning(
+            symbol, 
+            technical_data, 
+            signal, 
+            stock_data.get('current_price', 0)
+        )
+        
+        # Calculate potential return
+        trading_rec = stock_data.get('trading_recommendation', {})
+        target_price = trading_rec.get('target_price', stock_data.get('current_price', 0) * 1.1)
+        stop_loss = trading_rec.get('stop_loss', stock_data.get('current_price', 0) * 0.95)
+        current_price = stock_data.get('current_price', 0)
+        potential_return = ((target_price - current_price) / current_price * 100) if current_price > 0 else 0
+        
+        # Technical summary
+        rsi = technical_data.get('rsi', 50)
+        macd = technical_data.get('macd', 0)
+        tech_summary = f"RSI: {rsi:.0f}, MACD: {'Bullish' if macd > 0 else 'Bearish'}, Volume: {technical_data.get('volume_ratio', 1):.1f}x avg"
+        
+        return {
+            "symbol": symbol,
+            "name": stock_data.get('name', symbol),
+            "signal": signal,
+            "confidence": confidence,
+            "current_price": current_price,
+            "target_price": target_price,
+            "stop_loss": stop_loss,
+            "reasoning": reasoning,
+            "technical_summary": tech_summary,
+            "risk_level": risk_assessment.get('risk_level', 'Medium'),
+            "potential_return": round(potential_return, 2),
+            "sector": stock_data.get('sector', 'Unknown'),
+            "breakout_data": stock_data.get('breakout_data'),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error analyzing watchlist stock {symbol}: {str(e)}")
+        return None
+
+async def check_breakout_alerts(symbol: str, stock_data: Dict) -> Optional[Dict]:
+    """Check if a stock is about to breakout or has triggered any alerts"""
+    try:
+        breakout_data = stock_data.get('breakout_data')
+        current_price = stock_data.get('current_price', 0)
+        technical_data = stock_data.get('technical_indicators', {})
+        
+        if not breakout_data:
+            # Check for imminent breakout
+            resistance = technical_data.get('resistance_level')
+            if resistance and current_price > 0:
+                proximity = (resistance - current_price) / current_price * 100
+                if 0 < proximity < 2:  # Within 2% of resistance
+                    return {
+                        "symbol": symbol,
+                        "name": stock_data.get('name', symbol),
+                        "alert_type": "BREAKOUT_IMMINENT",
+                        "message": f"{symbol} is approaching resistance at ₹{resistance:.2f}. Currently {proximity:.1f}% away.",
+                        "current_price": current_price,
+                        "breakout_level": resistance,
+                        "confidence": 0.7,
+                        "is_read": False
+                    }
+        else:
+            # Confirmed breakout
+            return {
+                "symbol": symbol,
+                "name": stock_data.get('name', symbol),
+                "alert_type": "BREAKOUT_CONFIRMED",
+                "message": f"{symbol} has broken out above {breakout_data.get('type', 'resistance')} level! Confidence: {breakout_data.get('confidence', 0)*100:.0f}%",
+                "current_price": current_price,
+                "breakout_level": breakout_data.get('breakout_price'),
+                "confidence": breakout_data.get('confidence', 0.5),
+                "is_read": False
+            }
+        
+        return None
+    except Exception as e:
+        logger.error(f"Error checking breakout alerts for {symbol}: {str(e)}")
+        return None
+
+async def update_watchlist_signals():
+    """Background task to update signals for all watchlist stocks"""
+    global SIGNALS_CACHE, LAST_SIGNAL_UPDATE
+    
+    try:
+        logger.info("Starting watchlist signal update...")
+        
+        # Get all unique symbols from all users' watchlists
+        watchlist_items = await db.watchlist.find({}, {"_id": 0}).to_list(1000)
+        symbols = list(set(item.get('symbol') for item in watchlist_items if item.get('symbol')))
+        
+        if not symbols:
+            logger.info("No watchlist items found")
+            return
+        
+        logger.info(f"Updating signals for {len(symbols)} watchlist stocks")
+        
+        signals = []
+        alerts = []
+        
+        # Process in batches
+        for i in range(0, len(symbols), 10):
+            batch = symbols[i:i+10]
+            tasks = [analyze_watchlist_stock(symbol) for symbol in batch]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            for j, result in enumerate(results):
+                if isinstance(result, dict) and result:
+                    signals.append(result)
+                    
+                    # Check for alerts
+                    stock_data = await fetch_comprehensive_stock_data(batch[j])
+                    if stock_data:
+                        alert = await check_breakout_alerts(batch[j], stock_data)
+                        if alert:
+                            alerts.append(alert)
+            
+            # Small delay between batches
+            await asyncio.sleep(0.5)
+        
+        # Update cache
+        SIGNALS_CACHE = {
+            "signals": signals,
+            "alerts": alerts,
+            "updated_at": datetime.now(timezone.utc).isoformat()
+        }
+        LAST_SIGNAL_UPDATE = datetime.now(timezone.utc)
+        
+        # Store alerts in database
+        if alerts:
+            for alert in alerts:
+                alert['id'] = str(uuid.uuid4())
+                alert['created_at'] = datetime.now(timezone.utc).isoformat()
+                # Only store if not duplicate (check by symbol and alert_type in last hour)
+                one_hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
+                existing = await db.alerts.find_one({
+                    "symbol": alert['symbol'],
+                    "alert_type": alert['alert_type'],
+                    "created_at": {"$gte": one_hour_ago.isoformat()}
+                })
+                if not existing:
+                    await db.alerts.insert_one(alert)
+        
+        logger.info(f"Signal update complete: {len(signals)} signals, {len(alerts)} new alerts")
+        
+    except Exception as e:
+        logger.error(f"Error updating watchlist signals: {str(e)}")
+
+async def generate_top_picks() -> List[Dict]:
+    """Generate top stock picks based on comprehensive analysis"""
+    try:
+        # Scan top stocks for best opportunities
+        priority_symbols = get_symbols_by_priority()[:50]  # Top 50 stocks
+        
+        top_picks = []
+        
+        for i in range(0, len(priority_symbols), 10):
+            batch = priority_symbols[i:i+10]
+            tasks = [analyze_watchlist_stock(symbol) for symbol in batch]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            for result in results:
+                if isinstance(result, dict) and result:
+                    # Only include BUY signals with high confidence
+                    if result.get('signal') == 'BUY' and result.get('confidence', 0) >= 0.6:
+                        potential_upside = result.get('potential_return', 0)
+                        if potential_upside > 5:  # At least 5% upside potential
+                            top_picks.append({
+                                "symbol": result['symbol'],
+                                "name": result['name'],
+                                "signal": result['signal'],
+                                "confidence": result['confidence'],
+                                "current_price": result['current_price'],
+                                "target_price": result['target_price'],
+                                "potential_upside": potential_upside,
+                                "reasoning": result['reasoning'],
+                                "sector": result.get('sector', 'Unknown'),
+                                "risk_level": result['risk_level'],
+                                "timestamp": result['timestamp']
+                            })
+            
+            await asyncio.sleep(0.3)
+        
+        # Sort by potential upside and confidence
+        top_picks.sort(key=lambda x: (x['confidence'] * x['potential_upside']), reverse=True)
+        
+        return top_picks[:10]  # Return top 10 picks
+        
+    except Exception as e:
+        logger.error(f"Error generating top picks: {str(e)}")
+        return []
+
+# ==================== NEW API ENDPOINTS ====================
+
+@api_router.get("/signals/watchlist")
+async def get_watchlist_signals():
+    """Get dynamic buy/sell/hold signals for watchlist stocks"""
+    try:
+        global SIGNALS_CACHE, LAST_SIGNAL_UPDATE
+        
+        # Check if cache is fresh (within 15 minutes)
+        if LAST_SIGNAL_UPDATE and SIGNALS_CACHE.get('signals'):
+            cache_age = (datetime.now(timezone.utc) - LAST_SIGNAL_UPDATE).total_seconds()
+            if cache_age < SIGNALS_CACHE_EXPIRY:
+                return {
+                    "signals": SIGNALS_CACHE.get('signals', []),
+                    "cached": True,
+                    "cache_age_seconds": int(cache_age),
+                    "next_update_in_seconds": int(SIGNALS_CACHE_EXPIRY - cache_age),
+                    "timestamp": SIGNALS_CACHE.get('updated_at')
+                }
+        
+        # Generate fresh signals
+        await update_watchlist_signals()
+        
+        return {
+            "signals": SIGNALS_CACHE.get('signals', []),
+            "cached": False,
+            "timestamp": SIGNALS_CACHE.get('updated_at')
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting watchlist signals: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/signals/top-picks")
+async def get_top_picks():
+    """Get AI-curated top stock picks with reasoning"""
+    try:
+        top_picks = await generate_top_picks()
+        
+        return {
+            "top_picks": top_picks,
+            "count": len(top_picks),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting top picks: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/alerts")
+async def get_alerts(unread_only: bool = False, limit: int = 50):
+    """Get breakout and price alerts"""
+    try:
+        query = {}
+        if unread_only:
+            query["is_read"] = False
+        
+        alerts = await db.alerts.find(query, {"_id": 0}).sort("created_at", -1).to_list(limit)
+        
+        # Also include fresh alerts from cache
+        cached_alerts = SIGNALS_CACHE.get('alerts', [])
+        
+        # Combine and deduplicate
+        all_alerts = {a.get('id', str(i)): a for i, a in enumerate(alerts)}
+        for alert in cached_alerts:
+            alert_id = alert.get('id', str(uuid.uuid4()))
+            if alert_id not in all_alerts:
+                all_alerts[alert_id] = alert
+        
+        combined_alerts = list(all_alerts.values())
+        combined_alerts.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+        
+        return {
+            "alerts": combined_alerts[:limit],
+            "total_count": len(combined_alerts),
+            "unread_count": sum(1 for a in combined_alerts if not a.get('is_read', True)),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting alerts: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/alerts/{alert_id}/read")
+async def mark_alert_read(alert_id: str):
+    """Mark an alert as read"""
+    try:
+        result = await db.alerts.update_one(
+            {"id": alert_id},
+            {"$set": {"is_read": True}}
+        )
+        
+        return {"success": result.modified_count > 0, "alert_id": alert_id}
+        
+    except Exception as e:
+        logger.error(f"Error marking alert as read: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/alerts/read-all")
+async def mark_all_alerts_read():
+    """Mark all alerts as read"""
+    try:
+        result = await db.alerts.update_many(
+            {"is_read": False},
+            {"$set": {"is_read": True}}
+        )
+        
+        return {"success": True, "updated_count": result.modified_count}
+        
+    except Exception as e:
+        logger.error(f"Error marking all alerts as read: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/signals/stock/{symbol}")
+async def get_stock_signal(symbol: str):
+    """Get detailed signal analysis for a specific stock"""
+    try:
+        result = await analyze_watchlist_stock(symbol.upper())
+        
+        if not result:
+            raise HTTPException(status_code=404, detail=f"Unable to analyze stock {symbol}")
+        
+        return {
+            "signal": result,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting stock signal for {symbol}: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/signals/refresh")
+async def refresh_signals():
+    """Force refresh all watchlist signals"""
+    try:
+        await update_watchlist_signals()
+        
+        return {
+            "success": True,
+            "signals_count": len(SIGNALS_CACHE.get('signals', [])),
+            "alerts_count": len(SIGNALS_CACHE.get('alerts', [])),
+            "timestamp": SIGNALS_CACHE.get('updated_at')
+        }
+        
+    except Exception as e:
+        logger.error(f"Error refreshing signals: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Include the router in the main app
 app.include_router(api_router)
 
