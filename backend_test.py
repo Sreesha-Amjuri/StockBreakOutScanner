@@ -1425,6 +1425,11 @@ class StockBreakoutAPITester:
         self.test_nse_symbols()
         self.test_stock_search()
         
+        # NEW: StockBreak Pro Features Tests (Priority)
+        print("\n🌟 STOCKBREAK PRO NEW FEATURES")
+        print("-" * 45)
+        self.test_stockbreak_pro_features()
+        
         print("\n📊 STOCK DATA TESTS")
         print("-" * 30)
         self.test_individual_stock_data()
