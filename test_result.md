@@ -119,17 +119,17 @@ backend:
         agent: "testing"
         comment: "✅ Breakout scanning API responding correctly with scan statistics"
 
-  - task: "NSE Symbols API"
+  - task: "AI Reasoning Integration"
     implemented: true
-    working: true
+    working: false
     file: "/app/backend/server.py"
-    stuck_count: 0
+    stuck_count: 1
     priority: "medium"
     needs_retesting: false
     status_history:
-      - working: true
+      - working: false
         agent: "testing"
-        comment: "✅ NSE symbols API returns 594 total stocks with all expected symbols (RELIANCE, TCS, INFOSYS) present"
+        comment: "⚠️ OpenAI API integration has authentication issues (401 error: Incorrect API key). However, system uses fallback reasoning so signals and top picks still work. Core functionality not impacted but AI-generated reasoning may be limited."
 
 frontend:
   - task: "Frontend UI Testing"
