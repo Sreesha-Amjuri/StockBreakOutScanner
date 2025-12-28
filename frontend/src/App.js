@@ -15,6 +15,9 @@ import {
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
 import StockDetails from "./components/StockDetails";
+import TopPicksCarousel from "./components/TopPicksCarousel";
+import SignalsPanel from "./components/SignalsPanel";
+import AlertsNotification from "./components/AlertsNotification";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -52,6 +55,9 @@ const Dashboard = () => {
   const [sectors, setSectors] = useState([]);
   const [marketOverview, setMarketOverview] = useState(null);
   const [scanStats, setScanStats] = useState({ stocks_scanned: 0, breakouts_found: 0 });
+  
+  // New state for dashboard view
+  const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'signals', 'scanner'
 
   // Filter states
   const [searchTerm, setSearchTerm] = useState('');
