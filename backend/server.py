@@ -2067,6 +2067,295 @@ async def get_stock_fundamentals(symbol: str):
         logger.error(f"Error fetching fundamentals for {symbol}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Error fetching fundamentals: {str(e)}")
 
+# Global scan progress tracking
+scan_progress = {
+    "is_scanning": False,
+    "scan_type": None,  # "quick" or "full"
+    "total_stocks": 0,
+    "scanned_stocks": 0,
+    "breakouts_found": 0,
+    "current_batch": 0,
+    "total_batches": 0,
+    "start_time": None,
+    "estimated_time_remaining": None,
+    "results": []
+}
+
+@api_router.get("/stocks/scan/progress")
+async def get_scan_progress():
+    """Get current scan progress"""
+    global scan_progress
+    
+    progress_data = scan_progress.copy()
+    
+    if scan_progress["is_scanning"] and scan_progress["start_time"]:
+        elapsed = (datetime.now(timezone.utc) - scan_progress["start_time"]).total_seconds()
+        if scan_progress["scanned_stocks"] > 0:
+            time_per_stock = elapsed / scan_progress["scanned_stocks"]
+            remaining_stocks = scan_progress["total_stocks"] - scan_progress["scanned_stocks"]
+            progress_data["estimated_time_remaining"] = int(time_per_stock * remaining_stocks)
+            progress_data["elapsed_seconds"] = int(elapsed)
+    
+    # Don't send full results in progress (too large)
+    progress_data["results"] = []
+    progress_data["progress_percent"] = round((scan_progress["scanned_stocks"] / max(scan_progress["total_stocks"], 1)) * 100, 1)
+    
+    return progress_data
+
+@api_router.get("/stocks/breakouts/quick-scan")
+async def quick_scan_breakouts(
+    sector: Optional[str] = None,
+    min_confidence: float = 0.5,
+    risk_level: Optional[str] = None,
+    action: Optional[str] = None,
+    breakout_type: Optional[str] = None
+):
+    """Quick scan of top 30 priority stocks for fast results"""
+    global scan_progress
+    
+    try:
+        scan_progress["is_scanning"] = True
+        scan_progress["scan_type"] = "quick"
+        scan_progress["start_time"] = datetime.now(timezone.utc)
+        scan_progress["breakouts_found"] = 0
+        
+        breakout_stocks = []
+        
+        # Get top 30 priority stocks for quick scan
+        all_symbols = get_symbols_by_priority()
+        
+        if sector and sector != "All":
+            filtered_symbols = [s for s in all_symbols if NSE_SYMBOLS.get(s) == sector]
+            symbols_to_scan = filtered_symbols[:30]
+        else:
+            symbols_to_scan = all_symbols[:30]
+        
+        scan_progress["total_stocks"] = len(symbols_to_scan)
+        scan_progress["scanned_stocks"] = 0
+        
+        logger.info(f"Quick scan: Scanning {len(symbols_to_scan)} priority stocks")
+        
+        # Process in smaller batches for quicker results
+        for i in range(0, len(symbols_to_scan), 10):
+            batch_symbols = symbols_to_scan[i:i + 10]
+            scan_progress["current_batch"] = i // 10 + 1
+            scan_progress["total_batches"] = (len(symbols_to_scan) + 9) // 10
+            
+            tasks = [fetch_comprehensive_stock_data(symbol) for symbol in batch_symbols]
+            batch_results = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            for j, result in enumerate(batch_results):
+                scan_progress["scanned_stocks"] += 1
+                
+                if isinstance(result, dict) and result and result.get('breakout_data'):
+                    symbol = batch_symbols[j]
+                    breakout_data = result['breakout_data']
+                    
+                    # Apply filters
+                    if breakout_data['confidence'] < min_confidence:
+                        continue
+                    
+                    if risk_level and risk_level != 'All' and result.get('risk_assessment', {}).get('risk_level') != risk_level:
+                        continue
+                    
+                    trading_rec = result.get('trading_recommendation', {})
+                    stock_action = trading_rec.get('action', 'WAIT') if trading_rec else 'WAIT'
+                    if action and action != 'All' and stock_action != action:
+                        continue
+                    
+                    stock_breakout_type = breakout_data.get('type', '')
+                    if breakout_type and breakout_type != 'All' and stock_breakout_type != breakout_type:
+                        continue
+                    
+                    scan_progress["breakouts_found"] += 1
+                    
+                    breakout_stock = {
+                        "symbol": symbol,
+                        "name": result['name'],
+                        "current_price": result['current_price'],
+                        "breakout_price": breakout_data['breakout_price'],
+                        "breakout_type": breakout_data['type'],
+                        "confidence_score": breakout_data['confidence'],
+                        "change_percent": result.get('change_percent', 0),
+                        "volume_ratio": result['technical_indicators'].get('volume_ratio', 1),
+                        "rsi": result['technical_indicators'].get('rsi'),
+                        "sector": result.get('sector', 'Unknown'),
+                        "risk_level": result['risk_assessment']['risk_level'],
+                        "action": stock_action,
+                        "target_price": trading_rec.get('target_price'),
+                        "stop_loss": trading_rec.get('stop_loss'),
+                        "entry_price": trading_rec.get('entry_price'),
+                        "potential_return": trading_rec.get('potential_return')
+                    }
+                    breakout_stocks.append(breakout_stock)
+        
+        # Sort by confidence
+        breakout_stocks.sort(key=lambda x: x['confidence_score'], reverse=True)
+        
+        scan_progress["is_scanning"] = False
+        scan_progress["results"] = breakout_stocks
+        
+        return {
+            "scan_type": "quick",
+            "breakouts": breakout_stocks,
+            "breakouts_found": len(breakout_stocks),
+            "total_scanned": scan_progress["scanned_stocks"],
+            "scan_time_seconds": (datetime.now(timezone.utc) - scan_progress["start_time"]).total_seconds(),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        
+    except Exception as e:
+        scan_progress["is_scanning"] = False
+        logger.error(f"Quick scan error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/stocks/breakouts/full-scan/start")
+async def start_full_scan(
+    background_tasks: BackgroundTasks,
+    sector: Optional[str] = None,
+    min_confidence: float = 0.3,
+    risk_level: Optional[str] = None,
+    action: Optional[str] = None,
+    breakout_type: Optional[str] = None,
+    limit: int = 200
+):
+    """Start a full background scan of up to 200 stocks"""
+    global scan_progress
+    
+    if scan_progress["is_scanning"]:
+        return {
+            "status": "already_running",
+            "message": "A scan is already in progress",
+            "progress": scan_progress["scanned_stocks"],
+            "total": scan_progress["total_stocks"]
+        }
+    
+    # Start background scan
+    background_tasks.add_task(
+        run_full_scan_background,
+        sector, min_confidence, risk_level, action, breakout_type, limit
+    )
+    
+    return {
+        "status": "started",
+        "message": f"Full scan started for up to {limit} stocks",
+        "scan_type": "full"
+    }
+
+async def run_full_scan_background(
+    sector: Optional[str],
+    min_confidence: float,
+    risk_level: Optional[str],
+    action: Optional[str],
+    breakout_type: Optional[str],
+    limit: int
+):
+    """Background task for full scan"""
+    global scan_progress
+    
+    try:
+        scan_progress["is_scanning"] = True
+        scan_progress["scan_type"] = "full"
+        scan_progress["start_time"] = datetime.now(timezone.utc)
+        scan_progress["breakouts_found"] = 0
+        scan_progress["results"] = []
+        
+        breakout_stocks = []
+        
+        all_symbols = get_symbols_by_priority()
+        
+        if sector and sector != "All":
+            filtered_symbols = [s for s in all_symbols if NSE_SYMBOLS.get(s) == sector]
+            symbols_to_scan = filtered_symbols[:limit]
+        else:
+            symbols_to_scan = all_symbols[:limit]
+        
+        scan_progress["total_stocks"] = len(symbols_to_scan)
+        scan_progress["scanned_stocks"] = 0
+        scan_progress["total_batches"] = (len(symbols_to_scan) + BATCH_SIZE - 1) // BATCH_SIZE
+        
+        logger.info(f"Full scan: Scanning {len(symbols_to_scan)} stocks in background")
+        
+        for i in range(0, len(symbols_to_scan), BATCH_SIZE):
+            batch_symbols = symbols_to_scan[i:i + BATCH_SIZE]
+            scan_progress["current_batch"] = i // BATCH_SIZE + 1
+            
+            batch_results = await fetch_stock_data_batch(batch_symbols)
+            
+            for j, result in enumerate(batch_results):
+                scan_progress["scanned_stocks"] += 1
+                
+                if isinstance(result, dict) and result and result.get('breakout_data'):
+                    symbol = batch_symbols[j]
+                    breakout_data = result['breakout_data']
+                    
+                    # Apply filters
+                    if breakout_data['confidence'] < min_confidence:
+                        continue
+                    
+                    if risk_level and risk_level != 'All' and result.get('risk_assessment', {}).get('risk_level') != risk_level:
+                        continue
+                    
+                    trading_rec = result.get('trading_recommendation', {})
+                    stock_action = trading_rec.get('action', 'WAIT') if trading_rec else 'WAIT'
+                    if action and action != 'All' and stock_action != action:
+                        continue
+                    
+                    stock_breakout_type = breakout_data.get('type', '')
+                    if breakout_type and breakout_type != 'All' and stock_breakout_type != breakout_type:
+                        continue
+                    
+                    scan_progress["breakouts_found"] += 1
+                    
+                    breakout_stock = {
+                        "symbol": symbol,
+                        "name": result['name'],
+                        "current_price": result['current_price'],
+                        "breakout_price": breakout_data['breakout_price'],
+                        "breakout_type": breakout_data['type'],
+                        "confidence_score": breakout_data['confidence'],
+                        "change_percent": result.get('change_percent', 0),
+                        "volume_ratio": result['technical_indicators'].get('volume_ratio', 1),
+                        "rsi": result['technical_indicators'].get('rsi'),
+                        "sector": result.get('sector', 'Unknown'),
+                        "risk_level": result['risk_assessment']['risk_level'],
+                        "action": stock_action,
+                        "target_price": trading_rec.get('target_price'),
+                        "stop_loss": trading_rec.get('stop_loss'),
+                        "entry_price": trading_rec.get('entry_price'),
+                        "potential_return": trading_rec.get('potential_return')
+                    }
+                    breakout_stocks.append(breakout_stock)
+            
+            # Small delay between batches
+            await asyncio.sleep(0.5)
+        
+        # Sort by confidence
+        breakout_stocks.sort(key=lambda x: x['confidence_score'], reverse=True)
+        scan_progress["results"] = breakout_stocks
+        
+        logger.info(f"Full scan complete: Found {len(breakout_stocks)} breakouts from {scan_progress['scanned_stocks']} stocks")
+        
+    except Exception as e:
+        logger.error(f"Full scan background error: {str(e)}")
+    finally:
+        scan_progress["is_scanning"] = False
+
+@api_router.get("/stocks/breakouts/full-scan/results")
+async def get_full_scan_results():
+    """Get results from the last full scan"""
+    global scan_progress
+    
+    return {
+        "scan_type": scan_progress["scan_type"],
+        "is_scanning": scan_progress["is_scanning"],
+        "breakouts": scan_progress["results"],
+        "breakouts_found": len(scan_progress["results"]),
+        "total_scanned": scan_progress["scanned_stocks"],
+        "progress_percent": round((scan_progress["scanned_stocks"] / max(scan_progress["total_stocks"], 1)) * 100, 1),
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
 @api_router.get("/stocks/breakouts/scan")
 async def scan_breakout_stocks(
     sector: Optional[str] = None,
