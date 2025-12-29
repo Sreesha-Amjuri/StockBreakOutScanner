@@ -645,12 +645,33 @@ const Dashboard = () => {
             <Search className="w-4 h-4 mr-2" />
             Breakout Scanner
           </Button>
+          <Button
+            variant={activeTab === 'news' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('news')}
+          >
+            <Newspaper className="w-4 h-4 mr-2" />
+            Market News
+          </Button>
         </div>
 
-        {/* Signals Tab - NEW */}
+        {/* Signals Tab */}
         {activeTab === 'signals' && (
           <div className="mb-8">
             <SignalsPanel onStockClick={(symbol) => navigate(`/stock/${symbol}`)} />
+          </div>
+        )}
+
+        {/* News Tab */}
+        {activeTab === 'news' && (
+          <div className="mb-8">
+            <NewsPanel />
+          </div>
+        )}
+
+        {/* Scanner Tab - Enhanced with Quick/Full Scan */}
+        {activeTab === 'scanner' && (
+          <div className="mb-8">
+            <ScannerPanel onStockClick={(symbol) => navigate(`/stock/${symbol}`)} />
           </div>
         )}
         
