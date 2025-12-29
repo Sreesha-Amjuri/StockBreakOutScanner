@@ -238,12 +238,30 @@ const StockDetails = () => {
 
         {/* Detailed Analysis Tabs */}
         <Tabs defaultValue="technical" className="space-y-6">
-          <TabsList className="grid grid-cols-4 w-full">
-            <TabsTrigger value="technical">Technical Analysis</TabsTrigger>
-            <TabsTrigger value="fundamental">Fundamental Analysis</TabsTrigger>
-            <TabsTrigger value="risk">Risk Assessment</TabsTrigger>
-            <TabsTrigger value="breakout">Breakout Analysis</TabsTrigger>
+          <TabsList className="grid grid-cols-6 w-full">
+            <TabsTrigger value="technical">Technical</TabsTrigger>
+            <TabsTrigger value="fundamental">Fundamental</TabsTrigger>
+            <TabsTrigger value="fundamentals-detail">
+              <PieChart className="w-4 h-4 mr-1" />
+              Details
+            </TabsTrigger>
+            <TabsTrigger value="news">
+              <Newspaper className="w-4 h-4 mr-1" />
+              News
+            </TabsTrigger>
+            <TabsTrigger value="risk">Risk</TabsTrigger>
+            <TabsTrigger value="breakout">Breakout</TabsTrigger>
           </TabsList>
+
+          {/* New Fundamentals Detail Tab */}
+          <TabsContent value="fundamentals-detail">
+            <FundamentalsPanel symbol={symbol} />
+          </TabsContent>
+
+          {/* New News Tab */}
+          <TabsContent value="news">
+            <NewsPanel symbol={symbol} />
+          </TabsContent>
 
           <TabsContent value="technical">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
