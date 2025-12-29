@@ -1409,6 +1409,250 @@ class StockBreakoutAPITester:
         
         return all([success1, success2, success3, success4, success5])
 
+    def test_enhanced_search_api(self):
+        """Test Enhanced Search API with include_price parameter"""
+        print("\n🔍 ENHANCED SEARCH API TESTING")
+        print("-" * 35)
+        
+        # Test 1: Search with include_price=true
+        success1, data1 = self.test_api_endpoint("Enhanced Search - REL with price", "GET", "stocks/search", 
+                                                params={"q": "REL", "include_price": "true"})
+        
+        if success1:
+            results = data1.get('results', [])
+            if results:
+                # Check if results include current_price
+                first_result = results[0]
+                has_price = 'current_price' in first_result
+                self.log_test("Search Results Include Price", has_price, 
+                            f"First result: {first_result.get('symbol', 'N/A')} - Price: {first_result.get('current_price', 'Missing')}")
+                
+                # Verify expected symbols are present
+                symbols_found = [r.get('symbol', '') for r in results]
+                expected_symbols = ['RELIANCE', 'RELAXOHOME']
+                found_expected = [s for s in expected_symbols if s in symbols_found]
+                self.log_test("Expected Symbols in Search", len(found_expected) > 0, 
+                            f"Found: {found_expected} from expected: {expected_symbols}")
+        
+        # Test 2: Search without include_price parameter
+        success2, data2 = self.test_api_endpoint("Enhanced Search - REL without price", "GET", "stocks/search", 
+                                                params={"q": "REL"})
+        
+        return success1 and success2
+
+    def test_fundamentals_api(self):
+        """Test new Fundamentals API"""
+        print("\n📊 FUNDAMENTALS API TESTING")
+        print("-" * 30)
+        
+        test_symbols = ['RELIANCE', 'HDFCBANK', 'TCS']
+        successful_tests = 0
+        
+        for symbol in test_symbols:
+            success, data = self.test_api_endpoint(f"Fundamentals - {symbol}", "GET", f"stocks/{symbol}/fundamentals")
+            
+            if success:
+                successful_tests += 1
+                
+                # Check required fundamental fields
+                required_fields = ['pe_ratio', 'roe', 'debt_to_equity', 'profit_margin', 'fundamental_score', 'rating']
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if missing_fields:
+                    self.log_test(f"Fundamentals Structure - {symbol}", False, f"Missing fields: {missing_fields}")
+                else:
+                    pe_ratio = data.get('pe_ratio')
+                    roe = data.get('roe')
+                    debt_to_equity = data.get('debt_to_equity')
+                    fundamental_score = data.get('fundamental_score')
+                    rating = data.get('rating')
+                    
+                    self.log_test(f"Fundamentals Data - {symbol}", True, 
+                                f"P/E: {pe_ratio}, ROE: {roe}%, D/E: {debt_to_equity}, Score: {fundamental_score}, Rating: {rating}")
+        
+        return successful_tests > 0
+
+    def test_news_api(self):
+        """Test new News API with sentiment analysis"""
+        print("\n📰 NEWS API TESTING")
+        print("-" * 20)
+        
+        test_symbols = ['RELIANCE', 'TCS', 'HDFCBANK']
+        successful_tests = 0
+        
+        for symbol in test_symbols:
+            success, data = self.test_api_endpoint(f"News - {symbol}", "GET", f"stocks/{symbol}/news", timeout=30)
+            
+            if success:
+                successful_tests += 1
+                
+                # Check news structure
+                required_fields = ['news', 'overall_sentiment', 'sentiment_breakdown']
+                missing_fields = [field for field in required_fields if field not in data]
+                
+                if missing_fields:
+                    self.log_test(f"News Structure - {symbol}", False, f"Missing fields: {missing_fields}")
+                else:
+                    news_items = data.get('news', [])
+                    overall_sentiment = data.get('overall_sentiment')
+                    sentiment_breakdown = data.get('sentiment_breakdown', {})
+                    
+                    # Verify news items have sentiment
+                    if news_items:
+                        first_news = news_items[0]
+                        has_sentiment = 'sentiment' in first_news
+                        valid_sentiments = ['Positive', 'Negative', 'Neutral']
+                        sentiment_valid = first_news.get('sentiment') in valid_sentiments
+                        
+                        self.log_test(f"News Sentiment - {symbol}", has_sentiment and sentiment_valid, 
+                                    f"Found {len(news_items)} news items, Overall: {overall_sentiment}")
+                    else:
+                        self.log_test(f"News Items - {symbol}", True, "No news items found (acceptable)")
+        
+        return successful_tests > 0
+
+    def test_market_news_api(self):
+        """Test new Market News API"""
+        print("\n📈 MARKET NEWS API TESTING")
+        print("-" * 25)
+        
+        success, data = self.test_api_endpoint("Market News", "GET", "news/market", timeout=30)
+        
+        if success:
+            # Check market news structure
+            required_fields = ['headlines', 'market_mood']
+            missing_fields = [field for field in required_fields if field not in data]
+            
+            if missing_fields:
+                self.log_test("Market News Structure", False, f"Missing fields: {missing_fields}")
+            else:
+                headlines = data.get('headlines', [])
+                market_mood = data.get('market_mood')
+                
+                # Verify headlines have sentiment
+                if headlines:
+                    first_headline = headlines[0]
+                    has_sentiment = 'sentiment' in first_headline
+                    
+                    self.log_test("Market News Content", has_sentiment, 
+                                f"Found {len(headlines)} headlines, Market mood: {market_mood}")
+                else:
+                    self.log_test("Market News Content", True, "No headlines found (acceptable)")
+        
+        return success
+
+    def test_quick_scan_api(self):
+        """Test new Quick Scan API (Fast - 30 stocks)"""
+        print("\n⚡ QUICK SCAN API TESTING")
+        print("-" * 25)
+        
+        success, data = self.test_api_endpoint("Quick Scan", "GET", "stocks/breakouts/quick-scan", 
+                                             params={"min_confidence": "0.5"}, timeout=30)
+        
+        if success:
+            # Check quick scan structure
+            required_fields = ['breakouts', 'scan_info']
+            missing_fields = [field for field in required_fields if field not in data]
+            
+            if missing_fields:
+                self.log_test("Quick Scan Structure", False, f"Missing fields: {missing_fields}")
+            else:
+                breakouts = data.get('breakouts', [])
+                scan_info = data.get('scan_info', {})
+                
+                stocks_scanned = scan_info.get('stocks_scanned', 0)
+                scan_time = scan_info.get('scan_time_seconds', 0)
+                
+                # Verify it scans around 30 stocks quickly
+                quick_scan_valid = stocks_scanned <= 50 and scan_time <= 30  # Should be fast
+                
+                self.log_test("Quick Scan Performance", quick_scan_valid, 
+                            f"Scanned {stocks_scanned} stocks in {scan_time:.2f}s, Found {len(breakouts)} breakouts")
+                
+                # Test breakout structure if any found
+                if breakouts:
+                    first_breakout = breakouts[0]
+                    has_confidence = 'confidence_score' in first_breakout
+                    self.log_test("Quick Scan Breakout Structure", has_confidence, 
+                                f"Breakout: {first_breakout.get('symbol', 'N/A')} - Confidence: {first_breakout.get('confidence_score', 'Missing')}")
+        
+        return success
+
+    def test_enhanced_watchlist_api(self):
+        """Test Enhanced Add to Watchlist with retry logic"""
+        print("\n⭐ ENHANCED WATCHLIST API TESTING")
+        print("-" * 35)
+        
+        test_symbol = 'HDFCBANK'
+        
+        # Test adding to watchlist
+        success, data = self.test_api_endpoint(f"Enhanced Watchlist Add - {test_symbol}", "POST", "watchlist", 
+                                             params={"symbol": test_symbol}, timeout=30)
+        
+        if success:
+            # Check if response includes real-time price
+            has_price = 'current_price' in data or 'added_price' in data
+            retry_info = data.get('retry_info', {})
+            
+            self.log_test("Watchlist Add with Price", has_price, 
+                        f"Added {test_symbol} - Price info included: {has_price}")
+            
+            if retry_info:
+                self.log_test("Watchlist Retry Logic", True, 
+                            f"Retry attempts: {retry_info.get('attempts', 0)}")
+        
+        # Clean up - remove from watchlist
+        self.test_api_endpoint(f"Remove from Watchlist - {test_symbol}", "DELETE", f"watchlist/{test_symbol}")
+        
+        return success
+
+    def test_scan_progress_api(self):
+        """Test Scan Progress API"""
+        print("\n📊 SCAN PROGRESS API TESTING")
+        print("-" * 30)
+        
+        success, data = self.test_api_endpoint("Scan Progress", "GET", "stocks/scan/progress")
+        
+        if success:
+            # Check scan progress structure
+            expected_fields = ['current_scan', 'progress_percentage', 'status']
+            missing_fields = [field for field in expected_fields if field not in data]
+            
+            if missing_fields:
+                self.log_test("Scan Progress Structure", False, f"Missing fields: {missing_fields}")
+            else:
+                status = data.get('status')
+                progress = data.get('progress_percentage', 0)
+                
+                self.log_test("Scan Progress Info", True, 
+                            f"Status: {status}, Progress: {progress}%")
+        
+        return success
+
+    def test_stockbreak_pro_enhanced_features(self):
+        """Test all new StockBreak Pro enhanced features"""
+        print("\n🚀 STOCKBREAK PRO ENHANCED FEATURES TESTING")
+        print("=" * 50)
+        
+        # Test all new APIs
+        test_results = []
+        
+        test_results.append(self.test_enhanced_search_api())
+        test_results.append(self.test_fundamentals_api())
+        test_results.append(self.test_news_api())
+        test_results.append(self.test_market_news_api())
+        test_results.append(self.test_quick_scan_api())
+        test_results.append(self.test_enhanced_watchlist_api())
+        test_results.append(self.test_scan_progress_api())
+        
+        successful_features = sum(test_results)
+        total_features = len(test_results)
+        
+        self.log_test("StockBreak Pro Enhanced Features", successful_features >= 5, 
+                    f"{successful_features}/{total_features} enhanced features working")
+        
+        return successful_features >= 5
+
     def run_comprehensive_tests(self):
         """Run all tests in sequence"""
         print("🚀 Starting Comprehensive Backend API Testing")
@@ -1418,8 +1662,13 @@ class StockBreakoutAPITester:
         print("=" * 60)
         print()
 
+        # PRIORITY: Test new StockBreak Pro enhanced features first
+        print("🚀 STOCKBREAK PRO ENHANCED FEATURES (PRIORITY)")
+        print("=" * 50)
+        self.test_stockbreak_pro_enhanced_features()
+
         # Core API Tests
-        print("📋 CORE API TESTS")
+        print("\n📋 CORE API TESTS")
         print("-" * 30)
         self.test_root_endpoint()
         self.test_nse_symbols()
