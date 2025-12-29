@@ -1844,15 +1844,228 @@ async def get_nse_symbols():
         }
 
 @api_router.get("/stocks/search")
-async def search_stocks(q: str):
-    """Search stocks by symbol or name"""
-    query = q.upper()
-    matching_symbols = [
-        {"symbol": symbol, "sector": sector} 
-        for symbol, sector in NSE_SYMBOLS.items() 
-        if query in symbol
-    ]
+async def search_stocks(q: str, include_price: bool = False):
+    """Enhanced search stocks by symbol with optional real-time price data"""
+    query = q.upper().strip()
+    
+    if len(query) < 1:
+        return {"results": [], "query": q}
+    
+    matching_symbols = []
+    
+    for symbol, sector in NSE_SYMBOLS.items():
+        if query in symbol:
+            result = {"symbol": symbol, "sector": sector}
+            
+            # Optionally fetch real-time price for top results
+            if include_price and len(matching_symbols) < 5:
+                try:
+                    ticker = yf.Ticker(f"{symbol}.NS")
+                    info = ticker.fast_info
+                    result["current_price"] = round(info.last_price, 2) if hasattr(info, 'last_price') and info.last_price else None
+                    result["change_percent"] = round(((info.last_price - info.previous_close) / info.previous_close) * 100, 2) if hasattr(info, 'previous_close') and info.previous_close else None
+                except:
+                    result["current_price"] = None
+                    result["change_percent"] = None
+            
+            matching_symbols.append(result)
+            
+            if len(matching_symbols) >= 15:
+                break
+    
+    # Sort exact matches first
+    matching_symbols.sort(key=lambda x: (0 if x['symbol'] == query else 1, x['symbol']))
+    
     return {"results": matching_symbols[:10], "query": q}
+
+@api_router.get("/stocks/{symbol}/news")
+async def get_stock_news_endpoint(symbol: str):
+    """Get news and sentiment for a specific stock"""
+    symbol = symbol.upper()
+    
+    if symbol not in NSE_SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Stock not found: {symbol}")
+    
+    try:
+        # Get company name for better news search
+        company_name = None
+        try:
+            ticker = yf.Ticker(f"{symbol}.NS")
+            info = ticker.info
+            company_name = info.get('longName') or info.get('shortName')
+        except:
+            pass
+        
+        news_data = await get_stock_news(symbol, company_name)
+        return news_data
+    except Exception as e:
+        logger.error(f"Error fetching news for {symbol}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching news: {str(e)}")
+
+@api_router.get("/news/market")
+async def get_market_news_endpoint():
+    """Get general Indian stock market news"""
+    try:
+        news_data = await get_market_news()
+        return news_data
+    except Exception as e:
+        logger.error(f"Error fetching market news: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching news: {str(e)}")
+
+@api_router.get("/stocks/{symbol}/fundamentals")
+async def get_stock_fundamentals(symbol: str):
+    """Get fundamental indicators for a stock - real-time from Yahoo Finance"""
+    symbol = symbol.upper()
+    
+    if symbol not in NSE_SYMBOLS:
+        raise HTTPException(status_code=404, detail=f"Stock not found: {symbol}")
+    
+    try:
+        ticker = yf.Ticker(f"{symbol}.NS")
+        info = ticker.info
+        
+        # Extract fundamental data
+        fundamentals = {
+            "symbol": symbol,
+            "name": info.get('longName') or info.get('shortName') or symbol,
+            "sector": info.get('sector') or NSE_SYMBOLS.get(symbol, 'Unknown'),
+            "industry": info.get('industry'),
+            
+            # Valuation Metrics
+            "pe_ratio": info.get('trailingPE'),
+            "forward_pe": info.get('forwardPE'),
+            "pb_ratio": info.get('priceToBook'),
+            "ps_ratio": info.get('priceToSalesTrailing12Months'),
+            "peg_ratio": info.get('pegRatio'),
+            
+            # Profitability Metrics
+            "profit_margin": round(info.get('profitMargins', 0) * 100, 2) if info.get('profitMargins') else None,
+            "operating_margin": round(info.get('operatingMargins', 0) * 100, 2) if info.get('operatingMargins') else None,
+            "gross_margin": round(info.get('grossMargins', 0) * 100, 2) if info.get('grossMargins') else None,
+            "roe": round(info.get('returnOnEquity', 0) * 100, 2) if info.get('returnOnEquity') else None,
+            "roa": round(info.get('returnOnAssets', 0) * 100, 2) if info.get('returnOnAssets') else None,
+            
+            # Per Share Metrics
+            "eps": info.get('trailingEps'),
+            "eps_forward": info.get('forwardEps'),
+            "book_value": info.get('bookValue'),
+            "revenue_per_share": info.get('revenuePerShare'),
+            
+            # Debt & Liquidity
+            "debt_to_equity": info.get('debtToEquity'),
+            "current_ratio": info.get('currentRatio'),
+            "quick_ratio": info.get('quickRatio'),
+            "total_debt": info.get('totalDebt'),
+            "total_cash": info.get('totalCash'),
+            
+            # Growth Metrics
+            "revenue_growth": round(info.get('revenueGrowth', 0) * 100, 2) if info.get('revenueGrowth') else None,
+            "earnings_growth": round(info.get('earningsGrowth', 0) * 100, 2) if info.get('earningsGrowth') else None,
+            
+            # Dividend Info
+            "dividend_yield": round(info.get('dividendYield', 0) * 100, 2) if info.get('dividendYield') else None,
+            "dividend_rate": info.get('dividendRate'),
+            "payout_ratio": round(info.get('payoutRatio', 0) * 100, 2) if info.get('payoutRatio') else None,
+            
+            # Market Data
+            "market_cap": info.get('marketCap'),
+            "enterprise_value": info.get('enterpriseValue'),
+            "fifty_two_week_high": info.get('fiftyTwoWeekHigh'),
+            "fifty_two_week_low": info.get('fiftyTwoWeekLow'),
+            "avg_volume": info.get('averageVolume'),
+            "beta": info.get('beta'),
+            
+            # Analysis
+            "target_price": info.get('targetMeanPrice'),
+            "analyst_recommendation": info.get('recommendationKey'),
+            "number_of_analysts": info.get('numberOfAnalystOpinions'),
+            
+            "last_updated": datetime.now(timezone.utc).isoformat()
+        }
+        
+        # Calculate fundamental score (0-100)
+        score = 0
+        score_factors = []
+        
+        # P/E Score (lower is better, but not negative)
+        pe = fundamentals.get('pe_ratio')
+        if pe and 0 < pe < 15:
+            score += 20
+            score_factors.append("Low P/E ratio (undervalued)")
+        elif pe and 15 <= pe < 25:
+            score += 15
+            score_factors.append("Moderate P/E ratio")
+        elif pe and pe >= 25:
+            score += 5
+            score_factors.append("High P/E ratio (premium valuation)")
+        
+        # ROE Score (higher is better)
+        roe = fundamentals.get('roe')
+        if roe and roe > 20:
+            score += 20
+            score_factors.append("Strong ROE (>20%)")
+        elif roe and roe > 15:
+            score += 15
+            score_factors.append("Good ROE (>15%)")
+        elif roe and roe > 10:
+            score += 10
+            score_factors.append("Moderate ROE")
+        
+        # Debt-to-Equity Score (lower is better)
+        de = fundamentals.get('debt_to_equity')
+        if de is not None:
+            if de < 50:
+                score += 20
+                score_factors.append("Low debt levels")
+            elif de < 100:
+                score += 15
+                score_factors.append("Moderate debt")
+            elif de < 200:
+                score += 5
+                score_factors.append("High debt levels")
+        
+        # Profit Margin Score
+        margin = fundamentals.get('profit_margin')
+        if margin and margin > 20:
+            score += 20
+            score_factors.append("High profit margin (>20%)")
+        elif margin and margin > 10:
+            score += 15
+            score_factors.append("Good profit margin (>10%)")
+        elif margin and margin > 5:
+            score += 10
+            score_factors.append("Moderate profit margin")
+        
+        # Revenue Growth Score
+        growth = fundamentals.get('revenue_growth')
+        if growth and growth > 20:
+            score += 20
+            score_factors.append("Strong revenue growth (>20%)")
+        elif growth and growth > 10:
+            score += 15
+            score_factors.append("Good revenue growth (>10%)")
+        elif growth and growth > 0:
+            score += 10
+            score_factors.append("Positive revenue growth")
+        
+        fundamentals["fundamental_score"] = min(score, 100)
+        fundamentals["score_factors"] = score_factors
+        
+        # Determine fundamental rating
+        if score >= 80:
+            fundamentals["rating"] = "Excellent"
+        elif score >= 60:
+            fundamentals["rating"] = "Good"
+        elif score >= 40:
+            fundamentals["rating"] = "Average"
+        else:
+            fundamentals["rating"] = "Below Average"
+        
+        return fundamentals
+        
+    except Exception as e:
+        logger.error(f"Error fetching fundamentals for {symbol}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error fetching fundamentals: {str(e)}")
 
 @api_router.get("/stocks/breakouts/scan")
 async def scan_breakout_stocks(
