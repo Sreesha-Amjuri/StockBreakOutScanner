@@ -2687,7 +2687,7 @@ async def get_watchlist():
 
 @api_router.post("/watchlist")
 async def add_to_watchlist(symbol: str, target_price: Optional[float] = None, stop_loss: Optional[float] = None, notes: Optional[str] = None):
-    """Add stock to watchlist"""
+    """Add stock to watchlist with retry logic for real-time data"""
     try:
         symbol = symbol.upper()
         
@@ -2700,35 +2700,54 @@ async def add_to_watchlist(symbol: str, target_price: Optional[float] = None, st
         if existing:
             raise HTTPException(status_code=400, detail=f"{symbol} is already in watchlist")
         
-        # Try to get current stock data
-        stock_data = await fetch_comprehensive_stock_data(symbol)
+        # Try to get current stock data with retries
+        stock_data = None
+        max_retries = 3
         
-        # Create watchlist item - use available data or defaults
-        if stock_data:
+        for attempt in range(max_retries):
+            stock_data = await fetch_comprehensive_stock_data(symbol)
+            if stock_data and stock_data.get('current_price'):
+                break
+            
+            if attempt < max_retries - 1:
+                logger.info(f"Retry {attempt + 1}/{max_retries} for {symbol} data")
+                await asyncio.sleep(2)  # Wait 2 seconds before retry
+        
+        if not stock_data or not stock_data.get('current_price'):
+            # One more attempt using direct Yahoo Finance call
+            try:
+                ticker = yf.Ticker(f"{symbol}.NS")
+                info = ticker.fast_info
+                current_price = info.last_price if hasattr(info, 'last_price') and info.last_price else None
+                
+                if current_price:
+                    stock_data = {
+                        'name': f"{symbol} ({NSE_SYMBOLS.get(symbol, 'NSE')})",
+                        'current_price': current_price
+                    }
+            except Exception as e:
+                logger.warning(f"Direct Yahoo Finance call failed for {symbol}: {e}")
+        
+        # Create watchlist item - require real data
+        if stock_data and stock_data.get('current_price'):
             watchlist_item = {
                 "id": str(uuid.uuid4()),
                 "symbol": symbol,
-                "name": stock_data['name'],
+                "name": stock_data.get('name', f"{symbol} ({NSE_SYMBOLS.get(symbol, 'NSE')})"),
                 "added_price": stock_data['current_price'],
+                "current_price": stock_data['current_price'],
                 "target_price": target_price,
                 "stop_loss": stop_loss,
                 "notes": notes,
+                "sector": NSE_SYMBOLS.get(symbol, 'Unknown'),
                 "added_date": datetime.now(timezone.utc).isoformat(),
                 "added_at": datetime.now(timezone.utc).isoformat()
             }
         else:
-            # Fallback if API is rate-limited - still allow adding to watchlist
-            watchlist_item = {
-                "id": str(uuid.uuid4()),
-                "symbol": symbol,
-                "name": f"{symbol} ({NSE_SYMBOLS.get(symbol, 'NSE')})",
-                "added_price": 0,  # Will update when data available
-                "target_price": target_price,
-                "stop_loss": stop_loss,
-                "notes": notes or "Added while API rate-limited - price will update",
-                "added_date": datetime.now(timezone.utc).isoformat(),
-                "added_at": datetime.now(timezone.utc).isoformat()
-            }
+            raise HTTPException(
+                status_code=503, 
+                detail=f"Unable to fetch real-time data for {symbol}. Market may be closed or API rate-limited. Please try again in a moment."
+            )
         
         await db.watchlist.insert_one(watchlist_item)
         # Remove _id before returning (MongoDB adds it after insert)
