@@ -571,17 +571,12 @@ const Dashboard = () => {
               </div>
             </div>
             
-            {/* Search Bar */}
+            {/* Search Bar - Enhanced with Dropdown */}
             <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                <Input
-                  placeholder="Search stocks..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 w-64"
-                />
-              </div>
+              <StockSearchDropdown
+                onSelectStock={(symbol) => navigate(`/stock/${symbol}`)}
+                onAddToWatchlist={addToWatchlist}
+              />
               
               {marketOverview && (
                 <div className="flex items-center space-x-6">
