@@ -219,12 +219,14 @@ const Dashboard = () => {
 
   const addToWatchlist = async (symbol) => {
     try {
+      toast.loading(`Adding ${symbol} to watchlist...`, { id: 'watchlist-add' });
       await axios.post(`${API}/watchlist?symbol=${symbol}`);
       await fetchWatchlist();
-      toast.success(`Added ${symbol} to watchlist`);
+      toast.success(`Added ${symbol} to watchlist`, { id: 'watchlist-add' });
     } catch (error) {
       console.error('Error adding to watchlist:', error);
-      toast.error("Failed to add to watchlist");
+      const errorMsg = error.response?.data?.detail || "Failed to add to watchlist. Please try again.";
+      toast.error(errorMsg, { id: 'watchlist-add' });
     }
   };
 
@@ -235,7 +237,8 @@ const Dashboard = () => {
       toast.success(`Removed ${symbol} from watchlist`);
     } catch (error) {
       console.error('Error removing from watchlist:', error);
-      toast.error("Failed to remove from watchlist");
+      const errorMsg = error.response?.data?.detail || "Failed to remove from watchlist";
+      toast.error(errorMsg);
     }
   };
 
