@@ -26,9 +26,11 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 import time
 import random
-from openai import OpenAI
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+
+# Import news service
+from news_service import get_stock_news, get_market_news, analyze_sentiment
 
 
 ROOT_DIR = Path(__file__).parent
