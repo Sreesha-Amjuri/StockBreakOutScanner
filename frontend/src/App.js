@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./components/ui/table";
 import { 
   RefreshCw, TrendingUp, BarChart3, DollarSign, Activity, AlertCircle, 
-  Search, Filter, Heart, Star, Eye, Zap, Shield
+  Search, Filter, Heart, Star, Eye, Zap, Shield, Newspaper
 } from "lucide-react";
 import { Toaster } from "./components/ui/sonner";
 import { toast } from "sonner";
@@ -18,6 +18,10 @@ import StockDetails from "./components/StockDetails";
 import TopPicksCarousel from "./components/TopPicksCarousel";
 import SignalsPanel from "./components/SignalsPanel";
 import AlertsNotification from "./components/AlertsNotification";
+import StockSearchDropdown from "./components/StockSearchDropdown";
+import ScannerPanel from "./components/ScannerPanel";
+import NewsPanel from "./components/NewsPanel";
+import FundamentalsPanel from "./components/FundamentalsPanel";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
