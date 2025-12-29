@@ -4,10 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { ArrowLeft, TrendingUp, TrendingDown, Heart, AlertTriangle, DollarSign, BarChart3, Activity, Shield } from 'lucide-react';
+import { ArrowLeft, TrendingUp, TrendingDown, Heart, AlertTriangle, DollarSign, BarChart3, Activity, Shield, Newspaper, PieChart } from 'lucide-react';
 import axios from 'axios';
 import StockChart from './StockChart';
 import { toast } from 'sonner';
+import FundamentalsPanel from './FundamentalsPanel';
+import NewsPanel from './NewsPanel';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
